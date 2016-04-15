@@ -22,16 +22,19 @@ $.extend(
 
 
 girder.views.HierarchyWidget.prototype.events['click button.g-folder-run-button'] = function () {
-   var tmpnb = 'https://tmpnb.hub.yt';
    var collId = this.parentModel.escape('_id');
-   $.ajax({
-       type: "POST",
-       url: tmpnb + '/api/spawn/',
-       success: function(data, status, xhr) {
-	   var redirect = tmpnb + '/' + data["url"] + '/login?next=' 
+
+   girder.restRequest({path: 'ythub'}).done(function (resp) {
+     console.log(resp["url"]);
+     $.ajax({
+        type: "POST",
+        url: resp["url"] + '/api/spawn/',
+        success: function(data, status, xhr) {
+           var redirect = resp["url"] + '/' + data["url"] + '/login?next='
                         + encodeURIComponent(data["url"]);
-           $.redirectPost(redirect, {'girder_token': girder.currentToken, 
+           $.redirectPost(redirect, {'girder_token': girder.currentToken,
                                      'collection_id': collId});
        }
+     });
    });
 };
