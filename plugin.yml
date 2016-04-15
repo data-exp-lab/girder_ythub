@@ -1,0 +1,5 @@
+name: ytHub
+description: integration with tmpnb
+version: 1.0.0
+#dependencies:
+#    - jobs
