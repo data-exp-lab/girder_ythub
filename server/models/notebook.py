@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import requests
+import json
 
+from ..constants import PluginSettings
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import AccessControlledModel
 
@@ -50,7 +53,13 @@ class Notebook(AccessControlledModel):
                                                 limit=limit, offset=offset):
             yield r
 
-    def createNotebook(self, folder, user, url, when=None, save=True):
+    def deleteNotebook(self, notebook, token):
+        hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
+        payload = {"girder_token": token['_id'],
+                   "collection_id": str(notebook['folderId'])}
+        requests.delete(hub_url, json=payload)
+
+    def createNotebook(self, folder, user, token, when=None, save=True):
         existing = self.findOne({
             'folderId': folder['_id'],
             'userId': user['_id'],
@@ -61,11 +70,17 @@ class Notebook(AccessControlledModel):
 
         now = datetime.datetime.utcnow()
         when = when or now
+        hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
+
+        payload = {"girder_token": token['_id'],
+                   "collection_id": str(folder['_id'])}
+        r = requests.post(hub_url, json=payload)
+        nb = json.loads(r.content.decode('utf8'))
 
         notebook = {
             'folderId': folder['_id'],
             'userId': user['_id'],
-            'url': url,
+            'url': nb["url"],
             'created': now,
             'when': when,
         }

@@ -101,7 +101,9 @@ class Notebook(Resource):
         .errorResponse('Write access was denied for the notebook.', 403)
     )
     def deleteNotebook(self, notebook, params):
-        self.model('notebook', 'ythub').remove(notebook)
+        notebookModel = self.model('notebook', 'ythub')
+        notebookModel.deleteNotebook(notebook, self.getCurrentToken())
+        notebookModel.remove(notebook)
 
     @access.user
     @loadmodel(model='folder', level=AccessType.READ)
@@ -115,13 +117,12 @@ class Notebook(Resource):
     )
     def createNotebook(self, folder, params):
         user = self.getCurrentUser()
-        # token = self.getCurrentToken()
+        token = self.getCurrentToken()
         # folder = self.model('folder').load(item['folderId'], force=True)
         notebookModel = self.model('notebook', 'ythub')
 
-        url = "FIXME"  # get from post
+        notebook = notebookModel.createNotebook(folder, user, token)
 
-        notebook = notebookModel.createNotebook(folder, user, url)
         return notebookModel.save(notebook)
 
 
