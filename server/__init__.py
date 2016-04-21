@@ -52,6 +52,8 @@ class Notebook(Resource):
                'If not passed or empty, will use the currently logged in user.'
                ' If set to "None", will list all notebooks that do not have '
                'an owning user.', required=False)
+        .param('folderId', 'The folder ID which notebooks will be listed. ',
+               required=False)
         .pagingParams(defaultSort='created', defaultSortDir=SortDir.DESCENDING)
     )
     def listNotebooks(self, params):
@@ -59,6 +61,7 @@ class Notebook(Resource):
             params, 'created', SortDir.DESCENDING)
         currentUser = self.getCurrentUser()
         userId = params.get('userId')
+        folderId = params.get('folderId')
         if not userId:
             user = currentUser
         elif userId.lower() == 'none':
@@ -67,9 +70,15 @@ class Notebook(Resource):
             user = self.model('user').load(
                 params['userId'], user=currentUser, level=AccessType.READ)
 
+        if not folderId or folderId.lower() == 'none':
+            folder = None
+        else:
+            folder = self.model('folder').load(
+                params['folderId'], user=currentUser, level=AccessType.READ)
+
         return list(self.model('notebook', 'ythub').list(
-            user=user, offset=offset, limit=limit, sort=sort,
-            currentUser=currentUser))
+            user=user, folder=folder, offset=offset, limit=limit,
+            sort=sort, currentUser=currentUser))
 
     @access.user
     @loadmodel(model='notebook', plugin='ythub', level=AccessType.READ)
@@ -98,7 +107,7 @@ class Notebook(Resource):
     @loadmodel(model='folder', level=AccessType.READ)
     @filtermodel(model='notebook', plugin='ythub')
     @describeRoute(
-        Description('Blur an image using the worker.')
+        Description('Create new notebook for a current user and folder.')
         .notes('The output image is placed in the same parent folder as the '
                'input image.')
         .param('id', 'The ID of the item containing the input image.',

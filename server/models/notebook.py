@@ -19,14 +19,16 @@ class Notebook(AccessControlledModel):
         self.ensureIndices([(compoundSearchIndex, {})])
 
         self.exposeFields(level=AccessType.WRITE,
-                          fields={'created', 'when', 'folderId', '_id', 'userId', 'url'})
+                          fields={'created', 'when', 'folderId', '_id',
+                                  'userId', 'url'})
         self.exposeFields(level=AccessType.SITE_ADMIN,
                           fields={'args', 'kwargs'})
 
     def validate(self, notebook):
         return notebook
 
-    def list(self, user=None, limit=0, offset=0, sort=None, currentUser=None):
+    def list(self, user=None, folder=None, limit=0, offset=0,
+             sort=None, currentUser=None):
         """
         List a page of jobs for a given user.
 
@@ -37,8 +39,10 @@ class Notebook(AccessControlledModel):
         :param sort: The sort field.
         :param currentUser: User for access filtering.
         """
-        userId = user['_id'] if user else None
-        cursor = self.find({'userId': userId}, sort=sort)
+        cursor_def = {'userId': user['_id'] if user else None}
+        if folder is not None:
+            cursor_def.update({'folderId': folder['_id']})
+        cursor = self.find(cursor_def, sort=sort)
 
         for r in self.filterResultsByPermission(cursor=cursor,
                                                 user=currentUser,
@@ -65,7 +69,6 @@ class Notebook(AccessControlledModel):
             'created': now,
             'when': when,
         }
-
 
         self.setPublic(notebook, public=False)
         self.setUserAccess(notebook, user=user, level=AccessType.ADMIN)
