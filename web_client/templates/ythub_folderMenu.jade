@@ -1,4 +1,12 @@
-li(role="presentation")
+li(role="presentation", id="start_nb")
   a.g-start-notebook(role="menuitem")
     i.icon-chart-bar
     | Start Notebook
+li(role="presentation", id="go_nb")
+  a.g-visit-notebook(role="menuitem", notebook-id=goUrl)
+    i.icon-chart-bar
+    | Visit Notebook
+li(role="presentation", id="stop_nb")
+  a.g-stop-notebook(role="menuitem", notebook-id=delUrl)
+    i.icon-chart-bar
+    | Stop Notebook
