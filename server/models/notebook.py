@@ -8,6 +8,7 @@ import json
 from ..constants import PluginSettings
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import AccessControlledModel
+from girder.plugins.ythub.constants import NotebookStatus
 
 
 class Notebook(AccessControlledModel):
@@ -23,11 +24,15 @@ class Notebook(AccessControlledModel):
 
         self.exposeFields(level=AccessType.WRITE,
                           fields={'created', 'when', 'folderId', '_id',
-                                  'userId', 'url'})
+                                  'userId', 'url', 'status'})
         self.exposeFields(level=AccessType.SITE_ADMIN,
                           fields={'args', 'kwargs'})
 
     def validate(self, notebook):
+        if not NotebookStatus.isValid(notebook['status']):
+            raise ValidationException(
+                'Invalid notebook status %s.' % notebook['status'],
+                field='status')
         return notebook
 
     def list(self, user=None, folder=None, limit=0, offset=0,
@@ -71,9 +76,10 @@ class Notebook(AccessControlledModel):
         now = datetime.datetime.utcnow()
         when = when or now
         hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
-
         payload = {"girder_token": token['_id'],
                    "collection_id": str(folder['_id'])}
+
+        # TODO: check if succeeds and set status accordingly
         r = requests.post(hub_url, json=payload)
         nb = json.loads(r.content.decode('utf8'))
 
@@ -81,6 +87,7 @@ class Notebook(AccessControlledModel):
             'folderId': folder['_id'],
             'userId': user['_id'],
             'url': nb["url"],
+            'status': NotebookStatus.RUNNING,   # be optimistic for now
             'created': now,
             'when': when,
         }
