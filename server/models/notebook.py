@@ -7,7 +7,8 @@ import json
 
 from ..constants import PluginSettings
 from girder.constants import AccessType, SortDir
-from girder.models.model_base import AccessControlledModel
+from girder.models.model_base import \
+    AccessControlledModel, ValidationException
 from girder.plugins.ythub.constants import NotebookStatus
 
 
@@ -60,8 +61,9 @@ class Notebook(AccessControlledModel):
 
     def deleteNotebook(self, notebook, token):
         hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
-        payload = {"girder_token": token['_id'],
-                   "collection_id": str(notebook['folderId'])}
+        payload = {'girder_token': token['_id'],
+                   'collection_id': str(notebook['folderId']),
+                   'userId': str(notebook['userId'])}
         requests.delete(hub_url, json=payload)
 
     def createNotebook(self, folder, user, token, when=None, save=True):

@@ -4,8 +4,10 @@
 from girder import events
 from girder.models.notification import ProgressState
 
+
 class PluginSettings:
     TMPNB_URL = 'ythub.tmpnb_url'
+
 
 # Constants representing the setting keys for this plugin
 class NotebookStatus(object):
