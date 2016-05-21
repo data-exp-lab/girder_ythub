@@ -1,7 +1,7 @@
 girder.wrap(girder.views.HierarchyWidget, 'render', function (render) {
     var widget = this;
 
-    if (widget.parentModel.resourceName === 'folder') {
+    if (girder.currentUser & widget.parentModel.resourceName === 'folder') {
         _restParams = {
             path: 'notebook',
             type: 'GET',
