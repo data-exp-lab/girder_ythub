@@ -62,13 +62,11 @@ class Notebook(Resource):
         currentUser = self.getCurrentUser()
         userId = params.get('userId')
         folderId = params.get('folderId')
-        if not userId:
-            user = currentUser
-        elif userId.lower() == 'none':
+        if not userId or userId.lower() == 'none':
             user = None
         else:
             user = self.model('user').load(
-                params['userId'], user=currentUser, level=AccessType.READ)
+                userId, user=currentUser, level=AccessType.READ)
 
         if not folderId or folderId.lower() == 'none':
             folder = None

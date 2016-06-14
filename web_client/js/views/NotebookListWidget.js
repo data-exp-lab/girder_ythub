@@ -3,14 +3,25 @@ girder.views.ythub_NotebookListWidget = girder.View.extend({
         'click .g-notebook-trigger-link': function (e) {
             var cid = $(e.target).attr('cid');
             this.trigger('g:notebookClicked', this.collection.get(cid));
+        },
+
+   'click .g-notebook-delete-link': function (e) {
+        var url = $(e.currentTarget).attr('notebook-id');
+            var widget = this;
+            _delParams = {
+                path: 'notebook/' + url,
+                type: 'DELETE',
+                error: null
+            };
+            girder.restRequest(_delParams).done(function() {
+                widget.trigger('g:changed');
+            });
         }
     },
 
     initialize: function (settings) {
         this.columns = settings.columns || this.columnEnum.COLUMN_ALL;
-        this.filter = settings.filter || {
-            userId: girder.currentUser.id
-        };
+        this.filter = settings.filter || {};
 
         this.collection = new girder.collections.NotebookCollection();
         this.collection.sortField = settings.sortField || 'created';
@@ -19,6 +30,7 @@ girder.views.ythub_NotebookListWidget = girder.View.extend({
 
         this.collection.on('g:changed', function () {
             this.render();
+            this.trigger('g:changed');
         }, this).fetch(this.filter);
 
         this.showHeader = _.has(settings, 'showHeader') ? settings.showHeader : true;
@@ -41,9 +53,9 @@ girder.views.ythub_NotebookListWidget = girder.View.extend({
     ], 'COLUMN_ALL'),
 
     render: function () {
-    	var widget = this;
+        var widget = this;
 
-	girder.restRequest({path: 'ythub'}).done(function (resp) {
+        girder.restRequest({path: 'ythub'}).done(function (resp) {
             widget.$el.html(girder.templates.ythub_notebookList({
                 notebooks: widget.collection.toArray(),
                 showHeader: widget.showHeader,
@@ -52,7 +64,7 @@ girder.views.ythub_NotebookListWidget = girder.View.extend({
                 columnEnum: widget.columnEnum,
                 girder: girder
             }));
-	});
+        });
 
         if (this.showPaging) {
             this.paginateWidget.setElement(this.$('.g-notebook-pagination')).render();
@@ -91,6 +103,6 @@ girder.views.ythub_NotebookListWidget = girder.View.extend({
 
 girder.router.route('notebook/user/:id', 'notebookList', function (id) {
     girder.events.trigger('g:navigateTo', girder.views.ythub_NotebookListWidget, {
-        filter: {userId: id}
+        filter: {}
     });
 });

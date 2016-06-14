@@ -48,11 +48,12 @@ class Notebook(AccessControlledModel):
         :param sort: The sort field.
         :param currentUser: User for access filtering.
         """
-        cursor_def = {'userId': user['_id'] if user else None}
+        cursor_def = {}
+        if user is not None:
+            cursor_def['userId'] = user['_id']
         if folder is not None:
-            cursor_def.update({'folderId': folder['_id']})
+            cursor_def['folderId'] = folder['_id']
         cursor = self.find(cursor_def, sort=sort)
-
         for r in self.filterResultsByPermission(cursor=cursor,
                                                 user=currentUser,
                                                 level=AccessType.READ,
