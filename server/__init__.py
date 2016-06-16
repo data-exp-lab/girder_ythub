@@ -25,6 +25,7 @@ def validateSettings(event):
 
 class ytHub(Resource):
     def __init__(self):
+        super(ytHub, self).__init__()
         self.resourceName = 'ythub'
 
         self.route('GET', (), self.get_ythub_url)
@@ -37,6 +38,7 @@ class ytHub(Resource):
 
 class Notebook(Resource):
     def __init__(self):
+        super(Notebook, self).__init__()
         self.resourceName = 'notebook'
 
         self.route('GET', (), self.listNotebooks)
