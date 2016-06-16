@@ -5,12 +5,17 @@ from girder import events
 from girder.models.model_base import ValidationException
 from girder.api import access
 from girder.api.describe import Description, describeRoute
-from girder.api.rest import Resource, filtermodel, loadmodel
-from girder.constants import AccessType, SortDir
+from girder.api.rest import boundHandler, Resource, filtermodel, loadmodel
+from girder.constants import AccessType, SortDir, TokenScope
 from .constants import PluginSettings
+
+from girder.utility.model_importer import ModelImporter
+from girder.utility import assetstore_utilities
+from girder.api.rest import getCurrentUser
 
 
 class Job(Resource):
+
     def __init__(self):
         super(Job, self).__init__()
 
@@ -24,6 +29,7 @@ def validateSettings(event):
 
 
 class ytHub(Resource):
+
     def __init__(self):
         super(ytHub, self).__init__()
         self.resourceName = 'ythub'
@@ -31,12 +37,15 @@ class ytHub(Resource):
         self.route('GET', (), self.get_ythub_url)
 
     @access.public
+    @describeRoute(
+        Description('Return url for tmpnb hub.')
+    )
     def get_ythub_url(self, params):
-        settingModel = self.model('setting')
-        return {'url': settingModel.get(PluginSettings.TMPNB_URL)}
+        return {'url': self.model('setting').get(PluginSettings.TMPNB_URL)}
 
 
 class Notebook(Resource):
+
     def __init__(self):
         super(Notebook, self).__init__()
         self.resourceName = 'notebook'
@@ -126,7 +135,40 @@ class Notebook(Resource):
         return notebookModel.save(notebook)
 
 
+def saveImportPathToMeta(event):
+    resourceModel = ModelImporter.model(event.info['type'])
+    resource = resourceModel.load(event.info['id'], user=getCurrentUser())
+    resourceModel.setMetadata(resource,
+                              {"phys_path": event.info['importPath']})
+
+
+@access.public(scope=TokenScope.DATA_READ)
+@loadmodel(model='folder', level=AccessType.READ)
+@describeRoute(
+    Description('Get physical paths for files in folder.')
+    .param('id', 'The ID of the folder.', paramType='path')
+    .errorResponse('ID was invalid.')
+    .errorResponse('Read access was denied for the folder.', 403)
+)
+@boundHandler()
+def getFilesMapping(self, folder, params):
+    user = self.getCurrentUser()
+    result = {}
+
+    def retfunc(item):
+        assetstore = self.model('assetstore').load(item['assetstoreId'])
+        adapter = assetstore_utilities.getAssetstoreAdapter(assetstore)
+        return adapter.fullPath(item)
+    for (path, func) in self.model('folder').fileList(
+            folder, user=user, subpath=True, streamCallback=(retfunc, [], {})):
+        result[path] = func
+    return result
+
+
 def load(info):
     events.bind('model.setting.validate', 'ythub', validateSettings)
+    events.bind('filesystem_assetstore_imported', 'ythub',
+                saveImportPathToMeta)
     info['apiRoot'].ythub = ytHub()
     info['apiRoot'].notebook = Notebook()
+    info['apiRoot'].folder.route('GET', (':id', 'contents'), getFilesMapping)
