@@ -154,14 +154,11 @@ def saveImportPathToMeta(event):
 def getFilesMapping(self, folder, params):
     user = self.getCurrentUser()
     result = {}
-
-    def retfunc(item):
+    for (path, item) in self.model('folder').fileList(
+            folder, user=user, subpath=True, stream=False):
         assetstore = self.model('assetstore').load(item['assetstoreId'])
         adapter = assetstore_utilities.getAssetstoreAdapter(assetstore)
-        return adapter.fullPath(item)
-    for (path, func) in self.model('folder').fileList(
-            folder, user=user, subpath=True, streamCallback=(retfunc, [], {})):
-        result[path] = func
+        result[path] = adapter.fullPath(item)
     return result
 
 
