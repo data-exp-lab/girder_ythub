@@ -155,7 +155,7 @@ def getFilesMapping(self, folder, params):
     user = self.getCurrentUser()
     result = {}
     for (path, item) in self.model('folder').fileList(
-            folder, user=user, subpath=True, stream=False):
+            folder, user=user, subpath=True, data=False):
         assetstore = self.model('assetstore').load(item['assetstoreId'])
         adapter = assetstore_utilities.getAssetstoreAdapter(assetstore)
         result[path] = adapter.fullPath(item)
