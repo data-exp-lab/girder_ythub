@@ -162,6 +162,30 @@ def getFilesMapping(self, folder, params):
     return result
 
 
+@access.public(scope=TokenScope.DATA_READ)
+@loadmodel(model='folder', level=AccessType.READ)
+@describeRoute(
+    Description('List the content of a folder.')
+    .param('id', 'The ID of the folder.', paramType='path')
+    .errorResponse('ID was invalid.')
+    .errorResponse('Read access was denied for the folder.', 403)
+)
+@boundHandler()
+def listFolder(self, folder, params):
+    user = self.getCurrentUser()
+    folders = list(
+        self.model('folder').childFolders(parentType='folder',
+                                          parent=folder, user=user))
+
+    files = []
+    for item in self.model('folder').childItems(folder=folder):
+        if len(list(self.model('item').childFiles(item))) == 1:
+            files.append(item)
+        else:
+            folders.append(item)
+    return {'folders': folders, 'files': files}
+
+
 def load(info):
     events.bind('model.setting.validate', 'ythub', validateSettings)
     events.bind('filesystem_assetstore_imported', 'ythub',
@@ -169,3 +193,4 @@ def load(info):
     info['apiRoot'].ythub = ytHub()
     info['apiRoot'].notebook = Notebook()
     info['apiRoot'].folder.route('GET', (':id', 'contents'), getFilesMapping)
+    info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
