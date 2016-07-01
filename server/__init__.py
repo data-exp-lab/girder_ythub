@@ -199,8 +199,9 @@ def listFolder(self, folder, params):
 
     files = []
     for item in self.model('folder').childItems(folder=folder):
-        if len(list(self.model('item').childFiles(item))) == 1:
-            files.append(item)
+        childFiles = list(self.model('item').childFiles(item))
+        if len(childFiles) == 1:
+            files.append(childFiles[0])
         else:
             folders.append(item)
     return {'folders': folders, 'files': files}
