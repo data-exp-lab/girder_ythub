@@ -201,7 +201,13 @@ def listFolder(self, folder, params):
     for item in self.model('folder').childItems(folder=folder):
         childFiles = list(self.model('item').childFiles(item))
         if len(childFiles) == 1:
-            files.append(childFiles[0])
+            fileitem = childFiles[0]
+            if 'imported' not in fileitem:
+                store = \
+                    self.model('assetstore').load(fileitem['assetstoreId'])
+                adapter = assetstore_utilities.getAssetstoreAdapter(store)
+                fileitem["path"] = adapter.fullPath(fileitem)
+            files.append(fileitem)
         else:
             folders.append(item)
     return {'folders': folders, 'files': files}
@@ -217,7 +223,15 @@ def listFolder(self, folder, params):
 )
 @boundHandler()
 def listItem(self, item, params):
-    return {'folders': [], 'files': list(self.model('item').childFiles(item))}
+    files = []
+    for fileitem in self.model('item').childFiles(item):
+        if 'imported' not in fileitem:
+            store = \
+                self.model('assetstore').load(fileitem['assetstoreId'])
+            adapter = assetstore_utilities.getAssetstoreAdapter(store)
+            fileitem["path"] = adapter.fullPath(fileitem)
+        files.append(fileitem)
+    return {'folders': [], 'files': files}
 
 
 @access.public(scope=TokenScope.DATA_READ)
