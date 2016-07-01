@@ -151,7 +151,7 @@ def saveImportPathToMeta(event):
     .errorResponse('Read access was denied for the folder.', 403)
 )
 @boundHandler()
-def getFilesMapping(self, folder, params):
+def getFolderFilesMapping(self, folder, params):
     user = self.getCurrentUser()
     result = {}
     for (path, item) in self.model('folder').fileList(
@@ -159,6 +159,26 @@ def getFilesMapping(self, folder, params):
         assetstore = self.model('assetstore').load(item['assetstoreId'])
         adapter = assetstore_utilities.getAssetstoreAdapter(assetstore)
         result[path] = adapter.fullPath(item)
+    return result
+
+
+@access.public(scope=TokenScope.DATA_READ)
+@loadmodel(model='item', level=AccessType.READ)
+@describeRoute(
+    Description('Get physical paths for files in item.')
+    .param('id', 'The ID of the folder.', paramType='path')
+    .errorResponse('ID was invalid.')
+    .errorResponse('Read access was denied for the folder.', 403)
+)
+@boundHandler()
+def getItemFilesMapping(self, item, params):
+    user = self.getCurrentUser()
+    result = {}
+    for (path, fileitem) in self.model('item').fileList(
+            item, user=user, subpath=False, data=False):
+        assetstore = self.model('assetstore').load(fileitem['assetstoreId'])
+        adapter = assetstore_utilities.getAssetstoreAdapter(assetstore)
+        result[path] = adapter.fullPath(fileitem)
     return result
 
 
@@ -186,11 +206,40 @@ def listFolder(self, folder, params):
     return {'folders': folders, 'files': files}
 
 
+@access.public(scope=TokenScope.DATA_READ)
+@loadmodel(model='item', level=AccessType.READ)
+@describeRoute(
+    Description('List the content of an item.')
+    .param('id', 'The ID of the folder.', paramType='path')
+    .errorResponse('ID was invalid.')
+    .errorResponse('Read access was denied for the folder.', 403)
+)
+@boundHandler()
+def listItem(self, item, params):
+    return {'folders': [], 'files': list(self.model('item').childFiles(item))}
+
+
+@access.public(scope=TokenScope.DATA_READ)
+@loadmodel(model='folder', level=AccessType.READ)
+@describeRoute(
+    Description('Get the path to the root of the folder\'s hierarchy.')
+    .param('id', 'The ID of the folder.', paramType='path')
+    .errorResponse('ID was invalid.')
+    .errorResponse('Read access was denied for the item.', 403)
+)
+def folderRootpath(self, folder, params):
+    return self.model('folder').parentsToRoot(folder, self.getCurrentUser())
+
+
 def load(info):
     events.bind('model.setting.validate', 'ythub', validateSettings)
     events.bind('filesystem_assetstore_imported', 'ythub',
                 saveImportPathToMeta)
     info['apiRoot'].ythub = ytHub()
     info['apiRoot'].notebook = Notebook()
-    info['apiRoot'].folder.route('GET', (':id', 'contents'), getFilesMapping)
+    info['apiRoot'].folder.route('GET', (':id', 'contents'),
+                                 getFolderFilesMapping)
+    info['apiRoot'].item.route('GET', (':id', 'contents'), getItemFilesMapping)
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
+    info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
+    info['apiRoot'].folder.route('GET', (':id', 'rootpath'), folderRootpath)
