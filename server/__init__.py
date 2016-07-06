@@ -11,7 +11,7 @@ from .constants import PluginSettings
 
 from girder.utility.model_importer import ModelImporter
 from girder.utility import assetstore_utilities
-from girder.api.rest import getCurrentUser
+from girder.api.rest import getCurrentUser, getApiUrl
 
 
 class Job(Resource):
@@ -35,6 +35,7 @@ class ytHub(Resource):
         self.resourceName = 'ythub'
 
         self.route('GET', (), self.get_ythub_url)
+        self.route('GET', (':id', 'examples'), self.generateExamples)
 
     @access.public
     @describeRoute(
@@ -42,6 +43,53 @@ class ytHub(Resource):
     )
     def get_ythub_url(self, params):
         return {'url': self.model('setting').get(PluginSettings.TMPNB_URL)}
+
+    @access.public
+    @loadmodel(model='folder', level=AccessType.READ)
+    @describeRoute(
+        Description('Generate example data page.')
+        .param('id', 'The folder ID which holds example data.',
+               paramType='path')
+    )
+    def generateExamples(self, folder, params):
+        def get_code(resource):
+            try:
+                return resource["meta"]["code"]
+            except KeyError:
+                return "unknown"
+
+        def sizeof_fmt(num, suffix='B'):
+            for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+                if abs(num) < 1024.0:
+                    return "%3.1f%s%s" % (num, unit, suffix)
+                num /= 1024.0
+            return "%.1f%s%s" % (num, 'Yi', suffix)
+
+        def download_path(_id, resource):
+            return "{}/{}/{}/download".format(getApiUrl(), resource, _id)
+
+        result = {}
+        user = self.getCurrentUser()
+        frontends = list(
+            self.model('folder').childFolders(parentType='folder',
+                                              parent=folder, user=user))
+        for frontend in frontends:
+            ds = list(
+                self.model('folder').childFolders(parentType='folder',
+                                                  parent=frontend, user=user))
+
+            examples = [dict(code=get_code(_), description=_["description"],
+                             filename=_["name"], size=sizeof_fmt(_["size"]),
+                             url=download_path(_["_id"], "folder"))
+                        for _ in ds]
+            ds = list(self.model('folder').childItems(folder=frontend))
+            examples += [dict(code=get_code(_), description=_["description"],
+                              filename=_["name"], size=sizeof_fmt(_["size"]),
+                              url=download_path(_["_id"], "item"))
+                         for _ in ds]
+            result[frontend["name"]] = examples
+
+        return result
 
 
 class Notebook(Resource):
