@@ -290,8 +290,10 @@ def listItem(self, item, params):
     .errorResponse('ID was invalid.')
     .errorResponse('Read access was denied for the item.', 403)
 )
+@boundHandler()
 def folderRootpath(self, folder, params):
-    return self.model('folder').parentsToRoot(folder, self.getCurrentUser())
+    return self.model('folder').parentsToRoot(
+        folder, user=self.getCurrentUser())
 
 
 def load(info):
