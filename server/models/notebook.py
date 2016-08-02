@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import requests
 import json
+import requests
+import six
 
 from ..constants import PluginSettings
+from girder.api.rest import RestException
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
@@ -82,9 +84,24 @@ class Notebook(AccessControlledModel):
         payload = {"girder_token": token['_id'],
                    "collection_id": str(folder['_id'])}
 
-        # TODO: check if succeeds and set status accordingly
-        r = requests.post(hub_url, json=payload)
-        nb = json.loads(r.content.decode('utf8'))
+        resp = requests.post(hub_url, json=payload)
+        content = resp.content
+
+        if isinstance(content, six.binary_type):
+            content = content.decode('utf8')
+
+        try:
+            resp.raise_for_status()
+        except requests.HTTPError:
+            raise RestException(
+                'Got %s code from tmpnb, response="%s"/' % (
+                    resp.status_code, content
+                ), code=502)
+
+        try:
+            nb = json.loads(content)
+        except ValueError:
+            raise RestException('Non-JSON response: %s' % content, code=502)
 
         notebook = {
             'folderId': folder['_id'],
