@@ -1,0 +1,34 @@
+language: python
+
+python:
+    - "2.7"
+    - "3.4"
+
+sudo: false
+
+compiler:
+    - gcc
+before_install:
+    - cd "${HOME}"
+    - npm install -g npm
+    - git clone git://github.com/girder/girder
+    - curl "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.0.2.tgz" | gunzip -c | tar x
+    - cd mongodb-*/bin && export PATH="${PWD}:${PATH}"
+    - mkdir /tmp/db
+    - mongod --dbpath=/tmp/db >/dev/null 2>/dev/null &
+    - cd "${HOME}"
+    - curl -L "http://use.yt/upload/52795924" | gunzip -c | tar x
+    - cd cmake-*/bin && export PATH="${PWD}:${PATH}"
+    - ln -s "${HOME}/girder/.eslintrc" "${TRAVIS_BUILD_DIR}/../.."
+    - cd "${HOME}/girder/plugins"
+    - ln -s "${TRAVIS_BUILD_DIR}" ythub
+install:
+    - cd "${HOME}/girder"
+    - pip install -e .
+    - pip install -U -r requirements-dev.txt
+    - girder-install web --dev
+script:
+    - mkdir _build
+    - cd _build
+    - cmake -DRUN_CORE_TESTS:BOOL=OFF -DBUILD_JAVASCRIPT_TESTS:BOOL=OFF -DTEST_PLUGINS:STRING=ythub -DPYTHON_COVERAGE:BOOL=ON -DCOVERAGE_MINIMUM_PASS:STRING=4 -DPYTHON_VERSION:STRING=${TRAVIS_PYTHON_VERSION} "${HOME}/girder"
+    - ctest -V -j3
