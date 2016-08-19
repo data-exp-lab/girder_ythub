@@ -27,7 +27,9 @@ class Notebook(AccessControlledModel):
 
         self.exposeFields(level=AccessType.WRITE,
                           fields={'created', 'when', 'folderId', '_id',
-                                  'userId', 'url', 'status'})
+                                  'userId', 'url', 'status',
+                                  'containerPath', 'containerId',
+                                  'mountPoint', 'lastActivity'})
         self.exposeFields(level=AccessType.SITE_ADMIN,
                           fields={'args', 'kwargs'})
 
@@ -63,11 +65,15 @@ class Notebook(AccessControlledModel):
             yield r
 
     def deleteNotebook(self, notebook, token):
-        hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
-        payload = {'girder_token': token['_id'],
-                   'collection_id': str(notebook['folderId']),
-                   'userId': str(notebook['userId'])}
-        requests.delete(hub_url, json=payload)
+        payload = {
+            'containerId': str(notebook['containerId']),
+            'containerPath': str(notebook['containerPath']),
+            'mountPoint': str(notebook['mountPoint']),
+            'folderId': str(notebook['folderId']),
+            'girder_token': str(token['_id']),
+        }
+        requests.delete(self.model('setting').get(PluginSettings.TMPNB_URL),
+                        json=payload)
 
     def createNotebook(self, folder, user, token, when=None, save=True):
         existing = self.findOne({
@@ -82,7 +88,7 @@ class Notebook(AccessControlledModel):
         when = when or now
         hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
         payload = {"girder_token": token['_id'],
-                   "collection_id": str(folder['_id'])}
+                   "folderId": str(folder['_id'])}
 
         resp = requests.post(hub_url, json=payload)
         content = resp.content
@@ -106,7 +112,10 @@ class Notebook(AccessControlledModel):
         notebook = {
             'folderId': folder['_id'],
             'userId': user['_id'],
-            'url': nb["url"],
+            'containerId': nb['containerId'],
+            'containerPath': nb['containerPath'],
+            'mountPoint': nb['mountPoint'],
+            'lastActivity': now,
             'status': NotebookStatus.RUNNING,   # be optimistic for now
             'created': now,
             'when': when,

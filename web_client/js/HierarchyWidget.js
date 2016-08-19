@@ -66,7 +66,7 @@ girder.views.HierarchyWidget.prototype.events['click a.g-start-notebook'] = func
             path: 'notebook/' + folderId,
             type: 'POST'
         }).done(function (notebook) {
-            window.location.assign(hub["url"] + notebook["url"]);
+            window.location.assign(hub["url"] + '/' + notebook["containerPath"]);
         });
     });
 };
