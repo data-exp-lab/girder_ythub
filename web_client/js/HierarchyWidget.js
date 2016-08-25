@@ -19,6 +19,11 @@ girder.wrap(girder.views.HierarchyWidget, 'render', function (render) {
                     goUrl: '/dev/null',
                     delUrl: '0',
                 })).appendTo(widget.$('.g-folder-actions-menu'));
+                $(girder.templates.ytHub_HierarchyWidget({
+                    goUrl: '/dev/null',
+                    delUrl: '0',
+                    girder: girder,
+                })).prependTo(widget.$('.g-folder-header-buttons'));
                 document.getElementById("go_nb").style.display = "none";
                 document.getElementById("stop_nb").style.display = "none";
                 document.getElementById("start_nb").style.display = "list-item";
@@ -28,6 +33,11 @@ girder.wrap(girder.views.HierarchyWidget, 'render', function (render) {
                     goUrl: notebook.url,
                     delUrl: notebook._id
                 })).appendTo(widget.$('.g-folder-actions-menu'));
+                $(girder.templates.ytHub_HierarchyWidget({
+                    goUrl: notebook.url,
+                    delUrl: notebook._id,
+                    girder: girder,
+                })).prependTo(widget.$('.g-folder-header-buttons'));
                 document.getElementById("go_nb").style.display = "list-item";
                 document.getElementById("stop_nb").style.display = "list-item";
                 document.getElementById("start_nb").style.display = "none";
@@ -38,28 +48,46 @@ girder.wrap(girder.views.HierarchyWidget, 'render', function (render) {
     }
 });
 
-girder.views.HierarchyWidget.prototype.events['click a.g-visit-notebook'] = function (e) {
-    var url = $(e.currentTarget).attr('notebook-id');
-    girder.restRequest({path: 'ythub'}).done(function (resp) {
-        window.location.assign(resp["url"] + url);
-    });
+function _visit_nb (e) {
+    girder.restRequest({
+        path: 'notebook',
+        type: 'GET',
+        data: {
+            folderId: this.parentModel.id,
+            userId: girder.currentUser.get('_id'),
+        }
+    }).done(_.bind(function (resp) {
+       var nb_url = resp[0]['containerPath'];
+       girder.restRequest({path: 'ythub'}).done(function (resp) {
+           window.location.assign(resp["url"] + nb_url);
+       });
+    }, this));
 };
 
-girder.views.HierarchyWidget.prototype.events['click a.g-stop-notebook'] = function (e) {
-    var url = $(e.currentTarget).attr('notebook-id');
-    _delParams = {
-        path: 'notebook/' + url,
-        type: 'DELETE',
-        error: null
-    };
-    girder.restRequest(_delParams).done(function (foo) {
-        document.getElementById("go_nb").style.display = "none";
-        document.getElementById("stop_nb").style.display = "none";
-        document.getElementById("start_nb").style.display = "list-item";
-    });
+function _stop_nb (e) {
+    girder.restRequest({
+        path: 'notebook',
+        type: 'GET',
+        data: {
+            folderId: this.parentModel.id,
+            userId: girder.currentUser.get('_id'),
+        }
+    }).done(_.bind(function (resp) {
+       var nbId = resp[0]['_id'];
+       _delParams = {
+           path: 'notebook/' + nbId,
+           type: 'DELETE',
+           error: null
+       };
+       girder.restRequest(_delParams).done(function (foo) {
+           document.getElementById("go_nb").style.display = "none";
+           document.getElementById("stop_nb").style.display = "none";
+           document.getElementById("start_nb").style.display = "list-item";
+       });
+    }, this));
 };
 
-girder.views.HierarchyWidget.prototype.events['click a.g-start-notebook'] = function () {
+function _start_nb () {
     var folderId = this.parentModel.id;
     girder.restRequest({path: 'ythub'}).done(function (hub) {
         girder.restRequest({
@@ -70,3 +98,10 @@ girder.views.HierarchyWidget.prototype.events['click a.g-start-notebook'] = func
         });
     });
 };
+
+girder.views.HierarchyWidget.prototype.events['click a.g-visit-notebook'] = _visit_nb
+girder.views.HierarchyWidget.prototype.events['click a.g-start-notebook'] = _start_nb
+girder.views.HierarchyWidget.prototype.events['click a.g-stop-notebook'] = _stop_nb
+girder.views.HierarchyWidget.prototype.events['click .g-runnb-button'] = _start_nb
+girder.views.HierarchyWidget.prototype.events['click .g-gonb-button'] = _visit_nb
+girder.views.HierarchyWidget.prototype.events['click .g-stopnb-button'] = _stop_nb
