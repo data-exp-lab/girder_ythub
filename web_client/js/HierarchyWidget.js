@@ -20,13 +20,14 @@ girder.wrap(girder.views.HierarchyWidget, 'render', function (render) {
                     delUrl: '0',
                 })).appendTo(widget.$('.g-folder-actions-menu'));
                 $(girder.templates.ytHub_HierarchyWidget({
-                    goUrl: '/dev/null',
-                    delUrl: '0',
                     girder: girder,
                 })).prependTo(widget.$('.g-folder-header-buttons'));
                 document.getElementById("go_nb").style.display = "none";
                 document.getElementById("stop_nb").style.display = "none";
                 document.getElementById("start_nb").style.display = "list-item";
+                document.getElementsByClassName("g-runnb-button")[0].style.display = "inline";
+                document.getElementsByClassName("g-gonb-button")[0].style.display = "none";
+                document.getElementsByClassName("g-stopnb-button")[0].style.display = "none";
             } else {
                 var notebook = notebooks[0];
                 $(girder.templates.ythub_folderMenu({
@@ -34,13 +35,14 @@ girder.wrap(girder.views.HierarchyWidget, 'render', function (render) {
                     delUrl: notebook._id
                 })).appendTo(widget.$('.g-folder-actions-menu'));
                 $(girder.templates.ytHub_HierarchyWidget({
-                    goUrl: notebook.url,
-                    delUrl: notebook._id,
                     girder: girder,
                 })).prependTo(widget.$('.g-folder-header-buttons'));
                 document.getElementById("go_nb").style.display = "list-item";
                 document.getElementById("stop_nb").style.display = "list-item";
                 document.getElementById("start_nb").style.display = "none";
+                document.getElementsByClassName("g-runnb-button")[0].style.display = "none";
+                document.getElementsByClassName("g-gonb-button")[0].style.display = "inline";
+                document.getElementsByClassName("g-stopnb-button")[0].style.display = "inline";
             }
         });
     } else {
@@ -83,6 +85,9 @@ function _stop_nb (e) {
            document.getElementById("go_nb").style.display = "none";
            document.getElementById("stop_nb").style.display = "none";
            document.getElementById("start_nb").style.display = "list-item";
+           document.getElementsByClassName("g-runnb-button")[0].style.display = "inline";
+           document.getElementsByClassName("g-gonb-button")[0].style.display = "none";
+           document.getElementsByClassName("g-stopnb-button")[0].style.display = "none";
        });
     }, this));
 };
