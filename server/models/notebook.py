@@ -5,7 +5,9 @@ import datetime
 import json
 import requests
 import six
+import dateutil.parser
 
+from girder import logger
 from ..constants import PluginSettings
 from girder.api.rest import RestException
 from girder.constants import AccessType, SortDir
@@ -74,6 +76,44 @@ class Notebook(AccessControlledModel):
         }
         requests.delete(self.model('setting').get(PluginSettings.TMPNB_URL),
                         json=payload)
+        # TODO: handle error
+        self.remove(notebook)
+
+    def cullNotebooks(self):
+        resp = requests.get(
+            self.model('setting').get(PluginSettings.TMPNB_URL))
+        content = resp.content
+        if isinstance(content, six.binary_type):
+            content = content.decode('utf8')
+        try:
+            resp.raise_for_status()
+        except requests.HTTPError:
+            raise RestException(
+                'Got %s code from tmpnb, response="%s"/' % (
+                    resp.status_code, content
+                ), code=502)
+        try:
+            activity = json.loads(content)
+        except ValueError:
+            raise RestException('Non-JSON response: %s' % content, code=502)
+
+        admin = next(_ for _ in self.model('user').getAdmins())
+        token = self.model('token').createToken(user=admin, days=1)
+
+        # Iterate over all notebooks, not the prettiest way...
+        cull_time = datetime.datetime.utcnow() - \
+            datetime.timedelta(hours=4)
+        for nb in self.find({}):
+            try:
+                last_activity = dateutil.parser.parse(
+                    activity[nb['containerId']], ignoretz=True)
+            except KeyError:
+                # proxy is not aware of such container, kill it...
+                logger.info('deleting nb %s' % nb['_id'])
+                self.deleteNotebook(nb, token)
+            if last_activity < cull_time:
+                logger.info('deleting nb %s' % nb['_id'])
+                self.deleteNotebook(nb, token)
 
     def createNotebook(self, folder, user, token, when=None, save=True):
         existing = self.findOne({
