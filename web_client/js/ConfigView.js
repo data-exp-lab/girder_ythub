@@ -10,6 +10,9 @@ girder.views.ythub_ConfigView = girder.View.extend({
             this._saveSettings([{
                 key: 'ythub.tmpnb_url',
                 value: this.$('#ythub_tmpnb').val().trim()
+            }, {
+                key: 'ythub.culling_period',
+                value: this.$('#ythub_culling').val().trim()
             }]);
         }
     },
@@ -19,13 +22,14 @@ girder.views.ythub_ConfigView = girder.View.extend({
             path: 'system/setting',
             data: {
                 list: JSON.stringify([
-                    'ythub.tmpnb_url'
+                    'ythub.tmpnb_url',
+                    'ythub.culling_period'
                 ])
             }
         }).done(_.bind(function (resp) {
             this.render();
             this.$('#ythub_tmpnb').val(resp['ythub.tmpnb_url']);
-
+            this.$('#ythub_culling').val(resp['ythub.culling_period']);
         }, this));
     },
 

@@ -6,6 +6,7 @@ from girder.models.notification import ProgressState
 
 
 class PluginSettings:
+    CULLING_PERIOD = 'ythub.culling_period'
     TMPNB_URL = 'ythub.tmpnb_url'
 
 

@@ -101,8 +101,10 @@ class Notebook(AccessControlledModel):
         token = self.model('token').createToken(user=admin, days=1)
 
         # Iterate over all notebooks, not the prettiest way...
+        cull_period = self.model('setting').get(
+            PluginSettings.CULLING_PERIOD, '4')
         cull_time = datetime.datetime.utcnow() - \
-            datetime.timedelta(hours=4)
+            datetime.timedelta(hours=float(cull_period))
         for nb in self.find({}):
             try:
                 last_activity = dateutil.parser.parse(
