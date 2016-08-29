@@ -4,6 +4,9 @@ form#g-ythub-config-form(role="form")
     label.control-label(for="ythub_tmpnb") tmpnb URL
     input.input-sm.form-control#ythub_tmpnb(
       type="text", placeholder="Temporary notebook server's URL")
+    label.control-label(for="ythub_culling") Cull notebooks that are inactive for that many hours
+    input.input-sm.form-control#ythub_culling(
+      type="text", placeholder="Maximum inactivity period (hours) before notebook is deleted")
 
   p#g-ythub-error-message.g-validation-failed-message
   input.btn.btn-sm.btn-primary(type="submit", value="Save")

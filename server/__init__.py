@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from girder import events
+import datetime
+
+from girder import events, logger
 from girder.models.model_base import ValidationException
 from girder.api import access
 from girder.api.describe import Description, describeRoute
@@ -10,8 +12,11 @@ from girder.constants import AccessType, SortDir, TokenScope
 from .constants import PluginSettings
 
 from girder.utility.model_importer import ModelImporter
-from girder.utility import assetstore_utilities
+from girder.utility import assetstore_utilities, setting_utilities
 from girder.api.rest import getCurrentUser, getApiUrl
+
+
+_last_culling = datetime.datetime.utcnow()
 
 
 class Job(Resource):
@@ -20,12 +25,23 @@ class Job(Resource):
         super(Job, self).__init__()
 
 
-def validateSettings(event):
-    if event.info['key'] == PluginSettings.TMPNB_URL:
-        if not event.info['value']:
-            raise ValidationException(
-                'TmpNB URL must not be empty.', 'value')
-        event.preventDefault().stopPropagation()
+@setting_utilities.validator(PluginSettings.TMPNB_URL)
+def validateTmpNbUrl(doc):
+    if not doc['value']:
+        raise ValidationException(
+            'TmpNB URL must not be empty.', 'value')
+
+
+@setting_utilities.validator(PluginSettings.CULLING_PERIOD)
+def validateCullingPeriod(doc):
+    try:
+        float(doc['value'])
+    except KeyError:
+        raise ValidationException(
+            'Culling period must not be empty.', 'value')
+    except ValueError:
+        raise ValidationException(
+            'Culling period must float.', 'value')
 
 
 class ytHub(Resource):
@@ -158,9 +174,8 @@ class Notebook(Resource):
         .errorResponse('Write access was denied for the notebook.', 403)
     )
     def deleteNotebook(self, notebook, params):
-        notebookModel = self.model('notebook', 'ythub')
-        notebookModel.deleteNotebook(notebook, self.getCurrentToken())
-        notebookModel.remove(notebook)
+        self.model('notebook', 'ythub').deleteNotebook(
+            notebook, self.getCurrentToken())
 
     @access.user
     @loadmodel(model='folder', level=AccessType.READ)
@@ -296,10 +311,20 @@ def folderRootpath(self, folder, params):
         folder, user=self.getCurrentUser())
 
 
+def cullNotebooks(event):
+    global _last_culling
+    logger.info('Got heartbeat in cullNotebooks')
+    culling_freq = datetime.timedelta(minutes=1)
+    if datetime.datetime.utcnow() - culling_freq > _last_culling:
+        logger.info('Performing culling')
+        ModelImporter.model('notebook', 'ythub').cullNotebooks()
+        _last_culling = datetime.datetime.utcnow()
+
+
 def load(info):
-    events.bind('model.setting.validate', 'ythub', validateSettings)
     events.bind('filesystem_assetstore_imported', 'ythub',
                 saveImportPathToMeta)
+    events.bind('heartbeat', 'ythub', cullNotebooks)
     info['apiRoot'].ythub = ytHub()
     info['apiRoot'].notebook = Notebook()
     info['apiRoot'].folder.route('GET', (':id', 'contents'),
