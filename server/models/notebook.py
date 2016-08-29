@@ -111,10 +111,10 @@ class Notebook(AccessControlledModel):
                     activity[nb['containerId']], ignoretz=True)
             except KeyError:
                 # proxy is not aware of such container, kill it...
-                logger.info('deleting nb %s' % nb['_id'])
+                logger.info('Deleting nb %s' % nb['_id'])
                 self.deleteNotebook(nb, token)
             if last_activity < cull_time:
-                logger.info('deleting nb %s' % nb['_id'])
+                logger.info('Deleting nb %s' % nb['_id'])
                 self.deleteNotebook(nb, token)
 
     def createNotebook(self, folder, user, token, when=None, save=True):

@@ -313,10 +313,8 @@ def folderRootpath(self, folder, params):
 
 def cullNotebooks(event):
     global _last_culling
-    logger.info('Got heartbeat in cullNotebooks')
     culling_freq = datetime.timedelta(minutes=1)
     if datetime.datetime.utcnow() - culling_freq > _last_culling:
-        logger.info('Performing culling')
         ModelImporter.model('notebook', 'ythub').cullNotebooks()
         _last_culling = datetime.datetime.utcnow()
 
