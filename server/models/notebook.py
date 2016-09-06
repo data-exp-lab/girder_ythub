@@ -7,7 +7,7 @@ import requests
 import six
 import dateutil.parser
 
-from girder import logger
+from girder import events, logger
 from ..constants import PluginSettings
 from girder.api.rest import RestException
 from girder.constants import AccessType, SortDir
@@ -34,6 +34,8 @@ class Notebook(AccessControlledModel):
                                   'mountPoint', 'lastActivity'})
         self.exposeFields(level=AccessType.SITE_ADMIN,
                           fields={'args', 'kwargs'})
+        events.bind('model.user.save.created', 'ythub',
+                    self._addDefaultFolders)
 
     def validate(self, notebook):
         if not NotebookStatus.isValid(notebook['status']):
@@ -169,3 +171,10 @@ class Notebook(AccessControlledModel):
             notebook = self.save(notebook)
 
         return notebook
+
+    def _addDefaultFolders(self, event):
+        user = event.info
+        notebookFolder = self.model('folder').createFolder(
+            user, 'Notebooks', parentType='user', public=True, creator=user)
+        self.model('folder').setUserAccess(
+            notebookFolder, user, AccessType.ADMIN, save=True)
