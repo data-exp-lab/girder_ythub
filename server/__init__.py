@@ -3,7 +3,7 @@
 
 import datetime
 
-from girder import events, logger
+from girder import events  # , logger
 from girder.models.model_base import ValidationException
 from girder.api import access
 from girder.api.describe import Description, describeRoute
@@ -276,6 +276,32 @@ def listFolder(self, folder, params):
     return {'folders': folders, 'files': files}
 
 
+@access.public(scope=TokenScope.DATA_OWN)
+@loadmodel(model='item', level=AccessType.ADMIN)
+@describeRoute(
+    Description('Perform system check for a given item.')
+    .param('id', 'The ID of the item.', paramType='path')
+    .errorResponse('ID was invalid.')
+    .errorResponse('Read access was denied for the item.', 403)
+)
+@boundHandler()
+def checkItem(self, item, params):
+    self.model('item').updateSize(item)
+
+
+@access.public(scope=TokenScope.DATA_OWN)
+@loadmodel(model='folder', level=AccessType.ADMIN)
+@describeRoute(
+    Description('Perform system check for a given folder.')
+    .param('id', 'The ID of the folder.', paramType='path')
+    .errorResponse('ID was invalid.')
+    .errorResponse('Read access was denied for the folder.', 403)
+)
+@boundHandler()
+def checkFolder(self, folder, params):
+    self.model('folder').updateSize(folder)
+
+
 @access.public(scope=TokenScope.DATA_READ)
 @loadmodel(model='item', level=AccessType.READ)
 @describeRoute(
@@ -330,4 +356,6 @@ def load(info):
     info['apiRoot'].item.route('GET', (':id', 'contents'), getItemFilesMapping)
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
     info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
+    info['apiRoot'].item.route('PUT', (':id', 'check'), checkItem)
     info['apiRoot'].folder.route('GET', (':id', 'rootpath'), folderRootpath)
+    info['apiRoot'].folder.route('PUT', (':id', 'check'), checkFolder)
