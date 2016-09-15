@@ -302,6 +302,19 @@ def checkFolder(self, folder, params):
     self.model('folder').updateSize(folder)
 
 
+@access.public(scope=TokenScope.DATA_OWN)
+@loadmodel(model='collection', level=AccessType.ADMIN)
+@describeRoute(
+    Description('Perform system check for a given collection.')
+    .param('id', 'The ID of the collection.', paramType='path')
+    .errorResponse('ID was invalid.')
+    .errorResponse('Read access was denied for the collection.', 403)
+)
+@boundHandler()
+def checkCollection(self, collection, params):
+    self.model('collection').updateSize(collection)
+
+
 @access.public(scope=TokenScope.DATA_READ)
 @loadmodel(model='item', level=AccessType.READ)
 @describeRoute(
@@ -359,3 +372,4 @@ def load(info):
     info['apiRoot'].item.route('PUT', (':id', 'check'), checkItem)
     info['apiRoot'].folder.route('GET', (':id', 'rootpath'), folderRootpath)
     info['apiRoot'].folder.route('PUT', (':id', 'check'), checkFolder)
+    info['apiRoot'].collection.route('PUT', (':id', 'check'), checkCollection)
