@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
 
 from girder import events  # , logger
 from girder.models.model_base import ValidationException
@@ -49,6 +52,15 @@ class ytHub(Resource):
     def __init__(self):
         super(ytHub, self).__init__()
         self.resourceName = 'ythub'
+        self.rsa_key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048,
+            backend=default_backend()
+        )
+        self.pubkey_pem = self.rsa_key.public_key().public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        ).decode('utf8')
 
         self.route('GET', (), self.get_ythub_url)
         self.route('GET', (':id', 'examples'), self.generateExamples)
@@ -58,7 +70,8 @@ class ytHub(Resource):
         Description('Return url for tmpnb hub.')
     )
     def get_ythub_url(self, params):
-        return {'url': self.model('setting').get(PluginSettings.TMPNB_URL)}
+        return {'url': self.model('setting').get(PluginSettings.TMPNB_URL),
+                'pubkey': self.pubkey_pem}
 
     @access.public
     @loadmodel(model='folder', level=AccessType.READ)
