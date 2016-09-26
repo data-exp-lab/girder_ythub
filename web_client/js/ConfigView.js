@@ -13,7 +13,24 @@ girder.views.ythub_ConfigView = girder.View.extend({
             }, {
                 key: 'ythub.culling_period',
                 value: this.$('#ythub_culling').val().trim()
+            }, {
+                key: 'ythub.priv_key',
+                value: this.$('#ythub_priv_key').val()
+            }, {
+                key: 'ythub.pub_key',
+                value: this.$('#ythub_pub_key').val()
             }]);
+        },
+        'click .g-generate-key': function (event) {
+            event.preventDefault();
+            girder.restRequest({
+               type: 'POST',
+               path: 'ythub/genkey',
+               data: {}
+            }).done(_.bind(function (resp) {
+               this.$('#ythub_priv_key').val(resp['ythub.priv_key']);
+               this.$('#ythub_pub_key').val(resp['ythub.pub_key']);
+            }, this));
         }
     },
     initialize: function () {
@@ -23,13 +40,17 @@ girder.views.ythub_ConfigView = girder.View.extend({
             data: {
                 list: JSON.stringify([
                     'ythub.tmpnb_url',
-                    'ythub.culling_period'
+                    'ythub.culling_period',
+                    'ythub.priv_key',
+                    'ythub.pub_key'
                 ])
             }
         }).done(_.bind(function (resp) {
             this.render();
             this.$('#ythub_tmpnb').val(resp['ythub.tmpnb_url']);
             this.$('#ythub_culling').val(resp['ythub.culling_period']);
+            this.$('#ythub_priv_key').val(resp['ythub.priv_key']);
+            this.$('#ythub_pub_key').val(resp['ythub.pub_key']);
         }, this));
     },
 

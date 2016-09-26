@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
@@ -28,6 +29,46 @@ class Job(Resource):
         super(Job, self).__init__()
 
 
+@setting_utilities.validator(PluginSettings.HUB_PRIV_KEY)
+def validateHubPrivKey(doc):
+    if not doc['value']:
+        raise ValidationException(
+            'PRIV_KEY must not be empty.', 'value')
+    try:
+        serialization.load_pem_private_key(
+            doc['value'].encode('utf8'),
+            password=None,
+            backend=default_backend()
+        )
+    except ValueError:
+        raise ValidationException(
+            "PRIV_KEY's data structure could not be decoded.")
+    except TypeError:
+        raise ValidationException(
+            "PRIV_KEY is password encrypted, yet no password provided.")
+    except UnsupportedAlgorithm:
+        raise ValidationException(
+            "PRIV_KEY's type is not supported.")
+
+
+@setting_utilities.validator(PluginSettings.HUB_PUB_KEY)
+def validateHubPubKey(doc):
+    if not doc['value']:
+        raise ValidationException(
+            'PUB_KEY must not be empty.', 'value')
+    try:
+        serialization.load_pem_public_key(
+            doc['value'].encode('utf8'),
+            backend=default_backend()
+        )
+    except ValueError:
+        raise ValidationException(
+            "PUB_KEY's data structure could not be decoded.")
+    except UnsupportedAlgorithm:
+        raise ValidationException(
+            "PUB_KEY's type is not supported.")
+
+
 @setting_utilities.validator(PluginSettings.TMPNB_URL)
 def validateTmpNbUrl(doc):
     if not doc['value']:
@@ -52,26 +93,44 @@ class ytHub(Resource):
     def __init__(self):
         super(ytHub, self).__init__()
         self.resourceName = 'ythub'
-        self.rsa_key = rsa.generate_private_key(
+
+        self.route('GET', (), self.get_ythub_url)
+        self.route('GET', (':id', 'examples'), self.generateExamples)
+        self.route('POST', ('genkey',), self.generateRSAKey)
+
+    @access.admin
+    @describeRoute(
+        Description('Generate ythub\'s RSA key')
+    )
+    def generateRSAKey(self, params):
+        rsa_key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048,
             backend=default_backend()
         )
-        self.pubkey_pem = self.rsa_key.public_key().public_bytes(
+
+        pubkey_pem = rsa_key.public_key().public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         ).decode('utf8')
-
-        self.route('GET', (), self.get_ythub_url)
-        self.route('GET', (':id', 'examples'), self.generateExamples)
+        privkey_pem = rsa_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+        self.model('setting').set(PluginSettings.HUB_PUB_KEY, pubkey_pem)
+        self.model('setting').set(PluginSettings.HUB_PRIV_KEY, privkey_pem)
+        return {PluginSettings.HUB_PUB_KEY: pubkey_pem,
+                PluginSettings.HUB_PRIV_KEY: privkey_pem}
 
     @access.public
     @describeRoute(
         Description('Return url for tmpnb hub.')
     )
     def get_ythub_url(self, params):
-        return {'url': self.model('setting').get(PluginSettings.TMPNB_URL),
-                'pubkey': self.pubkey_pem}
+        setting = self.model('setting')
+        return {'url': setting.get(PluginSettings.TMPNB_URL),
+                'pubkey': setting.get(PluginSettings.HUB_PUB_KEY)}
 
     @access.public
     @loadmodel(model='folder', level=AccessType.READ)
