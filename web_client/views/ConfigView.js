@@ -1,7 +1,14 @@
-/**
- * Administrative configuration view.
- */
-girder.views.ythub_ConfigView = girder.View.extend({
+import _ from 'underscore';
+
+import PluginConfigBreadcrumbWidget from 'girder/views/widgets/PluginConfigBreadcrumbWidget';
+import View from 'girder/views/View';
+import events from 'girder/events';
+import { restRequest } from 'girder/rest';
+
+import ConfigViewTemplate from '../templates/configView.pug';
+import '../stylesheets/configView.styl';
+
+var ConfigView = View.extend({
     events: {
         'submit #g-ythub-config-form': function (event) {
             event.preventDefault();
@@ -23,7 +30,7 @@ girder.views.ythub_ConfigView = girder.View.extend({
         },
         'click .g-generate-key': function (event) {
             event.preventDefault();
-            girder.restRequest({
+            restRequest({
                type: 'POST',
                path: 'ythub/genkey',
                data: {}
@@ -34,7 +41,7 @@ girder.views.ythub_ConfigView = girder.View.extend({
         }
     },
     initialize: function () {
-        girder.restRequest({
+        restRequest({
             type: 'GET',
             path: 'system/setting',
             data: {
@@ -55,10 +62,10 @@ girder.views.ythub_ConfigView = girder.View.extend({
     },
 
     render: function () {
-        this.$el.html(girder.templates.ythub_config());
+        this.$el.html(ConfigViewTemplate());
 
         if (!this.breadcrumb) {
-            this.breadcrumb = new girder.views.PluginConfigBreadcrumbWidget({
+            this.breadcrumb = new PluginConfigBreadcrumbWidget({
                 pluginName: 'ytHub',
                 el: this.$('.g-config-breadcrumb-container'),
                 parentView: this
@@ -69,7 +76,7 @@ girder.views.ythub_ConfigView = girder.View.extend({
     },
 
     _saveSettings: function (settings) {
-        girder.restRequest({
+        restRequest({
             type: 'PUT',
             path: 'system/setting',
             data: {
@@ -77,7 +84,7 @@ girder.views.ythub_ConfigView = girder.View.extend({
             },
             error: null
         }).done(_.bind(function (resp) {
-            girder.events.trigger('g:alert', {
+            events.trigger('g:alert', {
                 icon: 'ok',
                 text: 'Settings saved.',
                 type: 'success',
@@ -90,6 +97,4 @@ girder.views.ythub_ConfigView = girder.View.extend({
     }
 });
 
-girder.router.route('plugins/ythub/config', 'ythubConfig', function () {
-    girder.events.trigger('g:navigateTo', girder.views.ythub_ConfigView);
-});
+export default ConfigView;

@@ -1,27 +1,35 @@
-girder.wrap(girder.views.HierarchyWidget, 'render', function (render) {
+import _ from 'underscore';
+
+import HierarchyWidget from 'girder/views/widgets/HierarchyWidget';
+import { restRequest } from 'girder/rest';
+import { wrap } from 'girder/utilities/PluginUtils';
+import { getCurrentUser } from 'girder/auth';
+import ytHubHierarchyWidget from '../templates/ytHubHierarchyWidget.pug';
+import ytHubFolderMenu from '../templates/ytHubFolderMenu.pug';
+
+
+wrap(HierarchyWidget, 'render', function (render) {
     var widget = this;
 
-    if (girder.currentUser && widget.parentModel.resourceName === 'folder') {
-        _restParams = {
+    if (getCurrentUser() && widget.parentModel.resourceName === 'folder') {
+        var _restParams = {
             path: 'notebook',
             type: 'GET',
             data: {
-                userId: girder.currentUser.id,
+                userId: getCurrentUser().id,
                 folderId: widget.parentModel.get('_id')
             },
             error: null
         };
-        girder.restRequest(_restParams).done(function (notebooks) {
+        restRequest(_restParams).done(function (notebooks) {
             // Call the underlying render function that we are wrapping
             render.call(widget);
             if (notebooks.length < 1) {
-                $(girder.templates.ythub_folderMenu({
+                $(ytHubFolderMenu({
                     goUrl: '/dev/null',
                     delUrl: '0',
                 })).appendTo(widget.$('.g-folder-actions-menu'));
-                $(girder.templates.ytHub_HierarchyWidget({
-                    girder: girder,
-                })).prependTo(widget.$('.g-folder-header-buttons'));
+                $(ytHubHierarchyWidget()).prependTo(widget.$('.g-folder-header-buttons'));
                 document.getElementById("go_nb").style.display = "none";
                 document.getElementById("stop_nb").style.display = "none";
                 document.getElementById("start_nb").style.display = "list-item";
@@ -30,13 +38,11 @@ girder.wrap(girder.views.HierarchyWidget, 'render', function (render) {
                 document.getElementsByClassName("g-stopnb-button")[0].style.display = "none";
             } else {
                 var notebook = notebooks[0];
-                $(girder.templates.ythub_folderMenu({
+                $(ytHubFolderMenu({
                     goUrl: notebook.url,
                     delUrl: notebook._id
                 })).appendTo(widget.$('.g-folder-actions-menu'));
-                $(girder.templates.ytHub_HierarchyWidget({
-                    girder: girder,
-                })).prependTo(widget.$('.g-folder-header-buttons'));
+                $(ytHubHierarchyWidget()).prependTo(widget.$('.g-folder-header-buttons'));
                 document.getElementById("go_nb").style.display = "list-item";
                 document.getElementById("stop_nb").style.display = "list-item";
                 document.getElementById("start_nb").style.display = "none";
@@ -51,28 +57,28 @@ girder.wrap(girder.views.HierarchyWidget, 'render', function (render) {
 });
 
 function _visit_nb (e) {
-    girder.restRequest({
+    restRequest({
         path: 'notebook',
         type: 'GET',
         data: {
             folderId: this.parentModel.id,
-            userId: girder.currentUser.get('_id'),
+            userId: getCurrentUser().get('_id'),
         }
     }).done(_.bind(function (resp) {
        var nb_url = resp[0]['containerPath'];
-       girder.restRequest({path: 'ythub'}).done(function (resp) {
+       restRequest({path: 'ythub'}).done(function (resp) {
            window.location.assign(resp["url"] + nb_url);
        });
     }, this));
 };
 
 function _stop_nb (e) {
-    girder.restRequest({
+    restRequest({
         path: 'notebook',
         type: 'GET',
         data: {
             folderId: this.parentModel.id,
-            userId: girder.currentUser.get('_id'),
+            userId: getCurrentUser().get('_id'),
         }
     }).done(_.bind(function (resp) {
        var nbId = resp[0]['_id'];
@@ -81,7 +87,7 @@ function _stop_nb (e) {
            type: 'DELETE',
            error: null
        };
-       girder.restRequest(_delParams).done(function (foo) {
+       restRequest(_delParams).done(function (foo) {
            document.getElementById("go_nb").style.display = "none";
            document.getElementById("stop_nb").style.display = "none";
            document.getElementById("start_nb").style.display = "list-item";
@@ -94,8 +100,8 @@ function _stop_nb (e) {
 
 function _start_nb () {
     var folderId = this.parentModel.id;
-    girder.restRequest({path: 'ythub'}).done(function (hub) {
-        girder.restRequest({
+    restRequest({path: 'ythub'}).done(function (hub) {
+        restRequest({
             path: 'notebook/' + folderId,
             type: 'POST'
         }).done(function (notebook) {
@@ -104,9 +110,9 @@ function _start_nb () {
     });
 };
 
-girder.views.HierarchyWidget.prototype.events['click a.g-visit-notebook'] = _visit_nb
-girder.views.HierarchyWidget.prototype.events['click a.g-start-notebook'] = _start_nb
-girder.views.HierarchyWidget.prototype.events['click a.g-stop-notebook'] = _stop_nb
-girder.views.HierarchyWidget.prototype.events['click .g-runnb-button'] = _start_nb
-girder.views.HierarchyWidget.prototype.events['click .g-gonb-button'] = _visit_nb
-girder.views.HierarchyWidget.prototype.events['click .g-stopnb-button'] = _stop_nb
+HierarchyWidget.prototype.events['click a.g-visit-notebook'] = _visit_nb
+HierarchyWidget.prototype.events['click a.g-start-notebook'] = _start_nb
+HierarchyWidget.prototype.events['click a.g-stop-notebook'] = _stop_nb
+HierarchyWidget.prototype.events['click .g-runnb-button'] = _start_nb
+HierarchyWidget.prototype.events['click .g-gonb-button'] = _visit_nb
+HierarchyWidget.prototype.events['click .g-stopnb-button'] = _stop_nb

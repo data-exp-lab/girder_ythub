@@ -28,11 +28,11 @@ table.g-notebooks-list-table
           td
             a(href="#folder/#{notebook.get('folderId')}")= notebook.get('folderId')
         if columns & columnEnum.COLUMN_CREATED
-          td.g-notebook-created-cell= girder.formatDate(notebook.get('created'), girder.DATE_SECOND)
+          td.g-notebook-created-cell= formatDate(notebook.get('created'), DATE_SECOND)
         if columns & columnEnum.COLUMN_OWNER
           td
             a(href="#user/#{notebook.get('userId')}")= notebook.get('userId')
         if columns & columnEnum.COLUMN_STATUS
-          td.g-notebook-status-cell= girder.ythub_NotebookStatus.text(notebook.get('status'))
+          td.g-notebook-status-cell= NotebookStatus.text(notebook.get('status'))
 
 .g-notebook-pagination
