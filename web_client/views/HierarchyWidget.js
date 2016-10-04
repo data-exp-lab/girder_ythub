@@ -82,7 +82,7 @@ function _stop_nb (e) {
         }
     }).done(_.bind(function (resp) {
        var nbId = resp[0]['_id'];
-       _delParams = {
+       var _delParams = {
            path: 'notebook/' + nbId,
            type: 'DELETE',
            error: null
