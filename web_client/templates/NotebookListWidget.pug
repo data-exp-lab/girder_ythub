@@ -16,22 +16,22 @@ table.g-notebooks-list-table
           th Status
   tbody
     each notebook in notebooks
-      tr(notebookId="#{notebook.id}")
+      tr(notebookId=notebook.id)
         if columns & columnEnum.COLUMN_STATUS_ICON
           td
-            button.g-notebook-delete-link.btn.btn-sm.btn-warning(notebook-id="#{notebook.id}")
+            button.g-notebook-delete-link.btn.btn-sm.btn-warning(notebook-id=notebook.id)
               i.icon-stop
         if columns & columnEnum.COLUMN_NOTEBOOK
           td
-            a(href="#{hubUrl}/#{notebook.get('containerPath')}")= notebook.get('containerPath')
+            a(href=`${hubUrl}/${notebook.get('containerPath')}`)= notebook.get('containerPath')
         if columns & columnEnum.COLUMN_FOLDER
           td
-            a(href="#folder/#{notebook.get('folderId')}")= notebook.get('folderId')
+            a(href=`#folder/${notebook.get('folderId')}`)= notebook.get('folderId')
         if columns & columnEnum.COLUMN_CREATED
           td.g-notebook-created-cell= formatDate(notebook.get('created'), DATE_SECOND)
         if columns & columnEnum.COLUMN_OWNER
           td
-            a(href="#user/#{notebook.get('userId')}")= notebook.get('userId')
+            a(href=`#user/${notebook.get('userId')}`)= notebook.get('userId')
         if columns & columnEnum.COLUMN_STATUS
           td.g-notebook-status-cell= NotebookStatus.text(notebook.get('status'))
 
