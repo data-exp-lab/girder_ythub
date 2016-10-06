@@ -337,7 +337,7 @@ def listFolder(self, folder, params):
         childFiles = list(self.model('item').childFiles(item))
         if len(childFiles) == 1:
             fileitem = childFiles[0]
-            if 'imported' not in fileitem:
+            if 'imported' not in fileitem and 'assetstoreId' in fileitem:
                 store = \
                     self.model('assetstore').load(fileitem['assetstoreId'])
                 adapter = assetstore_utilities.getAssetstoreAdapter(store)
@@ -399,7 +399,7 @@ def checkCollection(self, collection, params):
 def listItem(self, item, params):
     files = []
     for fileitem in self.model('item').childFiles(item):
-        if 'imported' not in fileitem:
+        if 'imported' not in fileitem and 'assetstoreId' in fileitem:
             store = \
                 self.model('assetstore').load(fileitem['assetstoreId'])
             adapter = assetstore_utilities.getAssetstoreAdapter(store)
