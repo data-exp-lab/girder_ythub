@@ -69,6 +69,9 @@ def validateHubPubKey(doc):
             "PUB_KEY's type is not supported.")
 
 
+# SC16: we will need a mapping {assetstore -> url} instead of
+#       single value. I suggest using JSON. For Girder UI this
+#       will require changing config field to TextArea.
 @setting_utilities.validator(PluginSettings.TMPNB_URL)
 def validateTmpNbUrl(doc):
     if not doc['value']:
@@ -129,6 +132,8 @@ class ytHub(Resource):
     )
     def get_ythub_url(self, params):
         setting = self.model('setting')
+        # SC16: take into account it's JSON now, may not be necessary though
+        #       this is only used in Girder UI
         return {'url': setting.get(PluginSettings.TMPNB_URL),
                 'pubkey': setting.get(PluginSettings.HUB_PUB_KEY)}
 
