@@ -73,13 +73,16 @@ class Notebook(AccessControlledModel):
             'containerId': str(notebook['containerId']),
             'containerPath': str(notebook['containerPath']),
             'mountPoint': str(notebook['mountPoint']),
+            'host': str(notebook['host']),
             'folderId': str(notebook['folderId']),
             'girder_token': str(token['_id']),
         }
+        headers = {'docker-host': str(notebook['host']),
+                   'content-type': 'application/json'}
         # SC16: use tmpnb_url stored in the notebook model.
         #       I said it may come in handy ;)
         requests.delete(self.model('setting').get(PluginSettings.TMPNB_URL),
-                        json=payload)
+                        json=payload, headers=headers)
         # TODO: handle error
         self.remove(notebook)
 
@@ -172,6 +175,7 @@ class Notebook(AccessControlledModel):
             'containerId': nb['containerId'],
             'containerPath': nb['containerPath'],
             'mountPoint': nb['mountPoint'],
+            'host': nb['host'],
             'lastActivity': now,
             'status': NotebookStatus.RUNNING,   # be optimistic for now
             'created': now,
