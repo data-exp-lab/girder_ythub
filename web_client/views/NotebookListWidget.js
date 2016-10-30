@@ -1,4 +1,21 @@
-girder.views.ythub_NotebookListWidget = girder.View.extend({
+import _ from 'underscore';
+
+import PaginateWidget from 'girder/views/widgets/PaginateWidget';
+import View from 'girder/views/View';
+import { defineFlags, formatDate, DATE_SECOND } from 'girder/misc';
+import eventStream from 'girder/utilities/EventStream';
+import { getCurrentUser } from 'girder/auth';
+import { SORT_DESC } from 'girder/constants';
+import { restRequest } from 'girder/rest';
+
+import NotebookCollection from '../collections/NotebookCollection';
+import NotebookListWidgetTemplate from '../templates/NotebookListWidget.pug';
+import NotebookStatus from '../NotebookStatus';
+
+import '../stylesheets/notebookListWidget.styl';
+
+
+var NotebookListWidget = View.extend({
     events: {
         'click .g-notebook-trigger-link': function (e) {
             var cid = $(e.target).attr('cid');
@@ -8,12 +25,12 @@ girder.views.ythub_NotebookListWidget = girder.View.extend({
    'click .g-notebook-delete-link': function (e) {
         var url = $(e.currentTarget).attr('notebook-id');
             var widget = this;
-            _delParams = {
+            var _delParams = {
                 path: 'notebook/' + url,
                 type: 'DELETE',
                 error: null
             };
-            girder.restRequest(_delParams).done(function() {
+            restRequest(_delParams).done(function() {
                 widget.trigger('g:changed');
             });
         }
@@ -23,9 +40,9 @@ girder.views.ythub_NotebookListWidget = girder.View.extend({
         this.columns = settings.columns || this.columnEnum.COLUMN_ALL;
         this.filter = settings.filter || {};
 
-        this.collection = new girder.collections.NotebookCollection();
+        this.collection = new NotebookCollection();
         this.collection.sortField = settings.sortField || 'created';
-        this.collection.sortDir = settings.sortDir || girder.SORT_DESC;
+        this.collection.sortDir = settings.sortDir || SORT_DESC;
         this.collection.pageLimit = settings.pageLimit || this.collection.pageLimit;
 
         this.collection.on('g:changed', function () {
@@ -36,14 +53,14 @@ girder.views.ythub_NotebookListWidget = girder.View.extend({
         this.showHeader = _.has(settings, 'showHeader') ? settings.showHeader : true;
         this.showPaging = _.has(settings, 'showPaging') ? settings.showPaging : true;
 
-        this.paginateWidget = new girder.views.PaginateWidget({
+        this.paginateWidget = new PaginateWidget({
             collection: this.collection,
             parentView: this
         });
-        girder.eventStream.on('g:event.notebook_status', this._statusChange, this);
+        eventStream.on('g:event.notebook_status', this._statusChange, this);
     },
 
-    columnEnum: girder.defineFlags([
+    columnEnum: defineFlags([
         'COLUMN_STATUS_ICON',
         'COLUMN_NOTEBOOK',
         'COLUMN_FOLDER',
@@ -55,14 +72,16 @@ girder.views.ythub_NotebookListWidget = girder.View.extend({
     render: function () {
         var widget = this;
 
-        girder.restRequest({path: 'ythub'}).done(function (resp) {
-            widget.$el.html(girder.templates.ythub_notebookList({
+        restRequest({path: 'ythub'}).done(function (resp) {
+            widget.$el.html(NotebookListWidgetTemplate({
                 notebooks: widget.collection.toArray(),
                 showHeader: widget.showHeader,
                 columns: widget.columns,
                 hubUrl: resp["url"],
                 columnEnum: widget.columnEnum,
-                girder: girder
+                NotebookStatus: NotebookStatus,
+                formatDate: formatDate,
+                DATE_SECOND: DATE_SECOND
             }));
         });
 
@@ -83,14 +102,14 @@ girder.views.ythub_NotebookListWidget = girder.View.extend({
 
         if (this.columns & this.columnEnum.COLUMN_STATUS_ICON) {
             tr.find('td.g-status-icon-container').attr('status', notebook.status)
-              .find('i').removeClass().addClass(girder.ythub_NotebookStatus.icon(notebook.status));
+              .find('i').removeClass().addClass(NotebookStatus.icon(notebook.status));
         }
         if (this.columns & this.columnEnum.COLUMN_STATUS) {
-            tr.find('td.g-notebook-status-cell').text(girder.ythub_NotebookStatus.text(notebook.status));
+            tr.find('td.g-notebook-status-cell').text(NotebookStatus.text(notebook.status));
         }
         if (this.columns & this.columnEnum.COLUMN_CREATED) {
             tr.find('td.g-notebook-created-cell').text(
-                girder.formatDate(notebook.created, girder.DATE_SECOND));
+                formatDate(notebook.created, DATE_SECOND));
         }
 
         tr.addClass('g-highlight');
@@ -101,8 +120,4 @@ girder.views.ythub_NotebookListWidget = girder.View.extend({
     }
 });
 
-girder.router.route('notebook/user/:id', 'notebookList', function (id) {
-    girder.events.trigger('g:navigateTo', girder.views.ythub_NotebookListWidget, {
-        filter: {}
-    });
-});
+export default NotebookListWidget;
