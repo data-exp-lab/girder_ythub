@@ -8,16 +8,18 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
 from girder import events  # , logger
-from girder.models.model_base import ValidationException
 from girder.api import access
 from girder.api.describe import Description, describeRoute
-from girder.api.rest import boundHandler, Resource, filtermodel, loadmodel
+from girder.api.rest import \
+    boundHandler, Resource, filtermodel, loadmodel, \
+    getCurrentUser, getApiUrl
 from girder.constants import AccessType, SortDir, TokenScope
-from .constants import PluginSettings
-from .harvester_rest import importData
-from girder.utility.model_importer import ModelImporter
+from girder.models.model_base import ValidationException
 from girder.utility import assetstore_utilities, setting_utilities
-from girder.api.rest import getCurrentUser, getApiUrl
+from girder.utility.model_importer import ModelImporter
+
+from .constants import PluginSettings
+from .harvester_rest import Harvester
 
 
 _last_culling = datetime.datetime.utcnow()
@@ -434,6 +436,7 @@ def load(info):
                 saveImportPathToMeta)
     events.bind('heartbeat', 'ythub', cullNotebooks)
     info['apiRoot'].ythub = ytHub()
+    info['apiRoot'].harvester = Harvester()
     info['apiRoot'].notebook = Notebook()
     info['apiRoot'].folder.route('GET', (':id', 'contents'),
                                  getFolderFilesMapping)
@@ -444,5 +447,3 @@ def load(info):
     info['apiRoot'].folder.route('GET', (':id', 'rootpath'), folderRootpath)
     info['apiRoot'].folder.route('PUT', (':id', 'check'), checkFolder)
     info['apiRoot'].collection.route('PUT', (':id', 'check'), checkCollection)
-
-    info['apiRoot'].ythub.route('POST', ('dataone_harvester', ), importData)
