@@ -5,6 +5,13 @@ from girder import events
 from girder.models.notification import ProgressState
 
 
+class HarvesterType:
+    """
+    All possible data harverster implementation types.
+    """
+    DATAONE = 0
+
+
 class PluginSettings:
     CULLING_PERIOD = 'ythub.culling_period'
     TMPNB_URL = 'ythub.tmpnb_url'

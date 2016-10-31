@@ -14,19 +14,13 @@ from girder.api.describe import Description, describeRoute
 from girder.api.rest import boundHandler, Resource, filtermodel, loadmodel
 from girder.constants import AccessType, SortDir, TokenScope
 from .constants import PluginSettings
-
+from .harvester_rest import importData
 from girder.utility.model_importer import ModelImporter
 from girder.utility import assetstore_utilities, setting_utilities
 from girder.api.rest import getCurrentUser, getApiUrl
 
 
 _last_culling = datetime.datetime.utcnow()
-
-
-class Job(Resource):
-
-    def __init__(self):
-        super(Job, self).__init__()
 
 
 @setting_utilities.validator(PluginSettings.HUB_PRIV_KEY)
@@ -450,3 +444,5 @@ def load(info):
     info['apiRoot'].folder.route('GET', (':id', 'rootpath'), folderRootpath)
     info['apiRoot'].folder.route('PUT', (':id', 'check'), checkFolder)
     info['apiRoot'].collection.route('PUT', (':id', 'check'), checkCollection)
+
+    info['apiRoot'].ythub.route('POST', ('dataone_harvester', ), importData)
