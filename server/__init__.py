@@ -142,19 +142,19 @@ class ytHub(Resource):
     def generateExamples(self, folder, params):
         def get_code(resource):
             try:
-                return resource["meta"]["code"]
+                return resource['meta']['code']
             except KeyError:
-                return "unknown"
+                return 'unknown'
 
         def sizeof_fmt(num, suffix='B'):
             for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
                 if abs(num) < 1024.0:
-                    return "%3.1f%s%s" % (num, unit, suffix)
+                    return '%3.1f%s%s' % (num, unit, suffix)
                 num /= 1024.0
-            return "%.1f%s%s" % (num, 'Yi', suffix)
+            return '%.1f%s%s' % (num, 'Yi', suffix)
 
         def download_path(_id, resource):
-            return "{}/{}/{}/download".format(getApiUrl(), resource, _id)
+            return '{}/{}/{}/download'.format(getApiUrl(), resource, _id)
 
         result = {}
         user = self.getCurrentUser()
@@ -166,16 +166,16 @@ class ytHub(Resource):
                 self.model('folder').childFolders(parentType='folder',
                                                   parent=frontend, user=user))
 
-            examples = [dict(code=get_code(_), description=_["description"],
-                             filename=_["name"], size=sizeof_fmt(_["size"]),
-                             url=download_path(_["_id"], "folder"))
+            examples = [dict(code=get_code(_), description=_['description'],
+                             filename=_['name'], size=sizeof_fmt(_['size']),
+                             url=download_path(_['_id'], 'folder'))
                         for _ in ds]
             ds = list(self.model('folder').childItems(folder=frontend))
-            examples += [dict(code=get_code(_), description=_["description"],
-                              filename=_["name"], size=sizeof_fmt(_["size"]),
-                              url=download_path(_["_id"], "item"))
+            examples += [dict(code=get_code(_), description=_['description'],
+                              filename=_['name'], size=sizeof_fmt(_['size']),
+                              url=download_path(_['_id'], 'item'))
                          for _ in ds]
-            result[frontend["name"]] = examples
+            result[frontend['name']] = examples
 
         return result
 
@@ -254,10 +254,8 @@ class Notebook(Resource):
     @filtermodel(model='notebook', plugin='ythub')
     @describeRoute(
         Description('Create new notebook for a current user and folder.')
-        .notes('The output image is placed in the same parent folder as the '
-               'input image.')
-        .param('id', 'The ID of the item containing the input image.',
-               paramType='path')
+        .param('id', 'The ID of the folder that will be mounted inside '
+                     'notebook\'s data/ directory.', paramType='path')
     )
     def createNotebook(self, folder, params):
         user = self.getCurrentUser()
@@ -274,7 +272,7 @@ def saveImportPathToMeta(event):
     resourceModel = ModelImporter.model(event.info['type'])
     resource = resourceModel.load(event.info['id'], user=getCurrentUser())
     resourceModel.setMetadata(resource,
-                              {"phys_path": event.info['importPath']})
+                              {'phys_path': event.info['importPath']})
 
 
 @access.public(scope=TokenScope.DATA_READ)
@@ -343,13 +341,87 @@ def listFolder(self, folder, params):
                     store = \
                         self.model('assetstore').load(fileitem['assetstoreId'])
                     adapter = assetstore_utilities.getAssetstoreAdapter(store)
-                    fileitem["path"] = adapter.fullPath(fileitem)
+                    fileitem['path'] = adapter.fullPath(fileitem)
                 except ValidationException:
                     pass
             files.append(fileitem)
         else:
             folders.append(item)
     return {'folders': folders, 'files': files}
+
+
+@access.public(scope=TokenScope.DATA_READ)
+@loadmodel(model='folder', level=AccessType.READ)
+@describeRoute(
+    Description('List the content of a folder.')
+    .param('id', 'The ID of the folder.', paramType='path')
+    .errorResponse('ID was invalid.')
+    .errorResponse('Read access was denied for the folder.', 403)
+)
+@boundHandler()
+def listFolderFast(self, folder, params):
+    user = self.getCurrentUser()
+    payload = {'folders': {}, 'files': {}}
+
+    for folder in self.model('folder').childFolders(
+            parentType='folder', parent=folder, user=user):
+        payload['folders'][folder['name']] = (
+            folder['_id'], folder['size'], folder['update'], folder['created'])
+
+    for item in self.model('folder').childItems(folder=folder):
+        item_data = self.listItemFast(item, params)
+        payload['folders'].update(item_data['folders'])
+        payload['files'].update(item_data['files'])
+    return payload
+
+
+@access.public(scope=TokenScope.DATA_READ)
+@loadmodel(model='item', level=AccessType.READ)
+@describeRoute(
+    Description('List the content of an item.')
+    .param('id', 'The ID of the folder.', paramType='path')
+    .errorResponse('ID was invalid.')
+    .errorResponse('Read access was denied for the folder.', 403)
+)
+@boundHandler()
+def listItemFast(self, item, params):
+    payload = {'folders': {}, 'files': {}}
+    for fileitem in self.model('item').childFiles(item):
+        if 'imported' not in fileitem and \
+                fileitem.get('assetstoreId') is not None:
+            store = \
+                self.model('assetstore').load(fileitem['assetstoreId'])
+            adapter = assetstore_utilities.getAssetstoreAdapter(store)
+            fileitem['path'] = adapter.fullPath(fileitem)
+        payload['files'][fileitem['name']] = (
+            fileitem['_id'], fileitem['path'], fileitem['size'],
+            fileitem['updated'], fileitem['created'])
+    if len(files) > 1:
+        payload['folders'][item['name']] = (
+            item['_id'], item['size'], item['updated'], item['created'])
+    return payload
+
+
+@access.public(scope=TokenScope.DATA_READ)
+@loadmodel(model='item', level=AccessType.READ)
+@describeRoute(
+    Description('List the content of an item.')
+    .param('id', 'The ID of the folder.', paramType='path')
+    .errorResponse('ID was invalid.')
+    .errorResponse('Read access was denied for the folder.', 403)
+)
+@boundHandler()
+def listItem(self, item, params):
+    files = []
+    for fileitem in self.model('item').childFiles(item):
+        if 'imported' not in fileitem and \
+                fileitem.get('assetstoreId') is not None:
+            store = \
+                self.model('assetstore').load(fileitem['assetstoreId'])
+            adapter = assetstore_utilities.getAssetstoreAdapter(store)
+            fileitem['path'] = adapter.fullPath(fileitem)
+        files.append(fileitem)
+    return {'folders': [], 'files': files}
 
 
 @access.public(scope=TokenScope.DATA_OWN)
@@ -392,28 +464,6 @@ def checkCollection(self, collection, params):
 
 
 @access.public(scope=TokenScope.DATA_READ)
-@loadmodel(model='item', level=AccessType.READ)
-@describeRoute(
-    Description('List the content of an item.')
-    .param('id', 'The ID of the folder.', paramType='path')
-    .errorResponse('ID was invalid.')
-    .errorResponse('Read access was denied for the folder.', 403)
-)
-@boundHandler()
-def listItem(self, item, params):
-    files = []
-    for fileitem in self.model('item').childFiles(item):
-        if 'imported' not in fileitem and \
-                fileitem.get('assetstoreId') is not None:
-            store = \
-                self.model('assetstore').load(fileitem['assetstoreId'])
-            adapter = assetstore_utilities.getAssetstoreAdapter(store)
-            fileitem["path"] = adapter.fullPath(fileitem)
-        files.append(fileitem)
-    return {'folders': [], 'files': files}
-
-
-@access.public(scope=TokenScope.DATA_READ)
 @loadmodel(model='folder', level=AccessType.READ)
 @describeRoute(
     Description('Get the path to the root of the folder\'s hierarchy.')
@@ -446,6 +496,8 @@ def load(info):
     info['apiRoot'].item.route('GET', (':id', 'contents'), getItemFilesMapping)
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
     info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
+    info['apiRoot'].folder.route('GET', (':id', 'listing2'), listFolderFast)
+    info['apiRoot'].item.route('GET', (':id', 'listing2'), listItemFast)
     info['apiRoot'].item.route('PUT', (':id', 'check'), checkItem)
     info['apiRoot'].folder.route('GET', (':id', 'rootpath'), folderRootpath)
     info['apiRoot'].folder.route('PUT', (':id', 'check'), checkFolder)
