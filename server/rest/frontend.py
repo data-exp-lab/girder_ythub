@@ -14,7 +14,7 @@ class Frontend(Resource):
 
         self.route('GET', (), self.listFrontends)
         self.route('GET', (':id',), self.getFrontend)
-        self.route('POST', (':id',), self.createFrontend)
+        self.route('POST', (), self.createFrontend)
         self.route('DELETE', (':id',), self.deleteFrontend)
 
     @access.public
@@ -25,17 +25,15 @@ class Frontend(Resource):
                       defaultSortDir=SortDir.DESCENDING)
     )
     def listFrontends(self, params):
+        user = self.getCurrentUser()
         limit, offset, sort = self.getPagingParameters(
             params, 'imageName', SortDir.DESCENDING)
-
-        currentUser = self.getCurrentUser()
         return list(self.model('frontend', 'ythub').list(
-            user=None, offset=offset, limit=limit, sort=sort,
-            currentUser=currentUser))
+            user=user, offset=offset, limit=limit, sort=sort))
 
     @access.public
     @filtermodel(model='frontend', plugin='ythub')
-    @loadmodel(model='frontend', plugin='ythub', level=AccessType.NONE)
+    @loadmodel(model='frontend', plugin='ythub', level=AccessType.READ)
     @describeRoute(
         Description('Get a frontend by ID.')
         .param('id', 'The ID of the frontend.', paramType='path')

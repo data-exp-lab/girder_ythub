@@ -17,9 +17,12 @@ class Frontend(AccessControlledModel):
             raise ValidationException(
                 'Invalid image name: %s.' % frontend['imageName'],
                 field='imageName')
+        return frontend
 
     def createFrontend(self, imageName, save=True):
-        frontend = dict(imageName=imageName)
+        frontend = {
+            'imageName': imageName
+        }
         if save:
             frontend = self.save(frontend)
         return frontend
