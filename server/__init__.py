@@ -18,6 +18,7 @@ from girder.utility import assetstore_utilities, setting_utilities
 from girder.api.rest import getCurrentUser
 
 from .constants import PluginSettings
+from .rest.frontend import Frontend
 from .rest.notebook import Notebook
 from .rest.ythub import ytHub
 
@@ -254,6 +255,7 @@ def load(info):
     events.bind('heartbeat', 'ythub', cullNotebooks)
     info['apiRoot'].ythub = ytHub()
     info['apiRoot'].notebook = Notebook()
+    info['apiRoot'].frontend = Frontend()
     info['apiRoot'].folder.route('GET', (':id', 'contents'),
                                  getFolderFilesMapping)
     info['apiRoot'].item.route('GET', (':id', 'contents'), getItemFilesMapping)
