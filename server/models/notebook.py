@@ -8,12 +8,11 @@ import six
 import dateutil.parser
 
 from girder import events, logger
-from ..constants import PluginSettings
+from ..constants import PluginSettings, API_VERSION, NotebookStatus
 from girder.api.rest import RestException
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
-from girder.plugins.ythub.constants import NotebookStatus
 
 
 class Notebook(AccessControlledModel):
@@ -134,8 +133,9 @@ class Notebook(AccessControlledModel):
         now = datetime.datetime.utcnow()
         when = when or now
         hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
-        payload = {"girder_token": token['_id'],
-                   "folderId": str(folder['_id'])}
+        payload = {'girder_token': token['_id'],
+                   'folderId': str(folder['_id']),
+                   'api_version': API_VERSION}
 
         resp = requests.post(hub_url, json=payload)
         content = resp.content
