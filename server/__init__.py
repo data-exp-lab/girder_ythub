@@ -6,13 +6,14 @@ from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
+import six
 
 from girder import events  # , logger
 from girder.api import access
 from girder.api.describe import Description, describeRoute
 from girder.api.rest import \
     boundHandler, Resource, filtermodel, loadmodel, \
-    getCurrentUser, getApiUrl
+    getCurrentUser, getApiUrl, RestException
 from girder.constants import AccessType, SortDir, TokenScope
 from girder.models.model_base import ValidationException
 from girder.utility import assetstore_utilities, setting_utilities
@@ -431,6 +432,57 @@ def cullNotebooks(event):
         _last_culling = datetime.datetime.utcnow()
 
 
+@access.public(scope=TokenScope.USER_INFO_READ)
+@describeRoute(
+    Description('Update the user settings.')
+    .errorResponse('Read access was denied.', 403)
+)
+@boundHandler()
+def getUserMetadata(self, params):
+    user = self.getCurrentUser()
+    if user is None:
+        return {}
+    return user.get('meta', {})
+
+
+@access.public(scope=TokenScope.USER_INFO_READ)
+@describeRoute(
+    Description('Get the user settings.')
+    .param('body', 'A JSON object containing the metadata keys to add',
+           paramType='body')
+    .errorResponse('Write access was denied.', 403)
+)
+@boundHandler()
+def setUserMetadata(self, params):
+    user = self.getCurrentUser()
+    if user is None:
+        return {}
+
+    metadata = self.getBodyJson()
+
+    # Make sure we let user know if we can't accept a metadata key
+    for k in metadata:
+        if not len(k):
+            raise RestException('Key names must be at least one character long.')
+        if '.' in k or k[0] == '$':
+            raise RestException('The key name %s must not contain a period '
+                                'or begin with a dollar sign.' % k)
+
+    if 'meta' not in user:
+        user['meta'] = {}
+
+    # Add new metadata to existing metadata
+    user['meta'].update(six.viewitems(metadata))
+
+    # Remove metadata fields that were set to null (use items in py3)
+    toDelete = [k for k, v in six.viewitems(user['meta']) if v is None]
+    for key in toDelete:
+        del user['meta'][key]
+
+    # Validate and save the user
+    return self.model('user').save(user)
+
+
 def load(info):
     events.bind('filesystem_assetstore_imported', 'ythub',
                 saveImportPathToMeta)
@@ -447,3 +499,6 @@ def load(info):
     info['apiRoot'].folder.route('GET', (':id', 'rootpath'), folderRootpath)
     info['apiRoot'].folder.route('PUT', (':id', 'check'), checkFolder)
     info['apiRoot'].collection.route('PUT', (':id', 'check'), checkCollection)
+
+    info['apiRoot'].user.route('PUT', ('settings',), setUserMetadata)
+    info['apiRoot'].user.route('GET', ('settings',), getUserMetadata)
