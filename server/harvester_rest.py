@@ -4,7 +4,7 @@ import re
 
 from girder.api import access
 from girder.api.describe import Description, describeRoute
-from girder.api.rest import boundHandler, RestException, Resource
+from girder.api.rest import RestException, Resource
 from girder.constants import AccessType, TokenScope
 from girder.utility.progress import ProgressContext
 # from .constants import HarvesterType

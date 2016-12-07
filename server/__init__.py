@@ -21,7 +21,7 @@ from girder.utility.model_importer import ModelImporter
 
 from .constants import PluginSettings
 from .harvester_rest import Harvester
-
+from .search_rest import DatasetSearchEngine
 
 _last_culling = datetime.datetime.utcnow()
 
@@ -490,6 +490,7 @@ def load(info):
     info['apiRoot'].ythub = ytHub()
     info['apiRoot'].harvester = Harvester()
     info['apiRoot'].notebook = Notebook()
+    info['apiRoot'].search = DatasetSearchEngine()
     info['apiRoot'].folder.route('GET', (':id', 'contents'),
                                  getFolderFilesMapping)
     info['apiRoot'].item.route('GET', (':id', 'contents'), getItemFilesMapping)
