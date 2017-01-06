@@ -9,7 +9,7 @@ from girder.constants import AccessType, SortDir
 class Frontend(Resource):
 
     def __init__(self):
-        super(Resource, self).__init__()
+        super(Frontend, self).__init__()
         self.resourceName = 'frontend'
 
         self.route('GET', (), self.listFrontends)
@@ -61,7 +61,7 @@ class Frontend(Resource):
                'input image.')
         .param('imageName', 'A docker image name')
     )
-    def createFrontend(self, frontend, params):
+    def createFrontend(self, params):
         self.requireParams(('imageName'), params)
 
         return self.model('frontend', 'ythub').createFrontend(
