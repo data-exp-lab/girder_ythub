@@ -82,15 +82,19 @@ class Notebook(Resource):
         Description('Create new notebook for a current user and folder.')
         .notes('The output image is placed in the same parent folder as the '
                'input image.')
-        .param('id', 'The ID of the item containing the input image.',
-               paramType='path')
+        .param('id', 'The ID of the folder that will be mounted inside '
+               'of the container.', paramType='path')
+        .param('frontendId', 'The ID of the frontend that is going to be '
+               'started.', required=False)
     )
     def createNotebook(self, folder, params):
+        self.requireParams(('frontendId'), params)
         user = self.getCurrentUser()
         token = self.getCurrentToken()
         # folder = self.model('folder').load(item['folderId'], force=True)
         notebookModel = self.model('notebook', 'ythub')
-
-        notebook = notebookModel.createNotebook(folder, user, token)
+        frontend = self.model('frontend', 'ythub').load(params['frontendId'],
+                                                        force=True)
+        notebook = notebookModel.createNotebook(folder, user, token, frontend)
 
         return notebookModel.save(notebook)

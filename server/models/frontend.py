@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+import datetime
 import re
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
@@ -9,7 +12,9 @@ class Frontend(AccessControlledModel):
     def initialize(self):
         self.name = 'frontend'
         self.exposeFields(level=AccessType.READ,
-                          fields={'_id', 'imageName'})
+                          fields={'_id', 'imageName', 'command', 'memLimit',
+                                  'user', 'cpuShares', 'port', 'created',
+                                  'updated'})
 
     def validate(self, frontend):
         if not re.match('(?:[a-z]+/)?([a-z]+)(?::[0-9]+)?',
@@ -19,10 +24,30 @@ class Frontend(AccessControlledModel):
                 field='imageName')
         return frontend
 
-    def createFrontend(self, imageName, save=True):
+    def createFrontend(self, imageName, memLimit='1024m', command=None,
+                       user=None, cpuShares=None, port=None, save=True):
+        now = datetime.datetime.utcnow()
         frontend = {
-            'imageName': imageName
+            'imageName': imageName,
+            'memLimit': memLimit,
+            'user': user,
+            'cpuShares': cpuShares,
+            'port': port,
+            'command': command,
+            'created': now,
+            'updated': now
         }
         if save:
             frontend = self.save(frontend)
         return frontend
+
+    def updateFrontend(self, frontend):
+        '''
+        Updates a frontend.
+
+        :param frontend: The frontend document to update.
+        :type frontend: dict
+        :returns: The frontend document that was edited.
+        '''
+        frontend['updated'] = datetime.datetime.utcnow()
+        return self.save(frontend)

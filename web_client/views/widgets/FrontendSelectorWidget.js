@@ -1,0 +1,65 @@
+import View from 'girder/views/View';
+import eventStream from 'girder/utilities/EventStream';
+import { SORT_DESC } from 'girder/constants';
+import { restRequest } from 'girder/rest';
+
+import FrontendSelectorTemplate from '../../templates/widgets/frontendSelector.pug';
+import FrontendCollection from '../../collections/FrontendCollection';
+
+import 'girder/utilities/jquery/girderModal';
+
+import '../../stylesheets/frontendSelector.styl';
+
+var FrontendSelectorWidget = View.extend({
+   events: {
+      'click button.g-run-frontend': function(e) {
+         $(e.currentTarget).attr('disabled', 'disabled');
+         var row = this.el.getElementsByClassName('selected')[0];
+         var frontendId = row.getAttribute('frontendid');
+         var folderId = row.getAttribute('folderid');
+         this._runFrontend(folderId, frontendId);
+      },
+      'click table.g-frontends-list-table tr': function(e) {
+         var row = $(e.currentTarget);
+         row.addClass('selected').siblings().removeClass('selected');
+         var value = e.currentTarget.getAttribute('frontendid');
+         console.log(value);
+      }
+   },
+
+   _runFrontend: function(folderId, frontendId) {
+      restRequest({path: 'ythub'}).done(function (hub) {
+         restRequest({
+            path: 'notebook/' + folderId,
+            data: {
+               frontendId: frontendId 
+            },
+            type: 'POST'
+         }).done(function (notebook) {
+            window.location.assign(hub["url"] + '/' + notebook["containerPath"]);
+         });
+      });
+   },
+   
+   initialize: function(settings) {
+        this.filter = settings.filter || {};
+        this.collection = new FrontendCollection();
+        this.collection.sortField = settings.sortField || 'created';
+        this.collection.sortDir = settings.sortDir || SORT_DESC;
+        this.collection.pageLimit = settings.pageLimit || this.collection.pageLimit;
+        this.collection.on('g:changed', function () {
+            this.render();
+            this.trigger('g:changed');
+        }, this).fetch(this.filter);
+   },
+
+   render: function() {
+      this.$el.html(FrontendSelectorTemplate({
+         folder: this.parentView.parentModel,
+         frontends: this.collection.toArray()
+      })).girderModal(this);
+      return this;
+   }
+});
+
+export default FrontendSelectorWidget;

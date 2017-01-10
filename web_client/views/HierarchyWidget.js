@@ -1,6 +1,7 @@
 import _ from 'underscore';
 
 import HierarchyWidget from 'girder/views/widgets/HierarchyWidget';
+import FrontendSelectorWidget from './widgets/FrontendSelectorWidget';
 import { restRequest } from 'girder/rest';
 import { wrap } from 'girder/utilities/PluginUtils';
 import { getCurrentUser } from 'girder/auth';
@@ -100,14 +101,10 @@ function _stop_nb (e) {
 
 function _start_nb () {
     var folderId = this.parentModel.id;
-    restRequest({path: 'ythub'}).done(function (hub) {
-        restRequest({
-            path: 'notebook/' + folderId,
-            type: 'POST'
-        }).done(function (notebook) {
-            window.location.assign(hub["url"] + '/' + notebook["containerPath"]);
-        });
-    });
+    new FrontendSelectorWidget({
+       el: $('#g-dialog-container'),
+       parentView: this
+    }).render();
 };
 
 HierarchyWidget.prototype.events['click a.g-visit-notebook'] = _visit_nb

@@ -28,7 +28,7 @@ class Notebook(AccessControlledModel):
 
         self.exposeFields(level=AccessType.WRITE,
                           fields={'created', 'when', 'folderId', '_id',
-                                  'userId', 'url', 'status',
+                                  'userId', 'url', 'status', 'frontendId',
                                   'containerPath', 'containerId',
                                   'mountPoint', 'lastActivity'})
         self.exposeFields(level=AccessType.SITE_ADMIN,
@@ -121,10 +121,12 @@ class Notebook(AccessControlledModel):
                 logger.info('Deleting nb %s' % nb['_id'])
                 self.deleteNotebook(nb, token)
 
-    def createNotebook(self, folder, user, token, when=None, save=True):
+    def createNotebook(self, folder, user, token, frontend, when=None,
+                       save=True):
         existing = self.findOne({
             'folderId': folder['_id'],
             'userId': user['_id'],
+            'frontendId': frontend['_id']
         })
 
         if existing:
@@ -135,6 +137,7 @@ class Notebook(AccessControlledModel):
         hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
         payload = {'girder_token': token['_id'],
                    'folderId': str(folder['_id']),
+                   'frontendId': str(frontend['_id']),
                    'api_version': API_VERSION}
 
         resp = requests.post(hub_url, json=payload)
@@ -159,6 +162,7 @@ class Notebook(AccessControlledModel):
         notebook = {
             'folderId': folder['_id'],
             'userId': user['_id'],
+            'frontendId': frontend['_id'],
             'containerId': nb['containerId'],
             'containerPath': nb['containerPath'],
             'mountPoint': nb['mountPoint'],
