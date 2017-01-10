@@ -57,13 +57,15 @@ class Frontend(Resource):
                'the container.', required=False)
         .param('port', 'Bind specified within-container port.',
                required=False)
+        .param('description', 'Short info about the image content.',
+               required=False)
         .param('cpuShares', 'Limit cpu usage.', required=False)
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the frontend.', 403)
     )
     def updateFrontend(self, frontend, params):
         for key in ('imageName', 'command', 'memLimit', 'user', 'port',
-                    'cpuShares'):
+                    'cpuShares', 'description'):
             try:
                 frontend[key] = params.get(key, frontend[key])
             except KeyError:
@@ -98,6 +100,8 @@ class Frontend(Resource):
                'the container.', required=False)
         .param('port', 'Bind specified within-container port.',
                required=False)
+        .param('description', 'Short info about the image content.',
+               required=False)
         .param('cpuShares', 'Limit cpu usage.', required=False)
     )
     def createFrontend(self, params):
@@ -108,8 +112,9 @@ class Frontend(Resource):
         imageName = params['imageName']
         user = params.get('user')
         port = params.get('port')
+        description = params.get('description')
         cpuShares = params.get('cpuShares')
 
         return self.model('frontend', 'ythub').createFrontend(
             imageName, memLimit=memLimit, command=command, user=user,
-            port=port, cpuShares=cpuShares)
+            port=port, cpuShares=cpuShares, description=description)
