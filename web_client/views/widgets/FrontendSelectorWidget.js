@@ -1,5 +1,5 @@
 import View from 'girder/views/View';
-import eventStream from 'girder/utilities/EventStream';
+import events from 'girder/events';
 import { SORT_DESC } from 'girder/constants';
 import { restRequest } from 'girder/rest';
 
@@ -13,10 +13,17 @@ import '../../stylesheets/frontendSelector.styl';
 var FrontendSelectorWidget = View.extend({
    events: {
       'click button.g-run-frontend': function(e) {
+         var row = this.el.getElementsByClassName('selected');
+         if (row.length === 0) {
+            events.trigger('g:alert', {
+               text: 'A frontend needs to be selected.',
+               type: 'warning'
+            });
+            return;
+         }
+         var frontendId = row[0].getAttribute('frontendid');
+         var folderId = row[0].getAttribute('folderid');
          $(e.currentTarget).attr('disabled', 'disabled');
-         var row = this.el.getElementsByClassName('selected')[0];
-         var frontendId = row.getAttribute('frontendid');
-         var folderId = row.getAttribute('folderid');
          this._runFrontend(folderId, frontendId);
       },
       'click table.g-frontends-list-table tr': function(e) {
