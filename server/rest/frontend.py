@@ -59,6 +59,8 @@ class Frontend(Resource):
                required=False)
         .param('description', 'Short info about the image content.',
                required=False)
+        .param('public', 'Whether the frontend should be publicly visible.'
+               ' Defaults to False.', dataType='boolean', required=False)
         .param('cpuShares', 'Limit cpu usage.', required=False)
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the frontend.', 403)
@@ -71,6 +73,9 @@ class Frontend(Resource):
             frontend[key] = params.get(key, frontend[key])
             if frontend[key] is not None:
                 frontend[key] = frontend[key].strip()
+
+        public = self.boolParam('public', params, default=False)
+        self.model('frontend', 'ythub').setPublic(frontend, public)
         return self.model('frontend', 'ythub').updateFrontend(frontend)
 
     @access.admin
@@ -101,6 +106,8 @@ class Frontend(Resource):
                required=False)
         .param('description', 'Short info about the image content.',
                required=False)
+        .param('public', 'Whether the frontend should be publicly visible.'
+               ' Defaults to False.', dataType='boolean', required=False)
         .param('cpuShares', 'Limit cpu usage.', required=False)
     )
     def createFrontend(self, params):
@@ -113,7 +120,9 @@ class Frontend(Resource):
         port = params.get('port')
         description = params.get('description')
         cpuShares = params.get('cpuShares')
+        public = self.boolParam('public', params, default=None)
 
         return self.model('frontend', 'ythub').createFrontend(
             imageName, memLimit=memLimit, command=command, user=user,
-            port=port, cpuShares=cpuShares, description=description)
+            port=port, cpuShares=cpuShares, description=description,
+            public=public)

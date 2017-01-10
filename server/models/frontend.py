@@ -14,7 +14,7 @@ class Frontend(AccessControlledModel):
         self.exposeFields(level=AccessType.READ,
                           fields={'_id', 'imageName', 'command', 'memLimit',
                                   'user', 'cpuShares', 'port', 'created',
-                                  'updated', 'description'})
+                                  'updated', 'description', 'public'})
 
     def validate(self, frontend):
         if not re.match('(?:[a-z]+/)?([a-z]+)(?::[0-9]+)?',
@@ -26,7 +26,7 @@ class Frontend(AccessControlledModel):
 
     def createFrontend(self, imageName, memLimit='1024m', command=None,
                        user=None, cpuShares=None, port=None, save=True,
-                       description=None):
+                       description=None, public=None):
         now = datetime.datetime.utcnow()
         frontend = {
             'imageName': imageName,
@@ -36,9 +36,13 @@ class Frontend(AccessControlledModel):
             'port': port,
             'command': command,
             'description': description,
+            'public': public,
             'created': now,
             'updated': now
         }
+        if public is not None and isinstance(public, bool):
+            self.setPublic(frontend, public, save=False)
+
         if save:
             frontend = self.save(frontend)
         return frontend
