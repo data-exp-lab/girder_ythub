@@ -66,10 +66,9 @@ class Frontend(Resource):
     def updateFrontend(self, frontend, params):
         for key in ('imageName', 'command', 'memLimit', 'user', 'port',
                     'cpuShares', 'description'):
-            try:
-                frontend[key] = params.get(key, frontend[key])
-            except KeyError:
+            if key not in frontend:
                 frontend[key] = None
+            frontend[key] = params.get(key, frontend[key])
             if frontend[key] is not None:
                 frontend[key] = frontend[key].strip()
         return self.model('frontend', 'ythub').updateFrontend(frontend)
