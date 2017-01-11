@@ -2,8 +2,54 @@
 # -*- coding: utf-8 -*-
 from girder.api import access
 from girder.api.describe import Description, describeRoute
+from girder.api.docs import addModel
 from girder.api.rest import Resource, loadmodel, filtermodel
 from girder.constants import AccessType, SortDir
+
+
+notebookModel = {
+    'id': 'notebook',
+    'type': 'object',
+    'required': [
+        '_accessLevel', '_id', '_modelType', 'containerId',
+        'containerPath', 'created', 'folderId', 'frontendId',
+        'lastActivity', 'mountPoint', 'status', 'userId',
+        'when'
+    ],
+    'example': {
+        '_accessLevel': 2,
+        '_id': '587506670791d3000121b68d',
+        '_modelType': 'notebook',
+        'containerId': '7086458236c55f336f78bb0e3cbe7233df07499abb0f943f2',
+        'containerPath': 'user/kvmKuSBUDydo',
+        'created': '2017-01-10T16:05:56.296000+00:00',
+        'folderId': '5873dc0faec030000144d232',
+        'frontendId': '5873dcdbaec030000144d233',
+        'lastActivity': '2017-01-10T16:05:56.296000+00:00',
+        'mountPoint': '/var/lib/docker/volumes/5873dc0faec0300_root/_data',
+        'status': 0,
+        'userId': '586fe9414bd053000185b45d',
+        'when': '2017-01-10T16:05:56.296000+00:00'
+    },
+    'properties': {
+        '_accessLevel': {'type': 'integer', 'format': 'int32'},
+        '_id': {'type': 'string'},
+        '_modelType': {'type': 'string'},
+        'containerId': {'type': 'string'},
+        'containerPath': {'type': 'string'},
+        'created': {'type': 'string', 'format': 'date'},
+        'folderId': {'type': 'string'},
+        'frontendId': {'type': 'string'},
+        'lastActivity': {'type': 'string', 'format': 'date'},
+        'mountPoint': {'type': 'string'},
+        'status': {'type': 'integer', 'format': 'int32',
+                   'allowEmptyValue': False,
+                   'maximum': 1, 'minimum': 0},
+        'userId': {'type': 'string'},
+        'when': {'type': 'string', 'format': 'date'},
+    }
+}
+addModel('notebook', notebookModel, resources='notebook')
 
 
 class Notebook(Resource):
@@ -27,6 +73,7 @@ class Notebook(Resource):
                'an owning user.', required=False)
         .param('folderId', 'The folder ID which notebooks will be listed. ',
                required=False)
+        .responseClass('notebook', array=True)
         .pagingParams(defaultSort='created', defaultSortDir=SortDir.DESCENDING)
     )
     def listNotebooks(self, params):
@@ -56,6 +103,7 @@ class Notebook(Resource):
     @describeRoute(
         Description('Get a notebook by ID.')
         .param('id', 'The ID of the notebook.', paramType='path')
+        .responseClass('notebook')
         .errorResponse('ID was invalid.')
         .errorResponse('Read access was denied for the notebook.', 403)
     )
@@ -86,6 +134,7 @@ class Notebook(Resource):
                'of the container.', paramType='path')
         .param('frontendId', 'The ID of the frontend that is going to be '
                'started.', required=False)
+        .responseClass('notebook')
     )
     def createNotebook(self, folder, params):
         self.requireParams(('frontendId'), params)
