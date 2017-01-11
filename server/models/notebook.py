@@ -8,12 +8,11 @@ import six
 import dateutil.parser
 
 from girder import events, logger
-from ..constants import PluginSettings
+from ..constants import PluginSettings, API_VERSION, NotebookStatus
 from girder.api.rest import RestException
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
-from girder.plugins.ythub.constants import NotebookStatus
 
 
 class Notebook(AccessControlledModel):
@@ -29,7 +28,7 @@ class Notebook(AccessControlledModel):
 
         self.exposeFields(level=AccessType.WRITE,
                           fields={'created', 'when', 'folderId', '_id',
-                                  'userId', 'url', 'status',
+                                  'userId', 'url', 'status', 'frontendId',
                                   'containerPath', 'containerId',
                                   'mountPoint', 'lastActivity'})
         self.exposeFields(level=AccessType.SITE_ADMIN,
@@ -73,11 +72,14 @@ class Notebook(AccessControlledModel):
             'containerId': str(notebook['containerId']),
             'containerPath': str(notebook['containerPath']),
             'mountPoint': str(notebook['mountPoint']),
+            'host': str(notebook['host']),
             'folderId': str(notebook['folderId']),
             'girder_token': str(token['_id']),
         }
+        headers = {'docker-host': str(notebook['host']),
+                   'content-type': 'application/json'}
         requests.delete(self.model('setting').get(PluginSettings.TMPNB_URL),
-                        json=payload)
+                        json=payload, headers=headers)
         # TODO: handle error
         self.remove(notebook)
 
@@ -119,10 +121,12 @@ class Notebook(AccessControlledModel):
                 logger.info('Deleting nb %s' % nb['_id'])
                 self.deleteNotebook(nb, token)
 
-    def createNotebook(self, folder, user, token, when=None, save=True):
+    def createNotebook(self, folder, user, token, frontend, when=None,
+                       save=True):
         existing = self.findOne({
             'folderId': folder['_id'],
             'userId': user['_id'],
+            'frontendId': frontend['_id']
         })
 
         if existing:
@@ -131,8 +135,10 @@ class Notebook(AccessControlledModel):
         now = datetime.datetime.utcnow()
         when = when or now
         hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
-        payload = {"girder_token": token['_id'],
-                   "folderId": str(folder['_id'])}
+        payload = {'girder_token': token['_id'],
+                   'folderId': str(folder['_id']),
+                   'frontendId': str(frontend['_id']),
+                   'api_version': API_VERSION}
 
         resp = requests.post(hub_url, json=payload)
         content = resp.content
@@ -156,9 +162,11 @@ class Notebook(AccessControlledModel):
         notebook = {
             'folderId': folder['_id'],
             'userId': user['_id'],
+            'frontendId': frontend['_id'],
             'containerId': nb['containerId'],
             'containerPath': nb['containerPath'],
             'mountPoint': nb['mountPoint'],
+            'host': nb['host'],
             'lastActivity': now,
             'status': NotebookStatus.RUNNING,   # be optimistic for now
             'created': now,

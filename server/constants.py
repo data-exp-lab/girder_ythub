@@ -5,6 +5,9 @@ from girder import events
 from girder.models.notification import ProgressState
 
 
+API_VERSION = '1.1'
+
+
 class HarvesterType:
     """
     All possible data harverster implementation types.
