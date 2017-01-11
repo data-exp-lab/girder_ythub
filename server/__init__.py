@@ -309,10 +309,10 @@ def load(info):
                 saveImportPathToMeta)
     events.bind('heartbeat', 'ythub', cullNotebooks)
     info['apiRoot'].ythub = ytHub()
-    info['apiRoot'].harvester = Harvester()
     info['apiRoot'].notebook = Notebook()
-    info['apiRoot'].search = DatasetSearchEngine()
     info['apiRoot'].frontend = Frontend()
+    info['apiRoot'].harvester = Harvester()
+    info['apiRoot'].search = DatasetSearchEngine()
     info['apiRoot'].folder.route('GET', (':id', 'contents'),
                                  getFolderFilesMapping)
     info['apiRoot'].item.route('GET', (':id', 'contents'), getItemFilesMapping)
