@@ -1,9 +1,54 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from girder.api import access
+from girder.api.docs import addModel
 from girder.api.describe import Description, describeRoute
 from girder.api.rest import Resource, loadmodel, filtermodel
 from girder.constants import AccessType, SortDir
+
+
+frontendModel = {
+    'id': 'frontend',
+    'type': 'object',
+    'required': [
+        '_accessLevel', '_id', '_modelType', 'imageName',
+        'description'
+    ],
+    'example': {
+        '_accessLevel': 2,
+        '_id': '5873dcdbaec030000144d233',
+        '_modelType': 'frontend',
+        'command': 'jupyter lab --no-browser',
+        'cpuShares': '',
+        'created': '2017-01-09T18:56:27.262000+00:00',
+        'description': 'Run Jupyter Lab',
+        'imageName': 'xarthisius/ythub-jupyter',
+        'memLimit': '1024m',
+        'port': '8888',
+        'public': True,
+        'updated': '2017-01-10T16:15:17.313000+00:00',
+        'user': 'jovyan'
+    },
+    'properties': {
+        '_accessLevel': {'type': 'integer', 'format': 'int32'},
+        '_id': {'type': 'string'},
+        '_modelType': {'type': 'string'},
+        'imageName': {'type': 'string', 'allowEmptyValue': False},
+        'command': {'type': 'string', 'allowEmptyValue': True},
+        'memLimit': {'type': 'string', 'allowEmptyValue': True},
+        'cpuShares': {'type': 'string', 'allowEmptyValue': True},
+        'description': {'type': 'string', 'allowEmptyValue': False},
+        'port': {'type': 'integer', 'format': 'int32',
+                 'allowEmptyValue': True,
+                 'maximum': 65535, 'minimum': 1},
+        'updated': {'type': 'string', 'format': 'date',
+                    'allowEmptyValue': True},
+        'created': {'type': 'string', 'format': 'date',
+                    'allowEmptyValue': True},
+        'public': {'type': 'boolean', 'allowEmptyValue': True},
+    }
+}
+addModel('frontend', frontendModel, resources='frontend')
 
 
 class Frontend(Resource):
@@ -22,6 +67,7 @@ class Frontend(Resource):
     @filtermodel(model='frontend', plugin='ythub')
     @describeRoute(
         Description('List available frontends.')
+        .responseClass('frontend', array=True)
         .pagingParams(defaultSort='imageName',
                       defaultSortDir=SortDir.DESCENDING)
     )
@@ -38,6 +84,7 @@ class Frontend(Resource):
     @describeRoute(
         Description('Get a frontend by ID.')
         .param('id', 'The ID of the frontend.', paramType='path')
+        .responseClass('frontend')
         .errorResponse('ID was invalid.')
     )
     def getFrontend(self, frontend, params):
@@ -62,6 +109,7 @@ class Frontend(Resource):
         .param('public', 'Whether the frontend should be publicly visible.'
                ' Defaults to False.', dataType='boolean', required=False)
         .param('cpuShares', 'Limit cpu usage.', required=False)
+        .responseClass('frontend')
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the frontend.', 403)
     )
@@ -93,8 +141,6 @@ class Frontend(Resource):
     @filtermodel(model='frontend', plugin='ythub')
     @describeRoute(
         Description('Create a new frontend.')
-        .notes('The output image is placed in the same parent folder as the '
-               'input image.')
         .param('imageName', 'A docker image name.')
         .param('command', 'The main command run inside the container.',
                required=False)
@@ -109,6 +155,8 @@ class Frontend(Resource):
         .param('public', 'Whether the frontend should be publicly visible.'
                ' Defaults to False.', dataType='boolean', required=False)
         .param('cpuShares', 'Limit cpu usage.', required=False)
+        .responseClass('frontend')
+        .errorResponse('You are not authorized to create collections.', 403)
     )
     def createFrontend(self, params):
         self.requireParams(('imageName'), params)
