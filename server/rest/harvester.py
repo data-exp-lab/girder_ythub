@@ -8,7 +8,7 @@ from girder.api.rest import RestException, Resource
 from girder.constants import AccessType, TokenScope
 from girder.utility.progress import ProgressContext
 # from .constants import HarvesterType
-from .dataone_harvester import DataONEHarvester
+from ..dataone_harvester import DataONEHarvester
 
 # http://blog.crossref.org/2015/08/doi-regular-expressions.html
 _DOI_REGEX = re.compile('(10.\d{4,9}/[-._;()/:A-Z0-9]+)', re.IGNORECASE)

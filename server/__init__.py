@@ -11,16 +11,15 @@ from girder import events  # , logger
 from girder.api import access
 from girder.api.describe import Description, describeRoute
 from girder.api.rest import \
-    boundHandler, Resource, filtermodel, loadmodel, \
-    getCurrentUser, getApiUrl, RestException
-from girder.constants import AccessType, SortDir, TokenScope
+    boundHandler, loadmodel, getCurrentUser, RestException
+from girder.constants import AccessType, TokenScope
 from girder.models.model_base import ValidationException
 from girder.utility import assetstore_utilities, setting_utilities
 from girder.utility.model_importer import ModelImporter
 
 from .constants import PluginSettings
-from .harvester_rest import Harvester
-from .search_rest import DatasetSearchEngine
+from .rest.harvester import Harvester
+from .rest.search import DatasetSearchEngine
 from .rest.frontend import Frontend
 from .rest.notebook import Notebook
 from .rest.ythub import ytHub
