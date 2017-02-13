@@ -20,7 +20,7 @@ import sys
 import time
 import re
 import json
-import urllib
+import six.moves.urllib as urllib
 import requests
 import rdflib
 
@@ -30,11 +30,11 @@ D1_BASE = "https://cn.dataone.org/cn/v2"
 def esc(value):
     """Escape a string so it can be used in a Solr query string"""
 
-    return urllib.quote_plus(value)
+    return urllib.parse.quote_plus(value)
 
 def unesc(value):
     """Unescapes a string so it can uesd in URLS"""
-    return urllib.unquote_plus(value)
+    return urllib.parse.unquote_plus(value)
 
 
 def query(q, fields=["identifier"], rows=1000, start=0):
@@ -44,7 +44,7 @@ def query(q, fields=["identifier"], rows=1000, start=0):
     query_url = "{}/query/solr/?q={}&fl={}&rows={}&start={}&wt=json".format(D1_BASE, q, fl, rows, start)
 
     req = requests.get(query_url)
-    content = json.loads(req.content)
+    content = json.loads(req.content.decode('utf8'))
 
     # Fail if the Solr query failed rather than fail later
     if content['responseHeader']['status'] != 0:
@@ -160,7 +160,7 @@ def get_documenting_identifiers(pid):
 def process_package(pid):
     """Create a package description (Dict) suitable for dumping to JSON."""
 
-    print "Processing package {}.".format(pid)
+    print(("Processing package {}.".format(pid)))
 
     # query for things in the resource map
     result = query("resourceMap:\"{}\"".format(esc(pid)),
@@ -193,10 +193,10 @@ def process_package(pid):
         raise Exception("Found two objects in the resource map documenting other objects. This is unexpected and unhandled.")
 
     # Add in URLs to resolve each metadata/data object by
-    for i in xrange(len(metadata)):
+    for i in range(len(metadata)):
           metadata[i]['url'] = "{}/resolve/{}".format(D1_BASE, metadata[i]['identifier'])
 
-    for i in xrange(len(data)):
+    for i in range(len(data)):
         data[i]['url'] = "{}/resolve/{}".format(D1_BASE, data[i]['identifier'])
 
     # Determine the folder name. This is usually the title of the metadata file
@@ -226,10 +226,10 @@ def process_package(pid):
 def create_map(path):
     """Create the map (JSON) describing a Data Package."""
     initial_pid = find_initial_pid(path)
-    print "Parsed initial PID of {}.".format(initial_pid)
+    print("Parsed initial PID of {}.".format(initial_pid))
 
     package_pid = find_package_pid(initial_pid)
-    print "Found package PID of {}.".format(package_pid)
+    print("Found package PID of {}.".format(package_pid))
 
     package = process_package(package_pid)
 
@@ -238,11 +238,11 @@ def create_map(path):
 
 def main():
     if len(sys.argv) < 2:
-        print "Usage: wt-registry-dataone path"
+        print("Usage: wt-registry-dataone path")
         return
 
     path = sys.argv[1]
-    print "Getting '{}'...".format(path)
+    print("Getting '{}'...".format(path))
 
     result = create_map(path)
 
