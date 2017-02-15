@@ -24,6 +24,8 @@ import six.moves.urllib as urllib
 import requests
 import rdflib
 
+from .rest.harvester import _DOI_REGEX
+
 D1_BASE = "https://cn.dataone.org/cn/v2"
 
 
@@ -109,6 +111,7 @@ def find_initial_pid(path):
     """
 
     package_pid = None
+    doi = _DOI_REGEX.search(path)
 
     if re.search(r'^http[s]?:\/\/search.dataone.org\/#view\/', path):
         package_pid = re.sub(
@@ -116,6 +119,8 @@ def find_initial_pid(path):
     elif re.search(r'^http[s]?://cn.dataone.org/cn/d1/v[\d]/\w+/', path):
         package_pid = re.sub(
             r'^http[s]?://cn.dataone.org/cn/d1/v[\d]/\w+/', '', path)
+    elif doi is not None:
+        package_pid = 'doi:{}'.format(doi.group())
     else:
         package_pid = path
 
