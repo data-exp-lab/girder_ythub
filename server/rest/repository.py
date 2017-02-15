@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import re
-
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.docs import addModel
 from girder.api.rest import Resource
-from ..register_dataone import lookup
-
-# http://blog.crossref.org/2015/08/doi-regular-expressions.html
-_DOI_REGEX = re.compile('(10.\d{4,9}/[-._;()/:A-Z0-9]+)', re.IGNORECASE)
+from ..dataone_register import lookup
 
 
 dataMap = {
