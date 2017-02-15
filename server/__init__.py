@@ -19,6 +19,7 @@ from girder.utility.model_importer import ModelImporter
 
 from .constants import PluginSettings
 from .rest.harvester import Harvester
+from .rest.repository import Repository
 from .rest.search import DatasetSearchEngine
 from .rest.frontend import Frontend
 from .rest.notebook import Notebook
@@ -311,6 +312,7 @@ def load(info):
     info['apiRoot'].notebook = Notebook()
     info['apiRoot'].frontend = Frontend()
     info['apiRoot'].harvester = Harvester()
+    info['apiRoot'].repository = Repository()
     info['apiRoot'].search = DatasetSearchEngine()
     info['apiRoot'].folder.route('GET', (':id', 'contents'),
                                  getFolderFilesMapping)
