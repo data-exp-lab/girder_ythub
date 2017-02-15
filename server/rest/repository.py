@@ -4,11 +4,53 @@ import re
 
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
+from girder.api.docs import addModel
 from girder.api.rest import Resource
 from ..register_dataone import lookup
 
 # http://blog.crossref.org/2015/08/doi-regular-expressions.html
 _DOI_REGEX = re.compile('(10.\d{4,9}/[-._;()/:A-Z0-9]+)', re.IGNORECASE)
+
+
+dataMap = {
+    'type': 'object',
+    'description': ('A container with a basic information about '
+                    'a set of external data resources.'),
+    'properties': {
+        'dataId': {
+            'type': 'string',
+            'description': 'External dataset identificator, such as URL.'
+        },
+        'repository': {
+            'type': 'string',
+            'description': 'Name of a data repository holding the dataset.'
+        },
+        'doi': {
+            'type': 'string',
+            'description': 'Digital Object Identifier'
+        },
+        'name': {
+            'type': 'string',
+            'description': ('A user-friendly name. Defaults to the name '
+                            'provided by an external repository.')
+        },
+        'size': {
+            'type': 'integer',
+            'description': 'Size of the dataset in bytes.'
+        }
+    },
+    'required': ['dataId', 'repository', 'doi', 'name', 'size'],
+    'example': {
+        'dataId': 'urn:uuid:42969280-e11c-41a9-92dc-33964bf785c8',
+        'doi': '10.5063/F1Z899CZ',
+        'name': ('Data from a dynamically downscaled projection of past and '
+                 'future microclimates covering North America from 1980-1999 '
+                 'and 2080-2099'),
+        'repository': 'DataONE',
+        'size': 178679
+    },
+}
+addModel('dataMap', dataMap)
 
 
 class Repository(Resource):
@@ -27,6 +69,6 @@ class Repository(Resource):
                'along with a basic metadata, such as size, name.')
         .param('dataId', dataType='array', paramType='query', required=True,
                description='List of external datasets identificators.')
-        .responseClass('DataMap', array=True))
-    def lookupData(self, params):
-        return [lookup(path) for path in params['dataId']]
+        .responseClass('dataMap', array=True))
+    def lookupData(self, dataId, params):
+        return [lookup(path) for path in dataId.split(',')]
