@@ -63,7 +63,8 @@ class Repository(Resource):
                'returns mapping to specific repository '
                'along with a basic metadata, such as size, name.')
         .param('dataId', dataType='array', paramType='query', required=True,
-               description='List of external datasets identificators.')
+               description='List of external datasets identificators.',
+               itemType='string')
         .responseClass('dataMap', array=True))
     def lookupData(self, dataId, params):
-        return [lookup(path) for path in dataId.split(',')]
+        return list(map(lookup, dataId))
