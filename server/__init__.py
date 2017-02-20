@@ -22,7 +22,7 @@ from .rest.recipe import Recipe
 from .rest.image import Image
 from .rest.repository import Repository
 from .rest.search import DatasetSearchEngine
-from .rest.frontend import Frontend
+from .rest.tale import Tale
 from .rest.notebook import Notebook
 from .rest.ythub import ytHub
 
@@ -311,7 +311,7 @@ def load(info):
     events.bind('heartbeat', 'ythub', cullNotebooks)
     info['apiRoot'].ythub = ytHub()
     info['apiRoot'].notebook = Notebook()
-    info['apiRoot'].frontend = Frontend()
+    info['apiRoot'].tale = Tale()
     info['apiRoot'].recipe = Recipe()
     info['apiRoot'].image = Image()
     info['apiRoot'].repository = Repository()
