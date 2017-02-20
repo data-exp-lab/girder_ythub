@@ -18,8 +18,8 @@ from girder.utility import assetstore_utilities, setting_utilities
 from girder.utility.model_importer import ModelImporter
 
 from .constants import PluginSettings
-from .rest.harvester import Harvester
 from .rest.recipe import Recipe
+from .rest.image import Image
 from .rest.repository import Repository
 from .rest.search import DatasetSearchEngine
 from .rest.frontend import Frontend
@@ -312,8 +312,8 @@ def load(info):
     info['apiRoot'].ythub = ytHub()
     info['apiRoot'].notebook = Notebook()
     info['apiRoot'].frontend = Frontend()
-    # info['apiRoot'].harvester = Harvester()
     info['apiRoot'].recipe = Recipe()
+    info['apiRoot'].image = Image()
     info['apiRoot'].repository = Repository()
     info['apiRoot'].search = DatasetSearchEngine()
     info['apiRoot'].folder.route('GET', (':id', 'contents'),

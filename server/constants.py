@@ -42,3 +42,31 @@ class NotebookStatus(object):
             return ProgressState.ACTIVE
         else:
             return ProgressState.ERROR
+
+
+class ImageStatus(object):
+    INVALID = 0
+    UNAVAILABLE = 1
+    BUILDING = 2
+    AVAILABLE = 3
+
+    @staticmethod
+    def isValid(status):
+        event = events.trigger('ythub.image.status.validate', info=status)
+
+        if event.defaultPrevented and len(event.responses):
+            return event.responses[-1]
+
+        return status in (ImageStatus.INVALID, ImageStatus.UNAVAILABLE,
+                          ImageStatus.BUILDING, ImageStatus.AVAILABLE)
+
+    @staticmethod
+    def toNotificationStatus(status):
+        if status in ImageStatus.UNAVAILABLE:
+            return ProgressState.QUEUED
+        if status == ImageStatus.BUILDING:
+            return ProgressState.ACTIVE
+        if status == ImageStatus.AVAILABLE:
+            return ProgressState.SUCCESS
+        else:
+            return ProgressState.ERROR

@@ -3,7 +3,7 @@
 from girder.api import access
 from girder.api.docs import addModel
 from girder.api.describe import Description, autoDescribeRoute
-from girder.api.rest import Resource, loadmodel, filtermodel, RestException
+from girder.api.rest import Resource, filtermodel, RestException
 from girder.constants import AccessType, SortDir, TokenScope
 
 
@@ -18,7 +18,8 @@ recipeModel = {
         'description': {'type': 'string'},
         'url': {
             'type': 'string',
-            'description': 'a URL of an external vcs repository containing all the data required to build an image.'
+            'description': ('a URL of an external vcs repository containing '
+                            'all the data required to build an image.')
         },
         'commitId': {
             'type': 'string',
