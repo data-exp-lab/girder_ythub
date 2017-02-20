@@ -150,8 +150,8 @@ class Recipe(Resource):
         .param('public', 'Whether the recipe should be publicly visible.'
                ' Defaults to True.', dataType='boolean', required=False,
                default=True)
-        .param('tags', 'A human readable labels for the recipe.',
-               required=False, dataType='array', itemType='string')
+        .jsonParam('tags', 'A human readable labels for the recipe.',
+                   required=False, requireArray=True)
         .responseClass('recipe')
         .errorResponse('ID was invalid.')
         .errorResponse('Read/write access was denied for the recipe.', 403)
@@ -193,8 +193,8 @@ class Recipe(Resource):
                required=False)
         .param('public', 'Whether the recipe should be publicly visible.'
                ' Defaults to True.', dataType='boolean', required=False)
-        .param('tags', 'A human readable labels for the recipe.',
-               required=False, dataType='array', itemType='string')
+        .jsonParam('tags', 'A human readable labels for the recipe.',
+                   required=False, requireArray=True)
         .responseClass('recipe')
         .errorResponse('Query parameter was invalid')
     )

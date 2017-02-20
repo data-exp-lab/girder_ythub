@@ -62,9 +62,9 @@ class Repository(Resource):
         .notes('Given a list of external data identifiers, '
                'returns mapping to specific repository '
                'along with a basic metadata, such as size, name.')
-        .param('dataId', dataType='array', paramType='query', required=True,
-               description='List of external datasets identificators.',
-               itemType='string')
+        .jsonParam('dataId', paramType='query', required=True,
+                   description='List of external datasets identificators.',
+                   requireArray=True)
         .responseClass('dataMap', array=True))
     def lookupData(self, dataId, params):
         return list(map(lookup, dataId))

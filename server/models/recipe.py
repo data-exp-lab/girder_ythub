@@ -68,6 +68,9 @@ class Recipe(AccessControlledModel):
 
     def createRecipe(self, commitId, url, name=None, tags=None, creator=None,
                      save=True, parent=None, description=None, public=None):
+
+        # TODO: check for existing recipe based on URL
+
         if creator is None:
             creatorId = None
         else:
