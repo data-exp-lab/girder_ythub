@@ -59,8 +59,8 @@ class Instance(Resource):
         self.resourceName = 'instance'
 
         self.route('GET', (), self.listInstances)
+        self.route('POST', (), self.createInstance)
         self.route('GET', (':id',), self.getInstance)
-        self.route('POST', (':id',), self.createInstance)
         self.route('DELETE', (':id',), self.deleteInstance)
 
     @access.user
