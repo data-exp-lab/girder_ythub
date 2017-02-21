@@ -36,6 +36,36 @@ class Tale(AccessControlledModel):
             tale = self.save(tale)
         return tale
 
+    def list(self, user=None, folder=None, image=None, limit=0, offset=0,
+             sort=None, currentUser=None):
+        """
+        List a page of jobs for a given user.
+
+        :param user: The user who created the tale.
+        :type user: dict or None
+        :param folder: The folder that's being used by the tale.
+        :type folder: dict or None
+        :param image: The Image that's being used by the tale.
+        :type image: dict or None
+        :param limit: The page limit.
+        :param offset: The page offset
+        :param sort: The sort field.
+        :param currentUser: User for access filtering.
+        """
+        cursor_def = {}
+        if user is not None:
+            cursor_def['creatorId'] = user['_id']
+        if folder is not None:
+            cursor_def['folderId'] = folder['_id']
+        if image is not None:
+            cursor_def['imageId'] = image['_id']
+
+        cursor = self.find(cursor_def, sort=sort)
+        for r in self.filterResultsByPermission(
+                cursor=cursor, user=currentUser, level=AccessType.READ,
+                limit=limit, offset=offset):
+            yield r
+
     def createTale(self, image, folder, creator=None, save=True, name=None,
                    description=None, public=None, config=None, published=False):
         if creator is None:

@@ -106,12 +106,26 @@ class Tale(Resource):
                       defaultSortDir=SortDir.DESCENDING)
     )
     def listTales(self, imageId, folderId, text, limit, offset, sort, params):
-        # TODO: utilize all parameters
         user = self.getCurrentUser()
-        limit, offset, sort = self.getPagingParameters(
-            params, 'imageName', SortDir.DESCENDING)
-        return list(self.model('tale', 'ythub').list(
-            user=user, offset=offset, limit=limit, sort=sort))
+        if imageId:
+            image = self.model('image', 'ythub').load(
+                imageId, user=user, level=AccessType.READ, exc=True)
+        else:
+            image = None
+
+        if folderId:
+            folder = self.model('folder').load(
+                folderId, user=user, level=AccessType.READ, exc=True)
+        else:
+            folder = None
+
+        if text:
+            return list(self.model('tale', 'ythub').textSearch(
+                text, user=user, limit=limit, offset=offset, sort=sort))
+        else:
+            return list(self.model('tale', 'ythub').list(
+                user=user, folder=folder, image=image, currentUser=user,
+                offset=offset, limit=limit, sort=sort))
 
     @access.public
     @filtermodel(model='tale', plugin='ythub')
