@@ -8,42 +8,41 @@ import six
 import dateutil.parser
 
 from girder import events, logger
-from ..constants import PluginSettings, API_VERSION, NotebookStatus
+from ..constants import PluginSettings, API_VERSION, InstanceStatus
 from girder.api.rest import RestException
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
 
 
-class Notebook(AccessControlledModel):
+class Instance(AccessControlledModel):
 
     def initialize(self):
-        self.name = 'notebook'
+        self.name = 'instance'
         compoundSearchIndex = (
-            ('userId', SortDir.ASCENDING),
-            ('created', SortDir.DESCENDING)
+            ('taleId', SortDir.ASCENDING),
+            ('creatorId', SortDir.DESCENDING),
+            ('name', SortDir.ASCENDING)
         )
-
         self.ensureIndices([(compoundSearchIndex, {})])
 
-        self.exposeFields(level=AccessType.WRITE,
-                          fields={'created', 'when', 'folderId', '_id',
-                                  'userId', 'url', 'status', 'frontendId',
-                                  'containerPath', 'containerId',
-                                  'mountPoint', 'lastActivity'})
-        self.exposeFields(level=AccessType.SITE_ADMIN,
-                          fields={'args', 'kwargs'})
+        self.exposeFields(
+            level=AccessType.READ,
+            fields={'_id', 'created', 'creatorId', 'name', 'taleId'})
+        self.exposeFields(
+            level=AccessType.WRITE,
+            fields={'containerInfo', 'lastActivity', 'status', 'url'})
         events.bind('model.user.save.created', 'ythub',
                     self._addDefaultFolders)
 
-    def validate(self, notebook):
-        if not NotebookStatus.isValid(notebook['status']):
+    def validate(self, instance):
+        if not InstanceStatus.isValid(instance['status']):
             raise ValidationException(
-                'Invalid notebook status %s.' % notebook['status'],
+                'Invalid instance status %s.' % instance['status'],
                 field='status')
-        return notebook
+        return instance
 
-    def list(self, user=None, folder=None, limit=0, offset=0,
+    def list(self, user=None, tale=None, limit=0, offset=0,
              sort=None, currentUser=None):
         """
         List a page of jobs for a given user.
@@ -58,32 +57,32 @@ class Notebook(AccessControlledModel):
         cursor_def = {}
         if user is not None:
             cursor_def['userId'] = user['_id']
-        if folder is not None:
-            cursor_def['folderId'] = folder['_id']
+        if tale is not None:
+            cursor_def['taleId'] = tale['_id']
         cursor = self.find(cursor_def, sort=sort)
-        for r in self.filterResultsByPermission(cursor=cursor,
-                                                user=currentUser,
-                                                level=AccessType.READ,
-                                                limit=limit, offset=offset):
+        for r in self.filterResultsByPermission(
+                cursor=cursor, user=currentUser, level=AccessType.READ,
+                limit=limit, offset=offset):
             yield r
 
-    def deleteNotebook(self, notebook, token):
+    def deleteInstance(self, instance, token):
         payload = {
-            'containerId': str(notebook['containerId']),
-            'containerPath': str(notebook['containerPath']),
-            'mountPoint': str(notebook['mountPoint']),
-            'host': str(notebook['host']),
-            'folderId': str(notebook['folderId']),
+            'containerId': str(instance['containerId']),
+            'containerPath': str(instance['containerPath']),
+            'mountPoint': str(instance['mountPoint']),
+            'host': str(instance['host']),
+            'folderId': str(instance['folderId']),
             'girder_token': str(token['_id']),
         }
-        headers = {'docker-host': str(notebook['host']),
+        headers = {'docker-host': str(instance['host']),
                    'content-type': 'application/json'}
         requests.delete(self.model('setting').get(PluginSettings.TMPNB_URL),
                         json=payload, headers=headers)
         # TODO: handle error
-        self.remove(notebook)
+        self.remove(instance)
 
-    def cullNotebooks(self):
+    def cullInstances(self):
+        return  # Needs to be update to API 2.0
         resp = requests.get(
             self.model('setting').get(PluginSettings.TMPNB_URL))
         content = resp.content
@@ -104,7 +103,7 @@ class Notebook(AccessControlledModel):
         admin = next(_ for _ in self.model('user').getAdmins())
         token = self.model('token').createToken(user=admin, days=1)
 
-        # Iterate over all notebooks, not the prettiest way...
+        # Iterate over all instances, not the prettiest way...
         cull_period = self.model('setting').get(
             PluginSettings.CULLING_PERIOD, '4')
         cull_time = datetime.datetime.utcnow() - \
@@ -116,28 +115,23 @@ class Notebook(AccessControlledModel):
             except KeyError:
                 # proxy is not aware of such container, kill it...
                 logger.info('Deleting nb %s' % nb['_id'])
-                self.deleteNotebook(nb, token)
+                self.deleteInstance(nb, token)
             if last_activity < cull_time:
                 logger.info('Deleting nb %s' % nb['_id'])
-                self.deleteNotebook(nb, token)
+                self.deleteInstance(nb, token)
 
-    def createNotebook(self, folder, user, token, frontend, when=None,
-                       save=True):
+    def createInstance(self, tale, user, token, save=True):
         existing = self.findOne({
-            'folderId': folder['_id'],
+            'taleId': tale['_id'],
             'userId': user['_id'],
-            'frontendId': frontend['_id']
         })
-
         if existing:
             return existing
 
         now = datetime.datetime.utcnow()
-        when = when or now
         hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
-        payload = {'girder_token': token['_id'],
-                   'folderId': str(folder['_id']),
-                   'frontendId': str(frontend['_id']),
+        payload = {'girder_token': str(token['_id']),
+                   'taleId': str(tale['_id']),
                    'api_version': API_VERSION}
 
         resp = requests.post(hub_url, json=payload)
@@ -155,34 +149,29 @@ class Notebook(AccessControlledModel):
                 ), code=502)
 
         try:
-            nb = json.loads(content)
+            resp = json.loads(content)
         except ValueError:
             raise RestException('Non-JSON response: %s' % content, code=502)
 
-        notebook = {
-            'folderId': folder['_id'],
-            'userId': user['_id'],
-            'frontendId': frontend['_id'],
-            'containerId': nb['containerId'],
-            'containerPath': nb['containerPath'],
-            'mountPoint': nb['mountPoint'],
-            'host': nb['host'],
-            'lastActivity': now,
-            'status': NotebookStatus.RUNNING,   # be optimistic for now
+        instance = {
+            'taleId': tale['_id'],
             'created': now,
-            'when': when,
+            'creatorId': user['_id'],
+            'lastActivity': now,
+            'containerInfo': resp['containerInfo'],
+            'status': InstanceStatus.RUNNING,   # be optimistic for now
+            'url': resp['url'],
         }
 
-        self.setPublic(notebook, public=False)
-        self.setUserAccess(notebook, user=user, level=AccessType.ADMIN)
+        self.setUserAccess(instance, user=user, level=AccessType.ADMIN)
         if save:
-            notebook = self.save(notebook)
+            instance = self.save(instance)
 
-        return notebook
+        return instance
 
     def _addDefaultFolders(self, event):
         user = event.info
-        notebookFolder = self.model('folder').createFolder(
-            user, 'Notebooks', parentType='user', public=True, creator=user)
+        instanceFolder = self.model('folder').createFolder(
+            user, 'Instances', parentType='user', public=True, creator=user)
         self.model('folder').setUserAccess(
-            notebookFolder, user, AccessType.ADMIN, save=True)
+            instanceFolder, user, AccessType.ADMIN, save=True)

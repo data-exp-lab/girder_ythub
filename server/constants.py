@@ -5,7 +5,7 @@ from girder import events
 from girder.models.notification import ProgressState
 
 
-API_VERSION = '1.1'
+API_VERSION = '2.0'
 
 
 class HarvesterType:
@@ -23,22 +23,22 @@ class PluginSettings:
 
 
 # Constants representing the setting keys for this plugin
-class NotebookStatus(object):
+class InstanceStatus(object):
     RUNNING = 0
     ERROR = 1
 
     @staticmethod
     def isValid(status):
-        event = events.trigger('notebook.status.validate', info=status)
+        event = events.trigger('instance.status.validate', info=status)
 
         if event.defaultPrevented and len(event.responses):
             return event.responses[-1]
 
-        return status in (NotebookStatus.RUNNING, NotebookStatus.ERROR)
+        return status in (InstanceStatus.RUNNING, InstanceStatus.ERROR)
 
     @staticmethod
     def toNotificationStatus(status):
-        if status == NotebookStatus.RUNNING:
+        if status == InstanceStatus.RUNNING:
             return ProgressState.ACTIVE
         else:
             return ProgressState.ERROR

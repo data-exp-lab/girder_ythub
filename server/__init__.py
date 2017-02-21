@@ -23,7 +23,7 @@ from .rest.image import Image
 from .rest.repository import Repository
 from .rest.search import DatasetSearchEngine
 from .rest.tale import Tale
-from .rest.notebook import Notebook
+from .rest.instance import Instance
 from .rest.ythub import ytHub
 
 
@@ -246,11 +246,11 @@ def folderRootpath(self, folder, params):
         folder, user=self.getCurrentUser())
 
 
-def cullNotebooks(event):
+def cullInstances(event):
     global _last_culling
     culling_freq = datetime.timedelta(minutes=1)
     if datetime.datetime.utcnow() - culling_freq > _last_culling:
-        ModelImporter.model('notebook', 'ythub').cullNotebooks()
+        ModelImporter.model('instance', 'ythub').cullInstances()
         _last_culling = datetime.datetime.utcnow()
 
 
@@ -308,9 +308,9 @@ def setUserMetadata(self, params):
 def load(info):
     events.bind('filesystem_assetstore_imported', 'ythub',
                 saveImportPathToMeta)
-    events.bind('heartbeat', 'ythub', cullNotebooks)
+    events.bind('heartbeat', 'ythub', cullInstances)
     info['apiRoot'].ythub = ytHub()
-    info['apiRoot'].notebook = Notebook()
+    info['apiRoot'].instance = Instance()
     info['apiRoot'].tale = Tale()
     info['apiRoot'].recipe = Recipe()
     info['apiRoot'].image = Image()
