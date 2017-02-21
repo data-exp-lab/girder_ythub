@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import re
+
+from bson.objectid import ObjectId
+
 from girder.models.model_base import \
-    AccessControlledModel, ValidationException
+    AccessControlledModel
 from girder.constants import AccessType
 
 
@@ -25,6 +27,13 @@ class Tale(AccessControlledModel):
                                   'updated', 'description', 'public'})
 
     def validate(self, tale):
+        return tale
+
+    def setPublished(self, tale, publish, save=False):
+        assert isinstance(publish, bool)
+        tale['published'] = publish or tale['published']
+        if save:
+            tale = self.save(tale)
         return tale
 
     def createTale(self, image, folder, creator=None, save=True, name=None,
