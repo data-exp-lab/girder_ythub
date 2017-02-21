@@ -3,7 +3,6 @@
 import datetime
 import re
 
-from bson.objectid import ObjectId
 from github import Github, GithubException
 
 from girder.models.model_base import \
@@ -77,7 +76,7 @@ class Recipe(AccessControlledModel):
             creatorId = creator.get('_id', None)
 
         if parent is not None:
-            parentId = ObjectId(parent['_id'])
+            parentId = parent['_id']
         else:
             parentId = None
 

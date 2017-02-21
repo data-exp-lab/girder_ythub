@@ -133,8 +133,8 @@ class Image(Resource):
                      'that user has access to'))
         .responseClass('image', array=True)
         .param('parentId', "The ID of the image's parent.", required=False)
-        .param('text', ('Perform a full text search for image with matching '
-                        'name or description.'), required=False)
+        .param('text', 'Perform a full text search for image with a matching '
+               'name or description.', required=False)
         .param('tag', 'Search all images with a given tag.', required=False)
         .pagingParams(defaultSort='lowerName',
                       defaultSortDir=SortDir.DESCENDING)

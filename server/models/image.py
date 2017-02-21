@@ -3,8 +3,6 @@
 import datetime
 import re
 
-from bson.objectid import ObjectId
-
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
 from girder.constants import AccessType
@@ -49,7 +47,7 @@ class Image(AccessControlledModel):
             creatorId = creator.get('_id', None)
 
         if parent is not None:
-            parentId = ObjectId(parent['_id'])
+            parentId = parent['_id']
         else:
             parentId = None
 
@@ -73,7 +71,7 @@ class Image(AccessControlledModel):
             'name': name,
             'parentId': parentId,
             'public': public,
-            'recipeId': ObjectId(recipe['_id']),
+            'recipeId': recipe['_id'],
             'status': ImageStatus.UNAVAILABLE,
             'tags': tags,
             'updated': now,
