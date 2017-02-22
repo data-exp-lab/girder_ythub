@@ -14,7 +14,7 @@ wrap(HierarchyWidget, 'render', function (render) {
 
     if (getCurrentUser() && widget.parentModel.resourceName === 'folder') {
         var _restParams = {
-            path: 'notebook',
+            path: 'instance',
             type: 'GET',
             data: {
                 userId: getCurrentUser().id,
@@ -22,10 +22,10 @@ wrap(HierarchyWidget, 'render', function (render) {
             },
             error: null
         };
-        restRequest(_restParams).done(function (notebooks) {
+        restRequest(_restParams).done(function (instances) {
             // Call the underlying render function that we are wrapping
             render.call(widget);
-            if (notebooks.length < 1) {
+            if (instances.length < 1) {
                 $(ytHubFolderMenu({
                     goUrl: '/dev/null',
                     delUrl: '0',
@@ -38,10 +38,10 @@ wrap(HierarchyWidget, 'render', function (render) {
                 document.getElementsByClassName("g-gonb-button")[0].style.display = "none";
                 document.getElementsByClassName("g-stopnb-button")[0].style.display = "none";
             } else {
-                var notebook = notebooks[0];
+                var instance = instances[0];
                 $(ytHubFolderMenu({
-                    goUrl: notebook.url,
-                    delUrl: notebook._id
+                    goUrl: instance.url,
+                    delUrl: instance._id
                 })).appendTo(widget.$('.g-folder-actions-menu'));
                 $(ytHubHierarchyWidget()).prependTo(widget.$('.g-folder-header-buttons'));
                 document.getElementById("go_nb").style.display = "list-item";
@@ -59,7 +59,7 @@ wrap(HierarchyWidget, 'render', function (render) {
 
 function _visit_nb (e) {
     restRequest({
-        path: 'notebook',
+        path: 'instance',
         type: 'GET',
         data: {
             folderId: this.parentModel.id,
@@ -75,7 +75,7 @@ function _visit_nb (e) {
 
 function _stop_nb (e) {
     restRequest({
-        path: 'notebook',
+        path: 'instance',
         type: 'GET',
         data: {
             folderId: this.parentModel.id,
@@ -84,7 +84,7 @@ function _stop_nb (e) {
     }).done(_.bind(function (resp) {
        var nbId = resp[0]['_id'];
        var _delParams = {
-           path: 'notebook/' + nbId,
+           path: 'instance/' + nbId,
            type: 'DELETE',
            error: null
        };
@@ -107,9 +107,9 @@ function _start_nb () {
     }).render();
 };
 
-HierarchyWidget.prototype.events['click a.g-visit-notebook'] = _visit_nb
-HierarchyWidget.prototype.events['click a.g-start-notebook'] = _start_nb
-HierarchyWidget.prototype.events['click a.g-stop-notebook'] = _stop_nb
+HierarchyWidget.prototype.events['click a.g-visit-instance'] = _visit_nb
+HierarchyWidget.prototype.events['click a.g-start-instance'] = _start_nb
+HierarchyWidget.prototype.events['click a.g-stop-instance'] = _stop_nb
 HierarchyWidget.prototype.events['click .g-runnb-button'] = _start_nb
 HierarchyWidget.prototype.events['click .g-gonb-button'] = _visit_nb
 HierarchyWidget.prototype.events['click .g-stopnb-button'] = _stop_nb

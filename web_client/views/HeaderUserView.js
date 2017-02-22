@@ -13,7 +13,7 @@ wrap(HeaderUserView, 'render', function (render) {
     var currentUser = getCurrentUser();
     if (currentUser) {
         this.$('#g-user-action-menu>ul').prepend(HeaderUserViewMenuTemplate({
-            href: '#notebook/user/' + currentUser.id
+            href: '#instance/user/' + currentUser.id
         }));
     }
     return this;

@@ -9,9 +9,9 @@ router.route('plugins/ythub/config', 'ythubConfig', function () {
     events.trigger('g:navigateTo', ConfigView);
 });
 
-import NotebookListWidget from './views/NotebookListWidget';
-router.route('notebook/user/:id', 'notebookList', function (id) {
-    events.trigger('g:navigateTo', NotebookListWidget, {
+import InstanceListWidget from './views/InstanceListWidget';
+router.route('instance/user/:id', 'instanceList', function (id) {
+    events.trigger('g:navigateTo', InstanceListWidget, {
         filter: {userId: id}
     });
 });
