@@ -24,8 +24,8 @@ import six.moves.urllib as urllib
 import requests
 import rdflib
 
-from .rest.harvester import _DOI_REGEX
-
+# http://blog.crossref.org/2015/08/doi-regular-expressions.html
+_DOI_REGEX = re.compile('(10.\d{4,9}/[-._;()/:A-Z0-9]+)', re.IGNORECASE)
 D1_BASE = "https://cn.dataone.org/cn/v2"
 
 
