@@ -13,6 +13,7 @@ from ..dataone_register import \
     get_documenting_identifiers, \
     query, \
     unesc
+from ..constants import dataMapSchema
 
 
 @access.user(scope=TokenScope.DATA_WRITE)
@@ -32,7 +33,7 @@ from ..dataone_register import \
            'Defaults to True.',
            required=False, dataType='boolean', default=True)
     .jsonParam('dataMap', 'A list of data mappings',
-               paramType='body')
+               paramType='body', schema=dataMapSchema)
     .errorResponse('Write access denied for parent collection.', 403)
 )
 @boundHandler()

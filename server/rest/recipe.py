@@ -5,7 +5,7 @@ from girder.api.docs import addModel
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, filtermodel, RestException
 from girder.constants import AccessType, SortDir, TokenScope
-
+from ..constants import tagsSchema
 
 recipeModel = {
     'properties': {
@@ -152,7 +152,7 @@ class Recipe(Resource):
                ' Defaults to True.', dataType='boolean', required=False,
                default=True)
         .jsonParam('tags', 'A human readable labels for the recipe.',
-                   required=False, requireArray=True)
+                   required=False, schema=tagsSchema)
         .responseClass('recipe')
         .errorResponse('ID was invalid.')
         .errorResponse('Read/write access was denied for the recipe.', 403)
@@ -195,7 +195,7 @@ class Recipe(Resource):
         .param('public', 'Whether the recipe should be publicly visible.'
                ' Defaults to True.', dataType='boolean', required=False)
         .jsonParam('tags', 'A human readable labels for the recipe.',
-                   required=False, requireArray=True)
+                   required=False, schema=tagsSchema)
         .responseClass('recipe')
         .errorResponse('Query parameter was invalid')
     )

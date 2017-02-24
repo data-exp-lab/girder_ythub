@@ -5,7 +5,7 @@ from girder.api.docs import addModel
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, filtermodel, RestException
 from girder.constants import AccessType, SortDir
-
+from ..constants import containerConfigSchema
 
 taleModel = {
     "description": "Object representing a Tale.",
@@ -150,7 +150,8 @@ class Tale(Resource):
         .param('published', 'If set to true, the Tale cannot be deleted or '
                'made unpublished.', dataType='boolean', required=False)
         .jsonParam('config', "The tale's runtime configuration",
-                   required=False, requireObject=True, paramType='body')
+                   required=False, schema=containerConfigSchema,
+                   paramType='body')
         .responseClass('tale')
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the tale.', 403)
@@ -194,7 +195,8 @@ class Tale(Resource):
                ' Defaults to True.', dataType='boolean', required=False,
                default=True)
         .jsonParam('config', "The tale's runtime configuration",
-                   required=False, requireObject=True, paramType='body')
+                   required=False, schema=containerConfigSchema,
+                   paramType='body')
         .responseClass('tale')
         .errorResponse('You are not authorized to create collections.', 403)
     )

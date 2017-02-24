@@ -7,6 +7,91 @@ from girder.models.notification import ProgressState
 
 API_VERSION = '2.0'
 
+dataMapSchema = {
+    'title': 'dataMap',
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'description': 'A schema for a WholeTale Data Map',
+    'type': 'object',
+    'properties': {
+        'dataId': {
+            'type': 'string',
+            'description': ('An internal unique identifier specific '
+                            'to a given repository.'),
+        },
+        'doi': {
+            'type': 'string',
+            'description': 'A unique Digital Object Identifier'
+        },
+        'name': {
+            'type': 'string'
+        },
+        'repository': {
+            'type': 'string',
+            'description': 'A name of the repository holding the data.'
+        },
+        'size': {
+            'type': 'integer',
+            'minimum': 0,
+            'description': 'The total size of the dataset in bytes.'
+        }
+    },
+    'required': ['dataId', 'repository']
+}
+
+tagsSchema = {
+    'title': 'tags',
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'description': 'A schema for recipe/image tags',
+    'type': 'array',
+    'items': {
+        'type': 'string'
+    }
+}
+
+containerConfigSchema = {
+    'title': 'containerConfig',
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'description': 'A subset of docker runtime configuration used for Tales',
+    'type': 'object',
+    'properties': {
+        'port': {
+            'type': 'integer',
+        },
+        'command': {
+            'type': 'string',
+        },
+        'cpuShares': {
+            'type': 'string',
+        },
+        'memLimit': {
+            'type': 'string',
+        },
+        'user': {
+            'type': 'string',
+        },
+    }
+}
+
+containerInfoSchema = {
+    'title': 'containerInfo',
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'description': 'A subset of docker info parameters used by Tales',
+    'type': 'object',
+    'properties': {
+        'created': {
+            'type': 'string',
+            'format': 'date-time',
+        },
+        'containerId': {
+            'type': 'string',
+        },
+        'mountPoint': {
+            'type': 'string',
+        },
+    },
+    'required': ['containerId', 'mountPoint'],
+}
+
 
 class HarvesterType:
     """
