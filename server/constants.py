@@ -38,6 +38,13 @@ dataMapSchema = {
     'required': ['dataId', 'repository']
 }
 
+dataMapListSchema = {
+    'title': 'list of dataMaps',
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'type': 'array',
+    'items': dataMapSchema,
+}
+
 tagsSchema = {
     'title': 'tags',
     '$schema': 'http://json-schema.org/draft-04/schema#',
