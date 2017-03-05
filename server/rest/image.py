@@ -143,9 +143,10 @@ class Image(Resource):
     )
     def listImages(self, parentId, text, tag, limit, offset, sort, params):
         user = self.getCurrentUser()
+        imageModel = self.model('image', 'ythub')
 
         if parentId:
-            parent = self.model('image', 'ythub').load(
+            parent = imageModel.load(
                 parentId, user=user, level=AccessType.READ, exc=True)
 
             filters = {}
@@ -156,16 +157,17 @@ class Image(Resource):
             if tag:
                 print('Do filtering by tag when I figure it out')
 
-            return list(self.model('image', 'ythub').childImages(
+            return list(imageModel.childImages(
                 parent=parent, user=user,
                 offset=offset, limit=limit, sort=sort, filters=filters))
         elif text:
-            return list(self.model('image', 'ythub').textSearch(
+            return list(imageModel.textSearch(
                 text, user=user, limit=limit, offset=offset, sort=sort))
         elif tag:
             raise RestException('Can filter by tag. yet...')
         else:
-            raise RestException('Invalid search mode.')
+            return list(imageModel.list(user=user, offset=offset, limit=limit,
+                                        sort=sort))
 
     @access.public(scope=TokenScope.DATA_READ)
     @filtermodel(model='image', plugin='ythub')
