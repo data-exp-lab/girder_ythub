@@ -125,7 +125,7 @@ def process_package(parent, parentType, progress, user, pid, name=None):
 
     gc_folder = ModelImporter.model('folder').createFolder(
         parent, name, description='',
-        parentType=parentType, reuseExisting=True)
+        parentType=parentType, creator=user, reuseExisting=True)
 
     fileModel = ModelImporter.model('file')
     for fileObj in data:
