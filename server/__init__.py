@@ -21,7 +21,7 @@ from .constants import PluginSettings
 from .rest.recipe import Recipe
 from .rest.image import Image
 from .rest.repository import Repository
-from .rest.harvester import importData
+from .rest.harvester import importData, listImportedData
 from .rest.search import DatasetSearchEngine
 from .rest.tale import Tale
 from .rest.instance import Instance
@@ -318,6 +318,7 @@ def load(info):
     info['apiRoot'].repository = Repository()
     info['apiRoot'].search = DatasetSearchEngine()
     info['apiRoot'].folder.route('POST', ('register',), importData)
+    info['apiRoot'].folder.route('GET', ('registered',), listImportedData)
     info['apiRoot'].folder.route('GET', (':id', 'contents'),
                                  getFolderFilesMapping)
     info['apiRoot'].item.route('GET', (':id', 'contents'), getItemFilesMapping)

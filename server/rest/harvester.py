@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
-from girder.api.rest import boundHandler, RestException
+from girder.api.rest import boundHandler, RestException, filtermodel
 from girder.constants import AccessType, TokenScope
 from girder.utility.model_importer import ModelImporter
 from girder.utility.progress import ProgressContext
@@ -126,6 +126,9 @@ def process_package(parent, parentType, progress, user, pid, name=None):
     gc_folder = ModelImporter.model('folder').createFolder(
         parent, name, description='',
         parentType=parentType, creator=user, reuseExisting=True)
+    gc_folder = ModelImporter.model('folder').setMetadata(
+        gc_folder, {'identifier': primary_metadata[0]['identifier'],
+                    'provider': 'DataONE'})
 
     fileModel = ModelImporter.model('file')
     for fileObj in data:
@@ -147,3 +150,15 @@ def process_package(parent, parentType, progress, user, pid, name=None):
             process_package(gc_folder, 'folder', progress, user,
                             child['identifier'])
     return gc_folder
+
+
+@access.user(scope=TokenScope.DATA_READ)
+@filtermodel(model='folder')
+@autoDescribeRoute(
+    Description('List all folders containing references to an external data')
+    .errorResponse('Write access denied for parent collection.', 403)
+)
+@boundHandler()
+def listImportedData(self, params):
+    q = {'meta.provider': {'$exists': 1}}
+    return list(ModelImporter.model('folder').find(query=q))
