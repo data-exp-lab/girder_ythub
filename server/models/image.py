@@ -9,7 +9,10 @@ from girder.constants import AccessType
 
 from ..constants import ImageStatus
 
+
 _GIT_REPO_REGEX = re.compile('(\w+://)(.+@)*([\w\d\.]+)(:[\d]+){0,1}/*(.*)')
+_DEFAULT_ICON = ('https://github.com/whole-tale/dashboard/blob/d1914c9'
+                 '/public/images/whole_tale_logo.png')
 
 
 class Image(AccessControlledModel):
@@ -27,8 +30,9 @@ class Image(AccessControlledModel):
         self.exposeFields(
             level=AccessType.READ,
             fields={'_id', 'config', 'created', 'creatorId', 'description',
-                    'digest', 'fullName', 'name', 'recipeId', 'status',
-                    'updated', 'name', 'parentId', 'public', 'tags'})
+                    'digest', 'fullName', 'icon',  'name', 'recipeId',
+                    'status', 'updated', 'name', 'parentId', 'public', 'tags'}
+        )
 
     def validate(self, image):
         if image is None:
@@ -37,7 +41,7 @@ class Image(AccessControlledModel):
 
     def createImage(self, recipe, fullName, name=None, tags=None,
                     creator=None, save=True, parent=None, description=None,
-                    public=None, config=None):
+                    public=None, config=None, icon=None):
 
         # TODO: check for existing image based on fullName
 
@@ -68,6 +72,7 @@ class Image(AccessControlledModel):
             'description': description,
             'fullName': fullName,
             'digest': None,
+            'icon': icon or _DEFAULT_ICON,
             'name': name,
             'parentId': parentId,
             'public': public,
@@ -96,6 +101,7 @@ class Image(AccessControlledModel):
         return self.save(image)
 
     def buildImage(self, image):
+        # TODO: create and schedule a job that will b
         image['status'] = ImageStatus.BUILDING
         return self.save(image)
 
@@ -115,4 +121,4 @@ class Image(AccessControlledModel):
             recipe, image['fullName'], name=image['name'],
             tags=['latest'], creator=creator, save=True, parent=image,
             description=image['description'], public=image['public'],
-            config=image['config'])
+            config=image['config'], icon=image.get('icon', _DEFAULT_ICON))

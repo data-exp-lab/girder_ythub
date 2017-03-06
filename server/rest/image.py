@@ -39,6 +39,10 @@ imageModel = {
         "config": {
             "$ref": "#/definitions/containerConfig"
         },
+        "icon": {
+            "type": "string",
+            "description": "A URL with an image icon"
+        },
         "imageId": {
             "type": "string",
             "description": "A image used to build the image."
@@ -192,6 +196,8 @@ class Image(Resource):
         .param('public', 'Whether the image should be publicly visible.'
                ' Defaults to True.', dataType='boolean', required=False,
                default=True)
+        .param('icon', 'An icon representing the content of the image.',
+               required=False)
         .jsonParam('tags', 'A human readable labels for the image.',
                    required=False, schema=tagsSchema)
         .responseClass('image')
@@ -199,13 +205,15 @@ class Image(Resource):
         .errorResponse('Read/write access was denied for the image.', 403)
         .errorResponse('Tag already exists.', 409)
     )
-    def updateImage(self, image, name, description, public, tags, params):
+    def updateImage(self, image, name, description, public, icon, tags, params):
         if name is not None:
             image['name'] = name
         if description is not None:
             image['description'] = description
         if tags is not None:
             image['tags'] = tags
+        if icon is not None:
+            image['icon'] = icon
         # TODO: tags magic
         self.model('image', 'ythub').setPublic(image, public)
         return self.model('image', 'ythub').updateImage(image)
@@ -234,6 +242,8 @@ class Image(Resource):
                required=False)
         .param('public', 'Whether the image should be publicly visible.'
                ' Defaults to True.', dataType='boolean', required=False)
+        .param('icon', 'An icon representing the content of the image.',
+               required=False)
         .jsonParam('tags', 'A human readable labels for the image.',
                    required=False, schema=tagsSchema)
         .jsonParam('config', 'Default image runtime configuration',
@@ -241,15 +251,15 @@ class Image(Resource):
         .responseClass('image')
         .errorResponse('Query parameter was invalid')
     )
-    def createImage(self, recipeId, fullName, name, description, public, tags,
-                    config, params):
+    def createImage(self, recipeId, fullName, name, description, public, icon,
+                    tags, config, params):
         user = self.getCurrentUser()
         recipe = self.model('recipe', 'ythub').load(
             recipeId, user=user, level=AccessType.READ, exc=True)
         return self.model('image', 'ythub').createImage(
             recipe, fullName, name=name, tags=tags, creator=user,
             save=True, parent=None, description=description, public=public,
-            config=config)
+            config=config, icon=icon)
 
     @access.admin
     @autoDescribeRoute(
