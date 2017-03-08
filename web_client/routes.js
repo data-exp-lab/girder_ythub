@@ -2,10 +2,10 @@ import router from 'girder/router';
 import events from 'girder/events';
 import { exposePluginConfig } from 'girder/utilities/PluginUtils';
 
-exposePluginConfig('ythub', 'plugins/ythub/config');
+exposePluginConfig('wholetale', 'plugins/wholetale/config');
 
 import ConfigView from './views/ConfigView';
-router.route('plugins/ythub/config', 'ythubConfig', function () {
+router.route('plugins/wholetale/config', 'wholetaleConfig', function () {
     events.trigger('g:navigateTo', ConfigView);
 });
 

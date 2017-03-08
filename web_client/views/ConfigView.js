@@ -10,33 +10,33 @@ import '../stylesheets/configView.styl';
 
 var ConfigView = View.extend({
     events: {
-        'submit #g-ythub-config-form': function (event) {
+        'submit #g-wholetale-config-form': function (event) {
             event.preventDefault();
-            this.$('#g-ythub-error-message').empty();
+            this.$('#g-wholetale-error-message').empty();
 
             this._saveSettings([{
-                key: 'ythub.tmpnb_url',
-                value: this.$('#ythub_tmpnb').val().trim()
+                key: 'wholetale.tmpnb_url',
+                value: this.$('#wholetale_tmpnb').val().trim()
             }, {
-                key: 'ythub.culling_period',
-                value: this.$('#ythub_culling').val().trim()
+                key: 'wholetale.culling_period',
+                value: this.$('#wholetale_culling').val().trim()
             }, {
-                key: 'ythub.priv_key',
-                value: this.$('#ythub_priv_key').val()
+                key: 'wholetale.priv_key',
+                value: this.$('#wholetale_priv_key').val()
             }, {
-                key: 'ythub.pub_key',
-                value: this.$('#ythub_pub_key').val()
+                key: 'wholetale.pub_key',
+                value: this.$('#wholetale_pub_key').val()
             }]);
         },
         'click .g-generate-key': function (event) {
             event.preventDefault();
             restRequest({
                type: 'POST',
-               path: 'ythub/genkey',
+               path: 'wholetale/genkey',
                data: {}
             }).done(_.bind(function (resp) {
-               this.$('#ythub_priv_key').val(resp['ythub.priv_key']);
-               this.$('#ythub_pub_key').val(resp['ythub.pub_key']);
+               this.$('#wholetale_priv_key').val(resp['wholetale.priv_key']);
+               this.$('#wholetale_pub_key').val(resp['wholetale.pub_key']);
             }, this));
         }
     },
@@ -46,18 +46,18 @@ var ConfigView = View.extend({
             path: 'system/setting',
             data: {
                 list: JSON.stringify([
-                    'ythub.tmpnb_url',
-                    'ythub.culling_period',
-                    'ythub.priv_key',
-                    'ythub.pub_key'
+                    'wholetale.tmpnb_url',
+                    'wholetale.culling_period',
+                    'wholetale.priv_key',
+                    'wholetale.pub_key'
                 ])
             }
         }).done(_.bind(function (resp) {
             this.render();
-            this.$('#ythub_tmpnb').val(resp['ythub.tmpnb_url']);
-            this.$('#ythub_culling').val(resp['ythub.culling_period']);
-            this.$('#ythub_priv_key').val(resp['ythub.priv_key']);
-            this.$('#ythub_pub_key').val(resp['ythub.pub_key']);
+            this.$('#wholetale_tmpnb').val(resp['wholetale.tmpnb_url']);
+            this.$('#wholetale_culling').val(resp['wholetale.culling_period']);
+            this.$('#wholetale_priv_key').val(resp['wholetale.priv_key']);
+            this.$('#wholetale_pub_key').val(resp['wholetale.pub_key']);
         }, this));
     },
 
@@ -66,7 +66,7 @@ var ConfigView = View.extend({
 
         if (!this.breadcrumb) {
             this.breadcrumb = new PluginConfigBreadcrumbWidget({
-                pluginName: 'ytHub',
+                pluginName: 'WholeTale',
                 el: this.$('.g-config-breadcrumb-container'),
                 parentView: this
             }).render();
@@ -91,7 +91,7 @@ var ConfigView = View.extend({
                 timeout: 4000
             });
         }, this)).error(_.bind(function (resp) {
-            this.$('#g-ythub-error-message').text(
+            this.$('#g-wholetale-error-message').text(
                 resp.responseJSON.message);
         }, this));
     }

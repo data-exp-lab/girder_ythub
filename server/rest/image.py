@@ -133,7 +133,7 @@ class Image(Resource):
         self.route('POST', (':id', 'copy'), self.copyImage)
 
     @access.public
-    @filtermodel(model='image', plugin='ythub')
+    @filtermodel(model='image', plugin='wholetale')
     @autoDescribeRoute(
         Description(('Returns all images from the system '
                      'that user has access to'))
@@ -147,7 +147,7 @@ class Image(Resource):
     )
     def listImages(self, parentId, text, tag, limit, offset, sort, params):
         user = self.getCurrentUser()
-        imageModel = self.model('image', 'ythub')
+        imageModel = self.model('image', 'wholetale')
 
         if parentId:
             parent = imageModel.load(
@@ -174,10 +174,10 @@ class Image(Resource):
                                         sort=sort))
 
     @access.public(scope=TokenScope.DATA_READ)
-    @filtermodel(model='image', plugin='ythub')
+    @filtermodel(model='image', plugin='wholetale')
     @autoDescribeRoute(
         Description('Get a image by ID.')
-        .modelParam('id', model='image', plugin='ythub', level=AccessType.READ)
+        .modelParam('id', model='image', plugin='wholetale', level=AccessType.READ)
         .responseClass('image')
         .errorResponse('ID was invalid.')
         .errorResponse('Read access was denied for the image.', 403)
@@ -188,7 +188,7 @@ class Image(Resource):
     @access.user
     @autoDescribeRoute(
         Description('Update an existing image.')
-        .modelParam('id', model='image', plugin='ythub', level=AccessType.WRITE,
+        .modelParam('id', model='image', plugin='wholetale', level=AccessType.WRITE,
                     description='The ID of the image.')
         .param('name', 'A name of the image.', required=False)
         .param('description', 'A description of the image.',
@@ -215,22 +215,22 @@ class Image(Resource):
         if icon is not None:
             image['icon'] = icon
         # TODO: tags magic
-        self.model('image', 'ythub').setPublic(image, public)
-        return self.model('image', 'ythub').updateImage(image)
+        self.model('image', 'wholetale').setPublic(image, public)
+        return self.model('image', 'wholetale').updateImage(image)
 
     @access.admin
     @autoDescribeRoute(
         Description('Delete an existing image.')
-        .modelParam('id', model='image', plugin='ythub', level=AccessType.WRITE,
+        .modelParam('id', model='image', plugin='wholetale', level=AccessType.WRITE,
                     description='The ID of the image.')
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the image.', 403)
     )
     def deleteImage(self, image, params):
-        self.model('image', 'ythub').remove(image)
+        self.model('image', 'wholetale').remove(image)
 
     @access.user
-    @filtermodel(model='image', plugin='ythub')
+    @filtermodel(model='image', plugin='wholetale')
     @autoDescribeRoute(
         Description('Create a new image.')
         .param('recipeId', 'The ID of a recipe used to build the image',
@@ -254,9 +254,9 @@ class Image(Resource):
     def createImage(self, recipeId, fullName, name, description, public, icon,
                     tags, config, params):
         user = self.getCurrentUser()
-        recipe = self.model('recipe', 'ythub').load(
+        recipe = self.model('recipe', 'wholetale').load(
             recipeId, user=user, level=AccessType.READ, exc=True)
-        return self.model('image', 'ythub').createImage(
+        return self.model('image', 'wholetale').createImage(
             recipe, fullName, name=name, tags=tags, creator=user,
             save=True, parent=None, description=description, public=public,
             config=config, icon=icon)
@@ -264,24 +264,24 @@ class Image(Resource):
     @access.admin
     @autoDescribeRoute(
         Description('Build an existing image')
-        .modelParam('id', model='image', plugin='ythub', level=AccessType.WRITE,
+        .modelParam('id', model='image', plugin='wholetale', level=AccessType.WRITE,
                     description='The ID of the image.')
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the image.', 403)
     )
     def buildImage(self, image, params):
-        return self.model('image', 'ythub').buildImage(image)
+        return self.model('image', 'wholetale').buildImage(image)
 
     @access.admin
     @autoDescribeRoute(
         Description('Update/verify the status of the image')
-        .modelParam('id', model='image', plugin='ythub', level=AccessType.WRITE,
+        .modelParam('id', model='image', plugin='wholetale', level=AccessType.WRITE,
                     description='The ID of the image.')
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the image.', 403)
     )
     def checkImage(self, image, params):
-        return self.model('image', 'ythub').checkImage(image)
+        return self.model('image', 'wholetale').checkImage(image)
 
     @access.user
     @autoDescribeRoute(
@@ -289,12 +289,12 @@ class Image(Resource):
         .notes('Create a copy of an image preserving original fullName. '
                'Operation will only succeed if the new recipe is '
                'a descendant of the recipe used by the original image.')
-        .modelParam('id', model='image', plugin='ythub', level=AccessType.READ,
+        .modelParam('id', model='image', plugin='wholetale', level=AccessType.READ,
                     description='The ID of the image.')
         .param('recipeId', 'The ID of the new recipe', required=True)
     )
     def copyImage(self, image, recipeId, params):
         user = self.getCurrentUser()
-        recipe = self.model('recipe', 'ythub').load(
+        recipe = self.model('recipe', 'wholetale').load(
             recipeId, user=user, level=AccessType.READ, exc=True)
-        return self.model('image', 'ythub').copyImage(image, recipe, creator=user)
+        return self.model('image', 'wholetale').copyImage(image, recipe, creator=user)

@@ -108,10 +108,10 @@ class HarvesterType:
 
 
 class PluginSettings:
-    CULLING_PERIOD = 'ythub.culling_period'
-    TMPNB_URL = 'ythub.tmpnb_url'
-    HUB_PRIV_KEY = 'ythub.priv_key'
-    HUB_PUB_KEY = 'ythub.pub_key'
+    CULLING_PERIOD = 'wholetale.culling_period'
+    TMPNB_URL = 'wholetale.tmpnb_url'
+    HUB_PRIV_KEY = 'wholetale.priv_key'
+    HUB_PUB_KEY = 'wholetale.pub_key'
 
 
 # Constants representing the setting keys for this plugin
@@ -144,7 +144,7 @@ class ImageStatus(object):
 
     @staticmethod
     def isValid(status):
-        event = events.trigger('ythub.image.status.validate', info=status)
+        event = events.trigger('wholetale.image.status.validate', info=status)
 
         if event.defaultPrevented and len(event.responses):
             return event.responses[-1]

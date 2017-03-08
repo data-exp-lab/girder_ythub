@@ -32,7 +32,7 @@ class Instance(AccessControlledModel):
         self.exposeFields(
             level=AccessType.WRITE,
             fields={'containerInfo', 'lastActivity', 'status', 'url'})
-        events.bind('model.user.save.created', 'ythub',
+        events.bind('model.user.save.created', 'wholetale',
                     self._addDefaultFolders)
 
     def validate(self, instance):

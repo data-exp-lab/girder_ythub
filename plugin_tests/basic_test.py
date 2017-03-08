@@ -27,7 +27,7 @@ def mocked_requests_post(*args, **kwargs):
 
 
 def setUpModule():
-    base.enabledPlugins.append('ythub')
+    base.enabledPlugins.append('wholetale')
     base.startServer()
 
 
@@ -39,7 +39,7 @@ class AssetFolderTestCase(base.TestCase):
 
     def setUp(self):
         global PluginSettings
-        from girder.plugins.ythub.constants import PluginSettings
+        from girder.plugins.wholetale.constants import PluginSettings
         self.model('setting').set(
             PluginSettings.TMPNB_URL, "https://tmpnb.null")
         self.token = 'token'
@@ -81,7 +81,7 @@ class AssetFolderTestCase(base.TestCase):
             return json.dumps({'url': '/arglebargle'})
 
         with httmock.HTTMock(mockTmpnbHubPost, self.mockOtherRequest):
-            notebook = self.model('notebook', 'ythub').createNotebook(
+            notebook = self.model('notebook', 'wholetale').createNotebook(
                 self.testFolder, self.testUser, {'_id': self.token})
         self.assertEqual(notebook['url'], '/arglebargle')
         self.assertEqual(notebook['folderId'], self.testFolder['_id'])
@@ -107,9 +107,9 @@ class AssetFolderTestCase(base.TestCase):
             return json.dumps({'url': '/arglebargle'})
 
         with httmock.HTTMock(mockTmpnbHubDelete, self.mockOtherRequest):
-            self.model('notebook', 'ythub').deleteNotebook(
+            self.model('notebook', 'wholetale').deleteNotebook(
                 notebook, {'_id': self.token})
-        self.model('notebook', 'ythub').remove(notebook)
+        self.model('notebook', 'wholetale').remove(notebook)
 
     def tearDown(self):
         self.model('folder').remove(self.testFolder)

@@ -25,7 +25,7 @@ from .rest.harvester import importData, listImportedData
 from .rest.search import DatasetSearchEngine
 from .rest.tale import Tale
 from .rest.instance import Instance
-from .rest.ythub import ytHub
+from .rest.wholetale import wholeTale
 
 
 _last_culling = datetime.datetime.utcnow()
@@ -251,7 +251,7 @@ def cullInstances(event):
     global _last_culling
     culling_freq = datetime.timedelta(minutes=1)
     if datetime.datetime.utcnow() - culling_freq > _last_culling:
-        ModelImporter.model('instance', 'ythub').cullInstances()
+        ModelImporter.model('instance', 'wholetale').cullInstances()
         _last_culling = datetime.datetime.utcnow()
 
 
@@ -307,10 +307,10 @@ def setUserMetadata(self, params):
 
 
 def load(info):
-    events.bind('filesystem_assetstore_imported', 'ythub',
+    events.bind('filesystem_assetstore_imported', 'wholetale',
                 saveImportPathToMeta)
-    events.bind('heartbeat', 'ythub', cullInstances)
-    info['apiRoot'].ythub = ytHub()
+    events.bind('heartbeat', 'wholetale', cullInstances)
+    info['apiRoot'].wholetale = wholeTale()
     info['apiRoot'].instance = Instance()
     info['apiRoot'].tale = Tale()
     info['apiRoot'].recipe = Recipe()

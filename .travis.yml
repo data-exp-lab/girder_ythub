@@ -20,7 +20,7 @@ before_install:
     - cd cmake-*/bin && export PATH="${PWD}:${PATH}"
     - ln -s "${HOME}/girder/.eslintrc" "${TRAVIS_BUILD_DIR}/../.."
     - cd "${HOME}/girder/plugins"
-    - ln -s "${TRAVIS_BUILD_DIR}" ythub
+    - ln -s "${TRAVIS_BUILD_DIR}" wholetale
 install:
     - cd "${HOME}/girder"
     - pip install -e .
@@ -29,5 +29,5 @@ install:
 script:
     - mkdir _build
     - cd _build
-    - cmake -DRUN_CORE_TESTS:BOOL=OFF -DBUILD_JAVASCRIPT_TESTS:BOOL=OFF -DTEST_PLUGINS:STRING=ythub -DPYTHON_COVERAGE:BOOL=ON -DCOVERAGE_MINIMUM_PASS:STRING=4 -DPYTHON_VERSION:STRING=${TRAVIS_PYTHON_VERSION} "${HOME}/girder"
+    - cmake -DRUN_CORE_TESTS:BOOL=OFF -DBUILD_JAVASCRIPT_TESTS:BOOL=OFF -DTEST_PLUGINS:STRING=wholetale -DPYTHON_COVERAGE:BOOL=ON -DCOVERAGE_MINIMUM_PASS:STRING=4 -DPYTHON_VERSION:STRING=${TRAVIS_PYTHON_VERSION} "${HOME}/girder"
     - ctest -V -j3

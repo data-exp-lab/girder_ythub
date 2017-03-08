@@ -90,7 +90,7 @@ class Recipe(Resource):
         self.route('DELETE', (':id',), self.deleteRecipe)
 
     @access.public
-    @filtermodel(model='recipe', plugin='ythub')
+    @filtermodel(model='recipe', plugin='wholetale')
     @autoDescribeRoute(
         Description(('Returns all recipes from the system '
                     'that user has access to'))
@@ -106,7 +106,7 @@ class Recipe(Resource):
         user = self.getCurrentUser()
 
         if parentId:
-            parent = self.model('recipe', 'ythub').load(
+            parent = self.model('recipe', 'wholetale').load(
                 parentId, user=user, level=AccessType.READ, exc=True)
 
             filters = {}
@@ -117,11 +117,11 @@ class Recipe(Resource):
             if tag:
                 print('Do filtering by tag when I figure it out')
 
-            return list(self.model('recipe', 'ythub').childRecipes(
+            return list(self.model('recipe', 'wholetale').childRecipes(
                 parent=parent, user=user,
                 offset=offset, limit=limit, sort=sort, filters=filters))
         elif text:
-            return list(self.model('recipe', 'ythub').textSearch(
+            return list(self.model('recipe', 'wholetale').textSearch(
                 text, user=user, limit=limit, offset=offset, sort=sort))
         elif tag:
             raise RestException('Can filter by tag. yet...')
@@ -129,10 +129,10 @@ class Recipe(Resource):
             raise RestException('Invalid search mode.')
 
     @access.public(scope=TokenScope.DATA_READ)
-    @filtermodel(model='recipe', plugin='ythub')
+    @filtermodel(model='recipe', plugin='wholetale')
     @autoDescribeRoute(
         Description('Get a recipe by ID.')
-        .modelParam('id', model='recipe', plugin='ythub', level=AccessType.READ)
+        .modelParam('id', model='recipe', plugin='wholetale', level=AccessType.READ)
         .responseClass('recipe')
         .errorResponse('ID was invalid.')
         .errorResponse('Read access was denied for the recipe.', 403)
@@ -143,7 +143,7 @@ class Recipe(Resource):
     @access.user
     @autoDescribeRoute(
         Description('Update an existing recipe.')
-        .modelParam('id', model='recipe', plugin='ythub', level=AccessType.WRITE,
+        .modelParam('id', model='recipe', plugin='wholetale', level=AccessType.WRITE,
                     description='The ID of the recipe.')
         .param('name', 'A name of the recipe.', required=False)
         .param('description', 'A description of the recipe.',
@@ -166,22 +166,22 @@ class Recipe(Resource):
         if tags is not None:
             recipe['tags'] = tags
         # TODO: tags magic
-        self.model('recipe', 'ythub').setPublic(recipe, public)
-        return self.model('recipe', 'ythub').updateRecipe(recipe)
+        self.model('recipe', 'wholetale').setPublic(recipe, public)
+        return self.model('recipe', 'wholetale').updateRecipe(recipe)
 
     @access.admin
     @autoDescribeRoute(
         Description('Delete an existing recipe.')
-        .modelParam('id', model='recipe', plugin='ythub', level=AccessType.WRITE,
+        .modelParam('id', model='recipe', plugin='wholetale', level=AccessType.WRITE,
                     description='The ID of the recipe.')
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the recipe.', 403)
     )
     def deleteRecipe(self, recipe, params):
-        self.model('recipe', 'ythub').remove(recipe)
+        self.model('recipe', 'wholetale').remove(recipe)
 
     @access.user
-    @filtermodel(model='recipe', plugin='ythub')
+    @filtermodel(model='recipe', plugin='wholetale')
     @autoDescribeRoute(
         Description('Create a new recipe.')
         .param('url', 'A URL of an external vcs repository containing '
@@ -201,6 +201,6 @@ class Recipe(Resource):
     )
     def createRecipe(self, url, commitId, name, description, public, tags, params):
         user = self.getCurrentUser()
-        return self.model('recipe', 'ythub').createRecipe(
+        return self.model('recipe', 'wholetale').createRecipe(
             commitId, url, name=name, tags=tags, creator=user,
             save=True, parent=None, description=description, public=public)

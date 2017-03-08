@@ -94,7 +94,7 @@ class Tale(Resource):
         self.route('DELETE', (':id',), self.deleteTale)
 
     @access.public
-    @filtermodel(model='tale', plugin='ythub')
+    @filtermodel(model='tale', plugin='wholetale')
     @autoDescribeRoute(
         Description('Return all the tales accessible to the user')
         .param('imageId', "The ID of the tale's image.", required=False)
@@ -108,7 +108,7 @@ class Tale(Resource):
     def listTales(self, imageId, folderId, text, limit, offset, sort, params):
         user = self.getCurrentUser()
         if imageId:
-            image = self.model('image', 'ythub').load(
+            image = self.model('image', 'wholetale').load(
                 imageId, user=user, level=AccessType.READ, exc=True)
         else:
             image = None
@@ -120,18 +120,18 @@ class Tale(Resource):
             folder = None
 
         if text:
-            return list(self.model('tale', 'ythub').textSearch(
+            return list(self.model('tale', 'wholetale').textSearch(
                 text, user=user, limit=limit, offset=offset, sort=sort))
         else:
-            return list(self.model('tale', 'ythub').list(
+            return list(self.model('tale', 'wholetale').list(
                 user=user, folder=folder, image=image, currentUser=user,
                 offset=offset, limit=limit, sort=sort))
 
     @access.public
-    @filtermodel(model='tale', plugin='ythub')
+    @filtermodel(model='tale', plugin='wholetale')
     @autoDescribeRoute(
         Description('Get a tale by ID.')
-        .modelParam('id', model='tale', plugin='ythub', level=AccessType.READ)
+        .modelParam('id', model='tale', plugin='wholetale', level=AccessType.READ)
         .responseClass('tale')
         .errorResponse('ID was invalid.')
         .errorResponse('Read access was denied for the tale.', 403)
@@ -142,7 +142,7 @@ class Tale(Resource):
     @access.user
     @autoDescribeRoute(
         Description('Update an existing tale.')
-        .modelParam('id', model='tale', plugin='ythub', level=AccessType.WRITE)
+        .modelParam('id', model='tale', plugin='wholetale', level=AccessType.WRITE)
         .param('name', 'A name of the tale.', required=False)
         .param('description', 'A description of the tale', required=False)
         .param('public', 'Whether the tale should be publicly visible.',
@@ -157,7 +157,7 @@ class Tale(Resource):
         .errorResponse('Admin access was denied for the tale.', 403)
     )
     def updateTale(self, tale, name, description, public, published, config, params):
-        taleModel = self.model('tale', 'ythub')
+        taleModel = self.model('tale', 'wholetale')
         if description:
             tale['description'] = description
         if name:
@@ -173,12 +173,12 @@ class Tale(Resource):
     @access.admin
     @autoDescribeRoute(
         Description('Delete an existing tale.')
-        .modelParam('id', model='tale', plugin='ythub', level=AccessType.ADMIN)
+        .modelParam('id', model='tale', plugin='wholetale', level=AccessType.ADMIN)
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the tale.', 403)
     )
     def deleteTale(self, tale, params):
-        self.model('tale', 'ythub').remove(tale)
+        self.model('tale', 'wholetale').remove(tale)
 
     @access.user
     @autoDescribeRoute(
@@ -211,11 +211,11 @@ class Tale(Resource):
             # create a tale
             raise RestException('Not implemented yet')
         elif all((imageId, folderId)):
-            image = self.model('image', 'ythub').load(
+            image = self.model('image', 'wholetale').load(
                 imageId, user=user, level=AccessType.READ, exc=True)
             folder = self.model('folder').load(
                 folderId, user=user, level=AccessType.READ, exc=True)
-            return self.model('tale', 'ythub').createTale(
+            return self.model('tale', 'wholetale').createTale(
                 image, folder, creator=user, save=True, name=name,
                 description=description, public=public, config=config,
                 published=False)

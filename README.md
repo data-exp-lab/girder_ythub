@@ -1,2 +1,2 @@
-# girder_ythub
+# girder_wholetale
 Girder plugin enabling intergration with tmpnb

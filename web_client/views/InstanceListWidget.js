@@ -72,7 +72,7 @@ var InstanceListWidget = View.extend({
     render: function () {
         var widget = this;
 
-        restRequest({path: 'ythub'}).done(function (resp) {
+        restRequest({path: 'wholetale'}).done(function (resp) {
             widget.$el.html(InstanceListWidgetTemplate({
                 instances: widget.collection.toArray(),
                 showHeader: widget.showHeader,

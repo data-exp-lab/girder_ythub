@@ -5,8 +5,8 @@ import FrontendSelectorWidget from './widgets/FrontendSelectorWidget';
 import { restRequest } from 'girder/rest';
 import { wrap } from 'girder/utilities/PluginUtils';
 import { getCurrentUser } from 'girder/auth';
-import ytHubHierarchyWidget from '../templates/ytHubHierarchyWidget.pug';
-import ytHubFolderMenu from '../templates/ytHubFolderMenu.pug';
+import WholeTaleHierarchyWidget from '../templates/WholeTaleHierarchyWidget.pug';
+import WholeTaleFolderMenu from '../templates/WholeTaleFolderMenu.pug';
 
 
 wrap(HierarchyWidget, 'render', function (render) {
@@ -26,11 +26,11 @@ wrap(HierarchyWidget, 'render', function (render) {
             // Call the underlying render function that we are wrapping
             render.call(widget);
             if (instances.length < 1) {
-                $(ytHubFolderMenu({
+                $(WholeTaleFolderMenu({
                     goUrl: '/dev/null',
                     delUrl: '0',
                 })).appendTo(widget.$('.g-folder-actions-menu'));
-                $(ytHubHierarchyWidget()).prependTo(widget.$('.g-folder-header-buttons'));
+                $(WholeTaleHierarchyWidget()).prependTo(widget.$('.g-folder-header-buttons'));
                 document.getElementById("go_nb").style.display = "none";
                 document.getElementById("stop_nb").style.display = "none";
                 document.getElementById("start_nb").style.display = "list-item";
@@ -39,11 +39,11 @@ wrap(HierarchyWidget, 'render', function (render) {
                 document.getElementsByClassName("g-stopnb-button")[0].style.display = "none";
             } else {
                 var instance = instances[0];
-                $(ytHubFolderMenu({
+                $(WholeTaleFolderMenu({
                     goUrl: instance.url,
                     delUrl: instance._id
                 })).appendTo(widget.$('.g-folder-actions-menu'));
-                $(ytHubHierarchyWidget()).prependTo(widget.$('.g-folder-header-buttons'));
+                $(WholeTaleHierarchyWidget()).prependTo(widget.$('.g-folder-header-buttons'));
                 document.getElementById("go_nb").style.display = "list-item";
                 document.getElementById("stop_nb").style.display = "list-item";
                 document.getElementById("start_nb").style.display = "none";
@@ -67,7 +67,7 @@ function _visit_nb (e) {
         }
     }).done(_.bind(function (resp) {
        var nb_url = resp[0]['containerPath'];
-       restRequest({path: 'ythub'}).done(function (resp) {
+       restRequest({path: 'wholetale'}).done(function (resp) {
            window.location.assign(resp["url"] + nb_url);
        });
     }, this));

@@ -64,7 +64,7 @@ class Instance(Resource):
         self.route('DELETE', (':id',), self.deleteInstance)
 
     @access.user
-    @filtermodel(model='instance', plugin='ythub')
+    @filtermodel(model='instance', plugin='wholetale')
     @autoDescribeRoute(
         Description('Return all the running instances accessible by the user')
         .param('taleId',  'List all the instanes using this tale.', required=False)
@@ -76,19 +76,19 @@ class Instance(Resource):
     def listInstances(self, taleId, text, limit, offset, sort, params):
         user = self.getCurrentUser()
         if taleId:
-            tale = self.model('tale', 'ythub').load(
+            tale = self.model('tale', 'wholetale').load(
                 taleId, user=user, level=AccessType.READ)
         else:
             tale = None
         # TODO allow to search for instances that belongs to specific user
-        return list(self.model('instance', 'ythub').list(
+        return list(self.model('instance', 'wholetale').list(
             user=user, tale=tale, offset=offset, limit=limit,
             sort=sort, currentUser=user))
 
     @access.user
     @autoDescribeRoute(
         Description('Get an instance by ID.')
-        .modelParam('id', model='instance', plugin='ythub', level=AccessType.READ)
+        .modelParam('id', model='instance', plugin='wholetale', level=AccessType.READ)
         .responseClass('instance')
         .errorResponse('ID was invalid.')
         .errorResponse('Read access was denied for the instance.', 403)
@@ -99,12 +99,12 @@ class Instance(Resource):
     @access.user
     @autoDescribeRoute(
         Description('Delete an existing instance.')
-        .modelParam('id', model='instance', plugin='ythub', level=AccessType.WRITE)
+        .modelParam('id', model='instance', plugin='wholetale', level=AccessType.WRITE)
         .errorResponse('ID was invalid.')
         .errorResponse('Write access was denied for the instance.', 403)
     )
     def deleteInstance(self, instance, params):
-        self.model('instance', 'ythub').deleteInstance(
+        self.model('instance', 'wholetale').deleteInstance(
             instance, self.getCurrentToken())
 
     @access.user
@@ -121,8 +121,8 @@ class Instance(Resource):
     def createInstance(self, taleId, name, params):
         user = self.getCurrentUser()
         token = self.getCurrentToken()
-        tale = self.model('tale', 'ythub').load(
+        tale = self.model('tale', 'wholetale').load(
             taleId, user=user, level=AccessType.READ)
 
-        instanceModel = self.model('instance', 'ythub')
+        instanceModel = self.model('instance', 'wholetale')
         return instanceModel.createInstance(tale, user, token, save=True)

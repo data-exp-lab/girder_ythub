@@ -8,22 +8,22 @@ from girder.api.describe import Description, describeRoute
 from girder.api.rest import Resource, loadmodel, getApiUrl
 from girder.constants import AccessType
 
-from girder.plugins.ythub.constants import PluginSettings
+from girder.plugins.wholetale.constants import PluginSettings
 
 
-class ytHub(Resource):
+class wholeTale(Resource):
 
     def __init__(self):
-        super(ytHub, self).__init__()
-        self.resourceName = 'ythub'
+        super(wholeTale, self).__init__()
+        self.resourceName = 'wholetale'
 
-        self.route('GET', (), self.get_ythub_url)
+        self.route('GET', (), self.get_wholetale_url)
         self.route('GET', (':id', 'examples'), self.generateExamples)
         self.route('POST', ('genkey',), self.generateRSAKey)
 
     @access.admin
     @describeRoute(
-        Description('Generate ythub\'s RSA key')
+        Description('Generate wholetale\'s RSA key')
     )
     def generateRSAKey(self, params):
         rsa_key = rsa.generate_private_key(
@@ -40,7 +40,7 @@ class ytHub(Resource):
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.TraditionalOpenSSL,
             encryption_algorithm=serialization.NoEncryption()
-        )
+        ).decode('utf8')
         self.model('setting').set(PluginSettings.HUB_PUB_KEY, pubkey_pem)
         self.model('setting').set(PluginSettings.HUB_PRIV_KEY, privkey_pem)
         return {PluginSettings.HUB_PUB_KEY: pubkey_pem,
@@ -50,7 +50,7 @@ class ytHub(Resource):
     @describeRoute(
         Description('Return url for tmpnb hub.')
     )
-    def get_ythub_url(self, params):
+    def get_wholetale_url(self, params):
         setting = self.model('setting')
         return {'url': setting.get(PluginSettings.TMPNB_URL),
                 'pubkey': setting.get(PluginSettings.HUB_PUB_KEY)}
