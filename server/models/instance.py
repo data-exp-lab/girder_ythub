@@ -67,14 +67,10 @@ class Instance(AccessControlledModel):
 
     def deleteInstance(self, instance, token):
         payload = {
-            'containerId': str(instance['containerId']),
-            'containerPath': str(instance['containerPath']),
-            'mountPoint': str(instance['mountPoint']),
-            'host': str(instance['host']),
-            'folderId': str(instance['folderId']),
+            'instanceId': str(instance['_id']),
             'girder_token': str(token['_id']),
         }
-        headers = {'docker-host': str(instance['host']),
+        headers = {'docker-host': str(instance['containerInfo']['host']),
                    'content-type': 'application/json'}
         requests.delete(self.model('setting').get(PluginSettings.TMPNB_URL),
                         json=payload, headers=headers)
@@ -158,9 +154,9 @@ class Instance(AccessControlledModel):
             'created': now,
             'creatorId': user['_id'],
             'lastActivity': now,
-            'containerInfo': resp['containerInfo'],
+            'containerInfo': resp,
             'status': InstanceStatus.RUNNING,   # be optimistic for now
-            'url': resp['url'],
+            'url': resp['containerPath'],
         }
 
         self.setUserAccess(instance, user=user, level=AccessType.ADMIN)
