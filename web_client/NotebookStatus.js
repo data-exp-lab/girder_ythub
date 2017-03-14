@@ -1,22 +1,24 @@
-girder.models.NotebookModel = girder.AccessControlledModel.extend({
-    resourceName: 'notebook'
-});
+import _ from 'underscore';
 
-girder.collections.NotebookCollection = girder.Collection.extend({
-    resourceName: 'notebook',
-    model: girder.models.NotebookModel
-});
 
 // The same notebook status enum as the server.
-girder.ythub_NotebookStatus = {
+var NotebookStatus = {
     _map: {},
 
     text: function (status) {
-        return this._map[status].text;
+        var text = status;
+        if (status in this._map) {
+            text = this._map[status].text;
+        }
+        return text;
     },
 
     icon: function (status) {
-        return this._map[status].icon;
+        var icon;
+        if (status in this._map) {
+            icon = this._map[status].icon;
+        }
+        return icon;
     },
 
     /**
@@ -44,7 +46,7 @@ girder.ythub_NotebookStatus = {
     }
 };
 
-girder.ythub_NotebookStatus.registerStatus({
+NotebookStatus.registerStatus({
     RUNNING: {
         value: 0,
         text: 'Running',
@@ -57,16 +59,4 @@ girder.ythub_NotebookStatus.registerStatus({
     },
 });
 
-/**
- * Add an entry to the user dropdown menu to navigate to user's job list view.
- */
-girder.wrap(girder.views.LayoutHeaderUserView, 'render', function (render) {
-    render.call(this);
-
-    if (girder.currentUser) {
-        this.$('#g-user-action-menu>ul').prepend(girder.templates.ythub_userMenu({
-            href: '#notebook/user/' + girder.currentUser.id
-        }));
-    }
-    return this;
-});
+export default NotebookStatus;

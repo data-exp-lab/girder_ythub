@@ -5,8 +5,14 @@ from girder import events
 from girder.models.notification import ProgressState
 
 
+API_VERSION = '1.1'
+
+
 class PluginSettings:
+    CULLING_PERIOD = 'ythub.culling_period'
     TMPNB_URL = 'ythub.tmpnb_url'
+    HUB_PRIV_KEY = 'ythub.priv_key'
+    HUB_PUB_KEY = 'ythub.pub_key'
 
 
 # Constants representing the setting keys for this plugin

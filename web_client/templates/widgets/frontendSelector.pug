@@ -1,0 +1,24 @@
+.modal-dialog
+  .modal-content
+    .modal-header
+      button.close(data-dismiss="modal", aria-hidden="true") &times;
+      h4.modal-title Choose frontend
+      .g-dialog-subtitle
+        i.icon-doc-inv
+        span= folder.name()
+    table.g-frontends-list-table
+      thead
+        tr
+          th Image Name
+          th Image Description
+      tbody
+        each frontend in frontends
+          tr(frontendId=frontend.id folderId=folder.id)
+            td
+              i.icon-cog
+              span= frontend.get('imageName')
+            td
+              span= frontend.get('description')
+
+    .modal-footer
+      button.g-run-frontend.btn.btn-small.btn-primary #[i.icon-play] Run 

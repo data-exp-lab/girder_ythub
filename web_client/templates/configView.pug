@@ -1,0 +1,18 @@
+.g-config-breadcrumb-container
+form#g-ythub-config-form(role="form")
+  .form-group
+    label.control-label(for="ythub_tmpnb") tmpnb URL
+    input.input-sm.form-control#ythub_tmpnb(
+      type="text", placeholder="Temporary notebook server's URL")
+    label.control-label(for="ythub_culling") Cull notebooks that are inactive for that many hours
+    input.input-sm.form-control#ythub_culling(
+      type="text", placeholder="Maximum inactivity period (hours) before notebook is deleted")
+    label.control-label(for="ythub_priv_key") yt Hub's private RSA key
+    textarea#ythub_priv_key.form-control= privkey
+    label.control-label(for="ythub_pub_key") yt Hub's public RSA key
+    textarea#ythub_pub_key.form-control= pubkey
+
+  p#g-ythub-error-message.g-validation-failed-message
+  button.g-generate-key.btn.btn-small.btn-primary(title="Generate Key")
+    | Generate Key
+  input.btn.btn-sm.btn-primary(type="submit", value="Save")

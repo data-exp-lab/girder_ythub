@@ -26,12 +26,9 @@ install:
     - cd "${HOME}/girder"
     - pip install -e .
     - pip install -U -r requirements-dev.txt
-    - pip install python-coveralls
     - girder-install web --dev
 script:
     - mkdir _build
     - cd _build
     - cmake -DRUN_CORE_TESTS:BOOL=OFF -DBUILD_JAVASCRIPT_TESTS:BOOL=OFF -DTEST_PLUGINS:STRING=ythub -DPYTHON_COVERAGE:BOOL=ON -DCOVERAGE_MINIMUM_PASS:STRING=4 -DPYTHON_VERSION:STRING=${TRAVIS_PYTHON_VERSION} "${HOME}/girder"
     - ctest -V -j3
-    - cd "${TRAVIS_BUILD_DIR}"
-after_success: coveralls -d "${HOME}"/.coverage
