@@ -90,7 +90,7 @@ class AssetFolderTestCase(base.TestCase):
         with httmock.HTTMock(mockTmpnbHubPost, self.mockOtherRequest):
             params = {'frontendId': str(self.testFrontend['_id'])}
             resp = self.request(
-                '/notebook/%s' % self.folder['_id'],
+                '/notebook/%s' % self.testFolder['_id'],
                 user=self.testUser, params=params)
             self.assertStatus(resp, 200)
             notebook = resp.json
