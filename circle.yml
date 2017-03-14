@@ -26,7 +26,7 @@ dependencies:
     - npm config set progress false
     - cd "$HOME"/girder; npm update; npm prune
     - set -o pipefail; cd "$HOME"/girder; pyenv exec pip install -U pip | cat
-    - set -o pipefail; cd "$HOME"/girder; pyenv exec pip install -r requirements-dev.txt -r plugins/ythub/requirements.txt -e .[plugins,sftp] -e clients/python | cat
+    - set -o pipefail; cd "$HOME"/girder; pyenv exec pip install -r requirements-dev.txt -e .[plugins,sftp] -e clients/python | cat
     - pyenv rehash
     - set -o pipefail; cd "$HOME"/girder; pyenv exec girder-install web --all-plugins --dev | cat
 
