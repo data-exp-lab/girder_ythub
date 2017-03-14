@@ -15,9 +15,8 @@ machine:
     - if [ "$CIRCLE_NODE_INDEX" -eq 1 ] ; then pyenv global 3.4.4 ; fi
 
 checkout:
-  pre:
-    - git clone https://github.com/girder/girder "~/girder"
   post:
+    - git clone https://github.com/girder/girder "~/girder"
     - ln -s "~/girder_ythub" "~/girder/plugins/ythub"
 
 dependencies:
