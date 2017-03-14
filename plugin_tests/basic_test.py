@@ -42,7 +42,6 @@ class AssetFolderTestCase(base.TestCase):
         from girder.plugins.ythub.constants import PluginSettings
         self.model('setting').set(
             PluginSettings.TMPNB_URL, "https://tmpnb.null")
-        self.token = 'token'
         self.testUser = self.model('user').createUser(
             email='bgates@microsoft.com',
             login='bgates',
@@ -51,7 +50,8 @@ class AssetFolderTestCase(base.TestCase):
             password='linuxRulez',
             admin=True
         )
-
+        self.testFrontend = self.model('frontend', 'ythub').createFrontend(
+            'xarthisius/ythub')
         self.testCollection = self.model('collection').createCollection(
             'testColl', self.testUser, public=True)
         self.testFolder = self.model('folder').createFolder(
@@ -63,27 +63,41 @@ class AssetFolderTestCase(base.TestCase):
         raise Exception('Unexpected url %s' % str(request.url))
 
     def testNotebookCreationDeletion(self):
+        tmpnb_response = {
+            'mountPoint': '/var/lib/blah',
+            'containerId': '123456',
+            'containerPath': '/user/blah',
+            'host': '172.168.1.16'
+        }
+
         @httmock.urlmatch(scheme='https', netloc='^tmpnb.null$',
                           path='^/$', method='POST')
         def mockTmpnbHubPost(url, request):
             try:
                 params = json.loads(request.body)
                 self.assertEqual(
-                    params['girder_token'], self.token)
+                    params['folderId'], str(self.testFolder['_id']))
                 self.assertEqual(
-                    params['collection_id'], str(self.testFolder['_id']))
+                    params['frontendId'], str(self.testFrontend['_id']))
             except (KeyError, AssertionError) as e:
                 return json.dumps({
                     'status_code': 401,
                     'content': json.dumps({'error': repr(e)})
                 })
 
-            return json.dumps({'url': '/arglebargle'})
+            return json.dumps(tmpnb_response)
 
         with httmock.HTTMock(mockTmpnbHubPost, self.mockOtherRequest):
-            notebook = self.model('notebook', 'ythub').createNotebook(
-                self.testFolder, self.testUser, {'_id': self.token})
-        self.assertEqual(notebook['url'], '/arglebargle')
+            params = {'frontendId': str(self.testFrontend['_id'])}
+            resp = self.request(
+                '/notebook/%s' % self.folder['_id'],
+                user=self.testUser, params=params)
+            self.assertStatus(resp, 200)
+            notebook = resp.json
+        self.assertEqual(notebook['host'], tmpnb_response['host'])
+        self.assertEqual(notebook['mountPoint'], tmpnb_response['mountPoint'])
+        self.assertEqual(notebook['containerId'], tmpnb_response['containerId'])
+        self.assertEqual(notebook['containerPath'], tmpnb_response['containerPath'])
         self.assertEqual(notebook['folderId'], self.testFolder['_id'])
         self.assertEqual(notebook['userId'], self.testUser['_id'])
 

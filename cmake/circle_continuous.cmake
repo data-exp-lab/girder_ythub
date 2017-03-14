@@ -43,8 +43,6 @@ elseif(test_group STREQUAL browser)
 endif()
 
 file(REMOVE "${CTEST_BINARY_DIRECTORY}/coverage.xml")
-ctest_submit()
-
 file(REMOVE "${CTEST_BINARY_DIRECTORY}/test_failed")
 if(NOT res EQUAL 0)
   file(WRITE "${CTEST_BINARY_DIRECTORY}/test_failed" "error")
