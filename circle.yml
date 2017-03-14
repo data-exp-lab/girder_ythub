@@ -26,18 +26,19 @@ dependencies:
   override:
     - sudo apt-get -q update; sudo apt-get install -q -y libgif-dev
     - ./scripts/install_cmake.sh
+        pwd: "~/girder"
     - npm config set progress false
     - npm update; npm prune
     - set -o pipefail; pyenv exec pip install -U pip | cat
+        pwd: "~/girder"
     - set -o pipefail; pyenv exec pip install -r requirements-dev.txt -r plugins/ythub/requirements.txt -e .[plugins,sftp] -e clients/python | cat
+        pwd: "~/girder"
     - pyenv rehash
     - set -o pipefail; pyenv exec girder-install web --all-plugins --dev | cat
-        pwd:
-          "~/girder"
+        pwd: "~/girder"
 
 test:
   override:
     - ~/girder_ythub/cmake/run_circleci.sh:
         parallel: true
-        pwd:
-          "~/girder"
+        pwd: "~/girder"
