@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import datetime
+import cherrypy
 from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
-from girder import events  # , logger
+from girder import events, logger
 from girder.models.model_base import ValidationException
 from girder.api import access
 from girder.api.describe import Description, describeRoute
@@ -14,15 +14,12 @@ from girder.api.rest import boundHandler, loadmodel
 from girder.constants import AccessType, TokenScope
 
 from girder.utility.model_importer import ModelImporter
-from girder.utility import assetstore_utilities, setting_utilities
-from girder.api.rest import getCurrentUser
+from girder.utility import assetstore_utilities, config, setting_utilities
 
 from .constants import PluginSettings
 from .rest.frontend import Frontend
 from .rest.notebook import Notebook
 from .rest.ythub import ytHub
-
-_last_culling = datetime.datetime.utcnow()
 
 
 @setting_utilities.validator(PluginSettings.HUB_PRIV_KEY)
@@ -31,10 +28,12 @@ def validateHubPrivKey(doc):
         raise ValidationException(
             'PRIV_KEY must not be empty.', 'value')
     try:
+        key = doc['value'].encode('utf8')
+    except AttributeError:
+        key = doc['value']
+    try:
         serialization.load_pem_private_key(
-            doc['value'].encode('utf8'),
-            password=None,
-            backend=default_backend()
+            key, password=None, backend=default_backend()
         )
     except ValueError:
         raise ValidationException(
@@ -53,9 +52,12 @@ def validateHubPubKey(doc):
         raise ValidationException(
             'PUB_KEY must not be empty.', 'value')
     try:
+        key = doc['value'].encode('utf8')
+    except AttributeError:
+        key = doc['value']
+    try:
         serialization.load_pem_public_key(
-            doc['value'].encode('utf8'),
-            backend=default_backend()
+            key, backend=default_backend()
         )
     except ValueError:
         raise ValidationException(
@@ -74,61 +76,26 @@ def validateTmpNbUrl(doc):
 
 @setting_utilities.validator(PluginSettings.CULLING_PERIOD)
 def validateCullingPeriod(doc):
-    try:
-        float(doc['value'])
-    except KeyError:
+    if not doc['value']:
         raise ValidationException(
             'Culling period must not be empty.', 'value')
+    try:
+        float(doc['value'])
     except ValueError:
         raise ValidationException(
             'Culling period must float.', 'value')
 
 
-def saveImportPathToMeta(event):
-    resourceModel = ModelImporter.model(event.info['type'])
-    resource = resourceModel.load(event.info['id'], user=getCurrentUser())
-    resourceModel.setMetadata(resource,
-                              {"phys_path": event.info['importPath']})
-
-
-@access.public(scope=TokenScope.DATA_READ)
-@loadmodel(model='folder', level=AccessType.READ)
-@describeRoute(
-    Description('Get physical paths for files in folder.')
-    .param('id', 'The ID of the folder.', paramType='path')
-    .errorResponse('ID was invalid.')
-    .errorResponse('Read access was denied for the folder.', 403)
-)
-@boundHandler()
-def getFolderFilesMapping(self, folder, params):
-    user = self.getCurrentUser()
-    result = {}
-    for (path, item) in self.model('folder').fileList(
-            folder, user=user, subpath=False, data=False):
-        assetstore = self.model('assetstore').load(item['assetstoreId'])
-        adapter = assetstore_utilities.getAssetstoreAdapter(assetstore)
-        result[path] = adapter.fullPath(item)
-    return result
-
-
-@access.public(scope=TokenScope.DATA_READ)
-@loadmodel(model='item', level=AccessType.READ)
-@describeRoute(
-    Description('Get physical paths for files in item.')
-    .param('id', 'The ID of the folder.', paramType='path')
-    .errorResponse('ID was invalid.')
-    .errorResponse('Read access was denied for the folder.', 403)
-)
-@boundHandler()
-def getItemFilesMapping(self, item, params):
-    user = self.getCurrentUser()
-    result = {}
-    for (path, fileitem) in self.model('item').fileList(
-            item, user=user, subpath=False, data=False):
-        assetstore = self.model('assetstore').load(fileitem['assetstoreId'])
-        adapter = assetstore_utilities.getAssetstoreAdapter(assetstore)
-        result[path] = adapter.fullPath(fileitem)
-    return result
+@setting_utilities.validator(PluginSettings.CULLING_FREQUENCY)
+def validateCullingFrequency(doc):
+    if not doc['value']:
+        raise ValidationException(
+            'Culling frequency must not be empty.', 'value')
+    try:
+        float(doc['value'])
+    except ValueError:
+        raise ValidationException(
+            'Culling frequency must float.', 'value')
 
 
 @access.public(scope=TokenScope.DATA_READ)
@@ -219,10 +186,13 @@ def listItem(self, item, params):
     for fileitem in self.model('item').childFiles(item):
         if 'imported' not in fileitem and \
                 fileitem.get('assetstoreId') is not None:
-            store = \
-                self.model('assetstore').load(fileitem['assetstoreId'])
-            adapter = assetstore_utilities.getAssetstoreAdapter(store)
-            fileitem["path"] = adapter.fullPath(fileitem)
+            try:
+                store = \
+                    self.model('assetstore').load(fileitem['assetstoreId'])
+                adapter = assetstore_utilities.getAssetstoreAdapter(store)
+                fileitem["path"] = adapter.fullPath(fileitem)
+            except ValidationException:
+                pass
         files.append(fileitem)
     return {'folders': [], 'files': files}
 
@@ -241,27 +211,42 @@ def folderRootpath(self, folder, params):
         folder, user=self.getCurrentUser())
 
 
-def cullNotebooks(event):
-    global _last_culling
-    culling_freq = datetime.timedelta(minutes=1)
-    if datetime.datetime.utcnow() - culling_freq > _last_culling:
-        ModelImporter.model('notebook', 'ythub').cullNotebooks()
-        _last_culling = datetime.datetime.utcnow()
+def addDefaultFolders(event):
+    user = event.info
+    notebookFolder = ModelImporter.model('folder').createFolder(
+        user, 'Notebooks', parentType='user', public=False, creator=user)
+    ModelImporter.model('folder').setUserAccess(
+        notebookFolder, user, AccessType.ADMIN, save=True)
 
 
 def load(info):
-    events.bind('filesystem_assetstore_imported', 'ythub',
-                saveImportPathToMeta)
-    events.bind('heartbeat', 'ythub', cullNotebooks)
+    notebook = Notebook()
     info['apiRoot'].ythub = ytHub()
-    info['apiRoot'].notebook = Notebook()
+    info['apiRoot'].notebook = notebook
     info['apiRoot'].frontend = Frontend()
-    info['apiRoot'].folder.route('GET', (':id', 'contents'),
-                                 getFolderFilesMapping)
-    info['apiRoot'].item.route('GET', (':id', 'contents'), getItemFilesMapping)
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
     info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
     info['apiRoot'].item.route('PUT', (':id', 'check'), checkItem)
     info['apiRoot'].folder.route('GET', (':id', 'rootpath'), folderRootpath)
     info['apiRoot'].folder.route('PUT', (':id', 'check'), checkFolder)
     info['apiRoot'].collection.route('PUT', (':id', 'check'), checkCollection)
+
+    curConfig = config.getConfig()
+    if curConfig['server']['mode'] == 'testing':
+        cull_period = 1
+    else:
+        cull_period = int(curConfig['server'].get('heartbeat', -1))
+
+    if cull_period > 0:
+
+        def _heartbeat():
+            events.trigger('heartbeat')
+
+        logger.info('Starting Heartbeat every %i s' % cull_period)
+        heartbeat = cherrypy.process.plugins.Monitor(
+            cherrypy.engine, _heartbeat, frequency=cull_period,
+            name="Heartbeat")
+        heartbeat.subscribe()
+        events.bind('heartbeat', 'ythub', notebook.cullNotebooks)
+
+    events.bind('model.user.save.created', 'ythub', addDefaultFolders)

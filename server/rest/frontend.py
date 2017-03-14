@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 from girder.api import access
 from girder.api.docs import addModel
-from girder.api.describe import Description, describeRoute
-from girder.api.rest import Resource, loadmodel, filtermodel
+from girder.api.describe import Description, autoDescribeRoute
+from girder.api.rest import Resource, filtermodel
 from girder.constants import AccessType, SortDir
 
 
@@ -65,24 +65,23 @@ class Frontend(Resource):
 
     @access.public
     @filtermodel(model='frontend', plugin='ythub')
-    @describeRoute(
+    @autoDescribeRoute(
         Description('List available frontends.')
         .responseClass('frontend', array=True)
         .pagingParams(defaultSort='imageName',
                       defaultSortDir=SortDir.DESCENDING)
     )
-    def listFrontends(self, params):
+    def listFrontends(self, limit, offset, sort, params):
         user = self.getCurrentUser()
-        limit, offset, sort = self.getPagingParameters(
-            params, 'imageName', SortDir.DESCENDING)
         return list(self.model('frontend', 'ythub').list(
             user=user, offset=offset, limit=limit, sort=sort))
 
     @access.public
     @filtermodel(model='frontend', plugin='ythub')
-    @loadmodel(model='frontend', plugin='ythub', level=AccessType.READ)
-    @describeRoute(
+    @autoDescribeRoute(
         Description('Get a frontend by ID.')
+        .modelParam('id', model='frontend', plugin='ythub',
+                    level=AccessType.READ)
         .param('id', 'The ID of the frontend.', paramType='path')
         .responseClass('frontend')
         .errorResponse('ID was invalid.')
@@ -91,10 +90,10 @@ class Frontend(Resource):
         return frontend
 
     @access.admin
-    @loadmodel(model='frontend', plugin='ythub', level=AccessType.ADMIN)
-    @describeRoute(
+    @autoDescribeRoute(
         Description('Update an existing frontend.')
-        .param('id', 'The ID of the frontend.', paramType='path')
+        .modelParam('id', model='frontend', plugin='ythub',
+                    level=AccessType.WRITE)
         .param('imageName', 'A docker image name.', required=False)
         .param('command', 'The main command run inside the container.',
                required=False)
@@ -113,24 +112,25 @@ class Frontend(Resource):
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the frontend.', 403)
     )
-    def updateFrontend(self, frontend, params):
-        for key in ('imageName', 'command', 'memLimit', 'user', 'port',
-                    'cpuShares', 'description'):
-            if key not in frontend:
-                frontend[key] = None
-            frontend[key] = params.get(key, frontend[key])
-            if frontend[key] is not None:
-                frontend[key] = frontend[key].strip()
+    def updateFrontend(self, frontend, imageName, command, memLimit,
+                       user, port, description, public, cpuShares, params):
+        frontend['imageName'] = imageName or frontend['imageName']
+        frontend['command'] = command or frontend['command']
+        frontend['memLimit'] = memLimit or frontend['memLimit']
+        frontend['user'] = user or frontend['user']
+        frontend['port'] = port or frontend['port']
+        frontend['description'] = description or frontend['description']
+        frontend['cpuShares'] = cpuShares or frontend['cpuShares']
 
-        public = self.boolParam('public', params, default=False)
-        self.model('frontend', 'ythub').setPublic(frontend, public)
+        if public is not None:
+            self.model('frontend', 'ythub').setPublic(frontend, public)
         return self.model('frontend', 'ythub').updateFrontend(frontend)
 
     @access.admin
-    @loadmodel(model='frontend', plugin='ythub', level=AccessType.ADMIN)
-    @describeRoute(
+    @autoDescribeRoute(
         Description('Delete an existing frontend.')
-        .param('id', 'The ID of the frontend.', paramType='path')
+        .modelParam('id', model='frontend', plugin='ythub',
+                    level=AccessType.WRITE)
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the frontend.', 403)
     )
@@ -139,7 +139,7 @@ class Frontend(Resource):
 
     @access.admin
     @filtermodel(model='frontend', plugin='ythub')
-    @describeRoute(
+    @autoDescribeRoute(
         Description('Create a new frontend.')
         .param('imageName', 'A docker image name.')
         .param('command', 'The main command run inside the container.',
@@ -158,18 +158,8 @@ class Frontend(Resource):
         .responseClass('frontend')
         .errorResponse('You are not authorized to create collections.', 403)
     )
-    def createFrontend(self, params):
-        self.requireParams(('imageName'), params)
-
-        command = params.get('command')
-        memLimit = params.get('memLimit', '1024m')   # TODO: validate me
-        imageName = params['imageName']
-        user = params.get('user')
-        port = params.get('port')
-        description = params.get('description')
-        cpuShares = params.get('cpuShares')
-        public = self.boolParam('public', params, default=None)
-
+    def createFrontend(self, imageName, command, memLimit, user, port,
+                       description, public, cpuShares, params):
         return self.model('frontend', 'ythub').createFrontend(
             imageName, memLimit=memLimit, command=command, user=user,
             port=port, cpuShares=cpuShares, description=description,

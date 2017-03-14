@@ -4,8 +4,8 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from girder.api import access
-from girder.api.describe import Description, describeRoute
-from girder.api.rest import Resource, loadmodel, getApiUrl
+from girder.api.describe import Description, autoDescribeRoute
+from girder.api.rest import Resource, getApiUrl
 from girder.constants import AccessType
 
 from girder.plugins.ythub.constants import PluginSettings
@@ -22,7 +22,7 @@ class ytHub(Resource):
         self.route('POST', ('genkey',), self.generateRSAKey)
 
     @access.admin
-    @describeRoute(
+    @autoDescribeRoute(
         Description('Generate ythub\'s RSA key')
     )
     def generateRSAKey(self, params):
@@ -47,7 +47,7 @@ class ytHub(Resource):
                 PluginSettings.HUB_PRIV_KEY: privkey_pem}
 
     @access.public
-    @describeRoute(
+    @autoDescribeRoute(
         Description('Return url for tmpnb hub.')
     )
     def get_ythub_url(self, params):
@@ -56,11 +56,9 @@ class ytHub(Resource):
                 'pubkey': setting.get(PluginSettings.HUB_PUB_KEY)}
 
     @access.public
-    @loadmodel(model='folder', level=AccessType.READ)
-    @describeRoute(
+    @autoDescribeRoute(
         Description('Generate example data page.')
-        .param('id', 'The folder ID which holds example data.',
-               paramType='path')
+        .modelParam('id', model='folder', level=AccessType.READ)
     )
     def generateExamples(self, folder, params):
         def get_code(resource):

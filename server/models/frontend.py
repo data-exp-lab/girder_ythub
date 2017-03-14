@@ -6,6 +6,12 @@ from girder.models.model_base import \
     AccessControlledModel, ValidationException
 from girder.constants import AccessType
 
+_DOCKER_IMAGENAME = re.compile(
+    '^(?:(?=[^:\/]{1,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)'
+    '(?:\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::[0-9]{1,5})?/)?((?![._-])'
+    '(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*)'
+    '(?::(?![.-])[a-zA-Z0-9_.-]{1,128})?$')
+
 
 class Frontend(AccessControlledModel):
 
@@ -17,8 +23,7 @@ class Frontend(AccessControlledModel):
                                   'updated', 'description', 'public'})
 
     def validate(self, frontend):
-        if not re.match('(?:[a-z]+/)?([a-z]+)(?::[0-9]+)?',
-                        frontend['imageName']):
+        if not _DOCKER_IMAGENAME.match(frontend['imageName']):
             raise ValidationException(
                 'Invalid image name: %s.' % frontend['imageName'],
                 field='imageName')

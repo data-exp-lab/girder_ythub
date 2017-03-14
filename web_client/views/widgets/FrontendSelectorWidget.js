@@ -37,8 +37,9 @@ var FrontendSelectorWidget = View.extend({
    _runFrontend: function(folderId, frontendId) {
       restRequest({path: 'ythub'}).done(function (hub) {
          restRequest({
-            path: 'notebook/' + folderId,
+            path: 'notebook',
             data: {
+               folderId: folderId,
                frontendId: frontendId 
             },
             type: 'POST'

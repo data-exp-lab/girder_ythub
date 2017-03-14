@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from girder import events
-from girder.models.notification import ProgressState
 
 
 API_VERSION = '1.1'
@@ -10,6 +9,7 @@ API_VERSION = '1.1'
 
 class PluginSettings:
     CULLING_PERIOD = 'ythub.culling_period'
+    CULLING_FREQUENCY = 'ythub.culling_frequency'
     TMPNB_URL = 'ythub.tmpnb_url'
     HUB_PRIV_KEY = 'ythub.priv_key'
     HUB_PUB_KEY = 'ythub.pub_key'
@@ -28,10 +28,3 @@ class NotebookStatus(object):
             return event.responses[-1]
 
         return status in (NotebookStatus.RUNNING, NotebookStatus.ERROR)
-
-    @staticmethod
-    def toNotificationStatus(status):
-        if status == NotebookStatus.RUNNING:
-            return ProgressState.ACTIVE
-        else:
-            return ProgressState.ERROR

@@ -21,6 +21,9 @@ var ConfigView = View.extend({
                 key: 'ythub.culling_period',
                 value: this.$('#ythub_culling').val().trim()
             }, {
+                key: 'ythub.culling_frequency',
+                value: this.$('#ythub_cullingfq').val().trim()
+            }, {
                 key: 'ythub.priv_key',
                 value: this.$('#ythub_priv_key').val()
             }, {
@@ -48,6 +51,7 @@ var ConfigView = View.extend({
                 list: JSON.stringify([
                     'ythub.tmpnb_url',
                     'ythub.culling_period',
+                    'ythub.culling_frequency',
                     'ythub.priv_key',
                     'ythub.pub_key'
                 ])
@@ -56,6 +60,7 @@ var ConfigView = View.extend({
             this.render();
             this.$('#ythub_tmpnb').val(resp['ythub.tmpnb_url']);
             this.$('#ythub_culling').val(resp['ythub.culling_period']);
+            this.$('#ythub_cullingfq').val(resp['ythub.culling_frequency']);
             this.$('#ythub_priv_key').val(resp['ythub.priv_key']);
             this.$('#ythub_pub_key').val(resp['ythub.pub_key']);
         }, this));
