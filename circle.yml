@@ -19,7 +19,7 @@ dependencies:
     - "~/cache"
   override:
     - git clone https://github.com/girder/girder "$HOME"/girder
-    - ln -s "$HOME"/girder_ythub" "$HOME"/girder/plugins/ythub
+    - ln -s "$HOME"/girder_ythub "$HOME"/girder/plugins/ythub
     - cd "$HOME"/girder
     - sudo apt-get -q update; sudo apt-get install -q -y libgif-dev
     - ./scripts/install_cmake.sh
