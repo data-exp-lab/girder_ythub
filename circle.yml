@@ -16,7 +16,7 @@ machine:
 
 checkout:
   pre:
-    - git clone https://github.com/girder/girder
+    - git clone https://github.com/girder/girder "~/girder"
   post:
     - ln -s "~/girder_ythub" "~/girder/plugins/ythub"
 
