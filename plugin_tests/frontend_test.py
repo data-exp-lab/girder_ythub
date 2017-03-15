@@ -39,13 +39,15 @@ class FrontendTestCase(base.TestCase):
             'login': 'admin',
             'firstName': 'Root',
             'lastName': 'van Klompf',
-            'password': 'secret'
+            'password': 'secret',
+            'admin': True,
         }, {
             'email': 'joe@dev.null',
             'login': 'joeregular',
             'firstName': 'Joe',
             'lastName': 'Regular',
-            'password': 'secret'
+            'password': 'secret',
+            'admin': False,
         })
         self.admin, self.user = [self._getUser(user) for user in users]
 
