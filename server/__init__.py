@@ -109,46 +109,6 @@ def saveImportPathToMeta(event):
 @access.public(scope=TokenScope.DATA_READ)
 @loadmodel(model='folder', level=AccessType.READ)
 @describeRoute(
-    Description('Get physical paths for files in folder.')
-    .param('id', 'The ID of the folder.', paramType='path')
-    .errorResponse('ID was invalid.')
-    .errorResponse('Read access was denied for the folder.', 403)
-)
-@boundHandler()
-def getFolderFilesMapping(self, folder, params):
-    user = self.getCurrentUser()
-    result = {}
-    for (path, item) in self.model('folder').fileList(
-            folder, user=user, subpath=False, data=False):
-        assetstore = self.model('assetstore').load(item['assetstoreId'])
-        adapter = assetstore_utilities.getAssetstoreAdapter(assetstore)
-        result[path] = adapter.fullPath(item)
-    return result
-
-
-@access.public(scope=TokenScope.DATA_READ)
-@loadmodel(model='item', level=AccessType.READ)
-@describeRoute(
-    Description('Get physical paths for files in item.')
-    .param('id', 'The ID of the folder.', paramType='path')
-    .errorResponse('ID was invalid.')
-    .errorResponse('Read access was denied for the folder.', 403)
-)
-@boundHandler()
-def getItemFilesMapping(self, item, params):
-    user = self.getCurrentUser()
-    result = {}
-    for (path, fileitem) in self.model('item').fileList(
-            item, user=user, subpath=False, data=False):
-        assetstore = self.model('assetstore').load(fileitem['assetstoreId'])
-        adapter = assetstore_utilities.getAssetstoreAdapter(assetstore)
-        result[path] = adapter.fullPath(fileitem)
-    return result
-
-
-@access.public(scope=TokenScope.DATA_READ)
-@loadmodel(model='folder', level=AccessType.READ)
-@describeRoute(
     Description('List the content of a folder.')
     .param('id', 'The ID of the folder.', paramType='path')
     .errorResponse('ID was invalid.')
@@ -269,9 +229,6 @@ def load(info):
     info['apiRoot'].ythub = ytHub()
     info['apiRoot'].notebook = notebook
     info['apiRoot'].frontend = Frontend()
-    info['apiRoot'].folder.route('GET', (':id', 'contents'),
-                                 getFolderFilesMapping)
-    info['apiRoot'].item.route('GET', (':id', 'contents'), getItemFilesMapping)
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
     info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
     info['apiRoot'].item.route('PUT', (':id', 'check'), checkItem)
