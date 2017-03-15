@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from girder import events
-from girder.models.notification import ProgressState
 
 
 API_VERSION = '1.1'
@@ -29,10 +28,3 @@ class NotebookStatus(object):
             return event.responses[-1]
 
         return status in (NotebookStatus.RUNNING, NotebookStatus.ERROR)
-
-    @staticmethod
-    def toNotificationStatus(status):
-        if status == NotebookStatus.RUNNING:
-            return ProgressState.ACTIVE
-        else:
-            return ProgressState.ERROR

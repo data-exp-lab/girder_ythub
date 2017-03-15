@@ -29,10 +29,12 @@ def validateHubPrivKey(doc):
         raise ValidationException(
             'PRIV_KEY must not be empty.', 'value')
     try:
+        key = doc['value'].encode('utf8')
+    except AttributeError:
+        key = doc['value']
+    try:
         serialization.load_pem_private_key(
-            doc['value'].encode('utf8'),
-            password=None,
-            backend=default_backend()
+            key, password=None, backend=default_backend()
         )
     except ValueError:
         raise ValidationException(
@@ -51,9 +53,12 @@ def validateHubPubKey(doc):
         raise ValidationException(
             'PUB_KEY must not be empty.', 'value')
     try:
+        key = doc['value'].encode('utf8')
+    except AttributeError:
+        key = doc['value']
+    try:
         serialization.load_pem_public_key(
-            doc['value'].encode('utf8'),
-            backend=default_backend()
+            key, backend=default_backend()
         )
     except ValueError:
         raise ValidationException(
@@ -251,6 +256,14 @@ def folderRootpath(self, folder, params):
         folder, user=self.getCurrentUser())
 
 
+def addDefaultFolders(event):
+    user = event.info
+    notebookFolder = ModelImporter.model('folder').createFolder(
+        user, 'Notebooks', parentType='user', public=False, creator=user)
+    ModelImporter.model('folder').setUserAccess(
+        notebookFolder, user, AccessType.ADMIN, save=True)
+
+
 def load(info):
     notebook = Notebook()
     info['apiRoot'].ythub = ytHub()
@@ -286,3 +299,4 @@ def load(info):
 
     events.bind('filesystem_assetstore_imported', 'ythub',
                 saveImportPathToMeta)
+    events.bind('model.user.save.created', 'ythub', addDefaultFolders)
