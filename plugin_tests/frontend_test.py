@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import httmock
-import json
-import six
 from tests import base
 from girder.models.model_base import ValidationException
 
@@ -96,7 +94,7 @@ class FrontendTestCase(base.TestCase):
             path='/frontend', method='GET', params={}, user=self.user)
         self.assertStatus(resp, 200)
         self.assertEqual(resp.json, [])
-        
+
         # Verify that admin sees private frontend
         resp = self.request(
             path='/frontend', method='GET', params={}, user=self.admin)
@@ -111,20 +109,20 @@ class FrontendTestCase(base.TestCase):
         self.assertEqual(resp.json['_id'], frontend['_id'])
         self.assertEqual(resp.json['public'], True)
         self.assertEqual(resp.json['memLimit'], '1024m')
-        
+
         # Verify that anyone can see public frontend
         resp = self.request(
             path='/frontend/{_id}'.format(**frontend), method='GET')
         self.assertStatus(resp, 200)
         self.assertEqual(resp.json['_id'], frontend['_id'])
-        
+
         # Verify that user cannot remove the frontend
         resp = self.request(
             path='/frontend/{_id}'.format(**frontend), method='DELETE',
             user=self.user)
         self.assertStatus(resp, 403)
-        
-        # Actually remove the frontend 
+
+        # Actually remove the frontend
         resp = self.request(
             path='/frontend/{_id}'.format(**frontend), method='DELETE',
             user=self.admin)

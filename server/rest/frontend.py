@@ -3,7 +3,7 @@
 from girder.api import access
 from girder.api.docs import addModel
 from girder.api.describe import Description, autoDescribeRoute
-from girder.api.rest import Resource, loadmodel, filtermodel
+from girder.api.rest import Resource, filtermodel
 from girder.constants import AccessType, SortDir
 
 

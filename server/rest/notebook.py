@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import datetime
+
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.docs import addModel
 from girder.api.rest import Resource, filtermodel
 from girder.constants import AccessType, SortDir
+
+from ..constants import PluginSettings
 
 
 notebookModel = {
@@ -63,6 +67,8 @@ class Notebook(Resource):
         self.route('GET', (':id',), self.getNotebook)
         self.route('DELETE', (':id',), self.deleteNotebook)
 
+        self.lastCulling = datetime.datetime.utcnow()
+
     @access.user
     @filtermodel(model='notebook', plugin='ythub')
     @autoDescribeRoute(
@@ -88,7 +94,7 @@ class Notebook(Resource):
             folder = None
         else:
             folder = self.model('folder').load(
-                params['folderId'], user=currentUser, level=AccessType.READ)
+                folderId, user=currentUser, level=AccessType.READ)
 
         return list(self.model('notebook', 'ythub').list(
             user=user, folder=folder, offset=offset, limit=limit,
@@ -140,3 +146,11 @@ class Notebook(Resource):
         notebook = notebookModel.createNotebook(folder, user, token, frontend)
 
         return notebookModel.save(notebook)
+
+    def cullNotebooks(self, event):
+        culling_freq = float(
+            self.model('setting').get(PluginSettings.CULLING_FREQUENCY, 0.5))
+        culling_freq = datetime.timedelta(hours=culling_freq)
+        if datetime.datetime.utcnow() - culling_freq > self.lastCulling:
+            self.model('notebook', 'ythub').cullNotebooks()
+            self.lastCulling = datetime.datetime.utcnow()
