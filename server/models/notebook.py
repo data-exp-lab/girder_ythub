@@ -29,7 +29,7 @@ class Notebook(AccessControlledModel):
         self.exposeFields(level=AccessType.WRITE,
                           fields={'created', 'when', 'folderId', '_id',
                                   'userId', 'url', 'status', 'frontendId',
-                                  'containerPath', 'containerId',
+                                  'containerPath', 'containerId', 'host',
                                   'mountPoint', 'lastActivity'})
         self.exposeFields(level=AccessType.SITE_ADMIN,
                           fields={'args', 'kwargs'})
