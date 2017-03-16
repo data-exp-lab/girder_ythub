@@ -28,6 +28,8 @@ if [ -f $HOME/build/test_failed ] ; then
 	exit 1
 fi
 
+cd $HOME/girder_ythub
+cp -r ~/build/coverage.xml $HOME/girder_ythub/
 mkdir -p $CIRCLE_ARTIFACTS/coverage/python $CIRCLE_ARTIFACTS/coverage/js
 cp -r ~/build/coverage.xml ~/girder/clients/web/dev/built/py_coverage/* $CIRCLE_ARTIFACTS/coverage/python
 cp -r ~/build/coverage/* $CIRCLE_ARTIFACTS/coverage/js
