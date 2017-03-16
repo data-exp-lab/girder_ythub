@@ -194,10 +194,13 @@ def listItem(self, item, params):
     for fileitem in self.model('item').childFiles(item):
         if 'imported' not in fileitem and \
                 fileitem.get('assetstoreId') is not None:
-            store = \
-                self.model('assetstore').load(fileitem['assetstoreId'])
-            adapter = assetstore_utilities.getAssetstoreAdapter(store)
-            fileitem["path"] = adapter.fullPath(fileitem)
+            try:
+                store = \
+                    self.model('assetstore').load(fileitem['assetstoreId'])
+                adapter = assetstore_utilities.getAssetstoreAdapter(store)
+                fileitem["path"] = adapter.fullPath(fileitem)
+            except ValidationException:
+                pass
         files.append(fileitem)
     return {'folders': [], 'files': files}
 
