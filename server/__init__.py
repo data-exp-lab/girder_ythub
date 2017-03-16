@@ -15,7 +15,6 @@ from girder.constants import AccessType, TokenScope
 
 from girder.utility.model_importer import ModelImporter
 from girder.utility import assetstore_utilities, config, setting_utilities
-from girder.api.rest import getCurrentUser
 
 from .constants import PluginSettings
 from .rest.frontend import Frontend
@@ -97,13 +96,6 @@ def validateCullingFrequency(doc):
     except ValueError:
         raise ValidationException(
             'Culling frequency must float.', 'value')
-
-
-def saveImportPathToMeta(event):
-    resourceModel = ModelImporter.model(event.info['type'])
-    resource = resourceModel.load(event.info['id'], user=getCurrentUser())
-    resourceModel.setMetadata(resource,
-                              {"phys_path": event.info['importPath']})
 
 
 @access.public(scope=TokenScope.DATA_READ)
@@ -257,6 +249,4 @@ def load(info):
         heartbeat.subscribe()
         events.bind('heartbeat', 'ythub', notebook.cullNotebooks)
 
-    events.bind('filesystem_assetstore_imported', 'ythub',
-                saveImportPathToMeta)
     events.bind('model.user.save.created', 'ythub', addDefaultFolders)

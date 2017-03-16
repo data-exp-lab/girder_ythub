@@ -80,7 +80,7 @@ class YtHubTestCase(base.TestCase):
                 'type': 'validation',
                 'message': '%s must not be empty.' % k
             })
-            
+
             params = {
                 'key': v,
                 'value': 'blah'
