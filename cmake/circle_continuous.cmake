@@ -42,7 +42,7 @@ elseif(test_group STREQUAL browser)
   file(RENAME "${CTEST_BINARY_DIRECTORY}/coverage/js_coverage.xml" "${CTEST_BINARY_DIRECTORY}/coverage.xml")
 endif()
 
-file(REMOVE "${CTEST_BINARY_DIRECTORY}/coverage.xml")
+#file(REMOVE "${CTEST_BINARY_DIRECTORY}/coverage.xml")
 file(REMOVE "${CTEST_BINARY_DIRECTORY}/test_failed")
 if(NOT res EQUAL 0)
   file(WRITE "${CTEST_BINARY_DIRECTORY}/test_failed" "error")
