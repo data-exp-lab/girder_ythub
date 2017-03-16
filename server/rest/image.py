@@ -127,7 +127,7 @@ class Image(Resource):
         self.route('POST', (), self.createImage)
         self.route('GET', (':id',), self.getImage)
         self.route('PUT', (':id',), self.updateImage)
-        # self.route('DELETE', (':id',), self.deleteImage)
+        self.route('DELETE', (':id',), self.deleteImage)
         self.route('PUT', (':id', 'build'), self.buildImage)
         self.route('PUT', (':id', 'check'), self.checkImage)
         self.route('POST', (':id', 'copy'), self.copyImage)
