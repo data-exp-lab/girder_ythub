@@ -40,9 +40,9 @@ class NotebookCullingTestCase(base.TestCase):
         self.model('setting').set(
             PluginSettings.TMPNB_URL, "https://tmpnb.null")
         self.model('setting').set(
-            PluginSettings.CULLING_PERIOD, 3.0 / 3600.0)
+            PluginSettings.CULLING_PERIOD, 5.0 / 3600.0)
         self.model('setting').set(
-            PluginSettings.CULLING_FREQUENCY, 1.0 / 3600.0)
+            PluginSettings.CULLING_FREQUENCY, 10.0 / 3600.0)
 
         users = ({
             'email': 'root@dev.null',
