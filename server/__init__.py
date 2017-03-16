@@ -77,11 +77,11 @@ def validateTmpNbUrl(doc):
 
 @setting_utilities.validator(PluginSettings.CULLING_PERIOD)
 def validateCullingPeriod(doc):
-    try:
-        float(doc['value'])
-    except KeyError:
+    if not doc['value']:
         raise ValidationException(
             'Culling period must not be empty.', 'value')
+    try:
+        float(doc['value'])
     except ValueError:
         raise ValidationException(
             'Culling period must float.', 'value')
@@ -89,11 +89,11 @@ def validateCullingPeriod(doc):
 
 @setting_utilities.validator(PluginSettings.CULLING_FREQUENCY)
 def validateCullingFrequency(doc):
-    try:
-        float(doc['value'])
-    except KeyError:
+    if not doc['value']:
         raise ValidationException(
             'Culling frequency must not be empty.', 'value')
+    try:
+        float(doc['value'])
     except ValueError:
         raise ValidationException(
             'Culling frequency must float.', 'value')
