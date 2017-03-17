@@ -31,10 +31,12 @@ def validateHubPrivKey(doc):
         raise ValidationException(
             'PRIV_KEY must not be empty.', 'value')
     try:
+        key = doc['value'].encode('utf8')
+    except AttributeError:
+        key = doc['value']
+    try:
         serialization.load_pem_private_key(
-            doc['value'].encode('utf8'),
-            password=None,
-            backend=default_backend()
+            key, password=None, backend=default_backend()
         )
     except ValueError:
         raise ValidationException(
@@ -53,9 +55,12 @@ def validateHubPubKey(doc):
         raise ValidationException(
             'PUB_KEY must not be empty.', 'value')
     try:
+        key = doc['value'].encode('utf8')
+    except AttributeError:
+        key = doc['value']
+    try:
         serialization.load_pem_public_key(
-            doc['value'].encode('utf8'),
-            backend=default_backend()
+            key, backend=default_backend()
         )
     except ValueError:
         raise ValidationException(
