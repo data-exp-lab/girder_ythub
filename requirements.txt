@@ -1,4 +1,3 @@
 rdflib
-xmltodict
 pygithub
 cryptography
