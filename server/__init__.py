@@ -86,13 +86,6 @@ def validateCullingPeriod(doc):
             'Culling period must float.', 'value')
 
 
-def saveImportPathToMeta(event):
-    resourceModel = ModelImporter.model(event.info['type'])
-    resource = resourceModel.load(event.info['id'], user=getCurrentUser())
-    resourceModel.setMetadata(resource,
-                              {"phys_path": event.info['importPath']})
-
-
 @access.public(scope=TokenScope.DATA_READ)
 @loadmodel(model='folder', level=AccessType.READ)
 @describeRoute(
@@ -295,8 +288,6 @@ def setUserMetadata(self, params):
 
 
 def load(info):
-    events.bind('filesystem_assetstore_imported', 'wholetale',
-                saveImportPathToMeta)
     info['apiRoot'].wholetale = wholeTale()
     info['apiRoot'].instance = Instance()
     info['apiRoot'].tale = Tale()
