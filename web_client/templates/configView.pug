@@ -4,9 +4,6 @@ form#g-wholetale-config-form(role="form")
     label.control-label(for="wholetale_tmpnb") tmpnb URL
     input.input-sm.form-control#wholetale_tmpnb(
       type="text", placeholder="Temporary instance server's URL")
-    label.control-label(for="wholetale_culling") Cull instances that are inactive for that many hours
-    input.input-sm.form-control#wholetale_culling(
-      type="text", placeholder="Maximum inactivity period (hours) before instance is deleted")
     label.control-label(for="wholetale_priv_key") yt Hub's private RSA key
     textarea#wholetale_priv_key.form-control= privkey
     label.control-label(for="wholetale_pub_key") yt Hub's public RSA key

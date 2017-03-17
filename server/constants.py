@@ -108,7 +108,6 @@ class HarvesterType:
 
 
 class PluginSettings:
-    CULLING_PERIOD = 'wholetale.culling_period'
     TMPNB_URL = 'wholetale.tmpnb_url'
     HUB_PRIV_KEY = 'wholetale.priv_key'
     HUB_PUB_KEY = 'wholetale.pub_key'

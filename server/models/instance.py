@@ -5,9 +5,8 @@ import datetime
 import json
 import requests
 import six
-import dateutil.parser
 
-from girder import events, logger
+from girder import events
 from ..constants import PluginSettings, API_VERSION, InstanceStatus
 from girder.api.rest import RestException
 from girder.constants import AccessType, SortDir
@@ -76,45 +75,6 @@ class Instance(AccessControlledModel):
                         json=payload, headers=headers)
         # TODO: handle error
         self.remove(instance)
-
-    def cullInstances(self):
-        return  # Needs to be update to API 2.0
-        resp = requests.get(
-            self.model('setting').get(PluginSettings.TMPNB_URL))
-        content = resp.content
-        if isinstance(content, six.binary_type):
-            content = content.decode('utf8')
-        try:
-            resp.raise_for_status()
-        except requests.HTTPError:
-            raise RestException(
-                'Got %s code from tmpnb, response="%s"/' % (
-                    resp.status_code, content
-                ), code=502)
-        try:
-            activity = json.loads(content)
-        except ValueError:
-            raise RestException('Non-JSON response: %s' % content, code=502)
-
-        admin = next(_ for _ in self.model('user').getAdmins())
-        token = self.model('token').createToken(user=admin, days=1)
-
-        # Iterate over all instances, not the prettiest way...
-        cull_period = self.model('setting').get(
-            PluginSettings.CULLING_PERIOD, '4')
-        cull_time = datetime.datetime.utcnow() - \
-            datetime.timedelta(hours=float(cull_period))
-        for nb in self.find({}):
-            try:
-                last_activity = dateutil.parser.parse(
-                    activity[nb['containerId']], ignoretz=True)
-            except KeyError:
-                # proxy is not aware of such container, kill it...
-                logger.info('Deleting nb %s' % nb['_id'])
-                self.deleteInstance(nb, token)
-            if last_activity < cull_time:
-                logger.info('Deleting nb %s' % nb['_id'])
-                self.deleteInstance(nb, token)
 
     def createInstance(self, tale, user, token, save=True):
         existing = self.findOne({

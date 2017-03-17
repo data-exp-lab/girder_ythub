@@ -18,9 +18,6 @@ var ConfigView = View.extend({
                 key: 'wholetale.tmpnb_url',
                 value: this.$('#wholetale_tmpnb').val().trim()
             }, {
-                key: 'wholetale.culling_period',
-                value: this.$('#wholetale_culling').val().trim()
-            }, {
                 key: 'wholetale.priv_key',
                 value: this.$('#wholetale_priv_key').val()
             }, {
@@ -47,7 +44,6 @@ var ConfigView = View.extend({
             data: {
                 list: JSON.stringify([
                     'wholetale.tmpnb_url',
-                    'wholetale.culling_period',
                     'wholetale.priv_key',
                     'wholetale.pub_key'
                 ])
@@ -55,7 +51,6 @@ var ConfigView = View.extend({
         }).done(_.bind(function (resp) {
             this.render();
             this.$('#wholetale_tmpnb').val(resp['wholetale.tmpnb_url']);
-            this.$('#wholetale_culling').val(resp['wholetale.culling_period']);
             this.$('#wholetale_priv_key').val(resp['wholetale.priv_key']);
             this.$('#wholetale_pub_key').val(resp['wholetale.pub_key']);
         }, this));

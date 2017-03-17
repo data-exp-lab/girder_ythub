@@ -6,15 +6,13 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 import six
 
-from girder import events  # , logger
 from girder.api import access
 from girder.api.describe import Description, describeRoute
 from girder.api.rest import \
-    boundHandler, loadmodel, getCurrentUser, RestException
+    boundHandler, loadmodel, RestException
 from girder.constants import AccessType, TokenScope
 from girder.models.model_base import ValidationException
 from girder.utility import assetstore_utilities, setting_utilities
-from girder.utility.model_importer import ModelImporter
 
 from .constants import PluginSettings
 from .rest.recipe import Recipe
@@ -72,18 +70,6 @@ def validateTmpNbUrl(doc):
     if not doc['value']:
         raise ValidationException(
             'TmpNB URL must not be empty.', 'value')
-
-
-@setting_utilities.validator(PluginSettings.CULLING_PERIOD)
-def validateCullingPeriod(doc):
-    try:
-        float(doc['value'])
-    except KeyError:
-        raise ValidationException(
-            'Culling period must not be empty.', 'value')
-    except ValueError:
-        raise ValidationException(
-            'Culling period must float.', 'value')
 
 
 @access.public(scope=TokenScope.DATA_READ)
