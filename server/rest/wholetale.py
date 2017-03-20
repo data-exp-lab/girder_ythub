@@ -5,8 +5,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from girder.api import access
 from girder.api.describe import Description, describeRoute
-from girder.api.rest import Resource, loadmodel, getApiUrl
-from girder.constants import AccessType
+from girder.api.rest import Resource
 
 from girder.plugins.wholetale.constants import PluginSettings
 
@@ -18,7 +17,6 @@ class wholeTale(Resource):
         self.resourceName = 'wholetale'
 
         self.route('GET', (), self.get_wholetale_url)
-        self.route('GET', (':id', 'examples'), self.generateExamples)
         self.route('POST', ('genkey',), self.generateRSAKey)
 
     @access.admin
@@ -54,50 +52,3 @@ class wholeTale(Resource):
         setting = self.model('setting')
         return {'url': setting.get(PluginSettings.TMPNB_URL),
                 'pubkey': setting.get(PluginSettings.HUB_PUB_KEY)}
-
-    @access.public
-    @loadmodel(model='folder', level=AccessType.READ)
-    @describeRoute(
-        Description('Generate example data page.')
-        .param('id', 'The folder ID which holds example data.',
-               paramType='path')
-    )
-    def generateExamples(self, folder, params):
-        def get_code(resource):
-            try:
-                return resource["meta"]["code"]
-            except KeyError:
-                return "unknown"
-
-        def sizeof_fmt(num, suffix='B'):
-            for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
-                if abs(num) < 1024.0:
-                    return "%3.1f%s%s" % (num, unit, suffix)
-                num /= 1024.0
-            return "%.1f%s%s" % (num, 'Yi', suffix)
-
-        def download_path(_id, resource):
-            return "{}/{}/{}/download".format(getApiUrl(), resource, _id)
-
-        result = {}
-        user = self.getCurrentUser()
-        frontends = list(
-            self.model('folder').childFolders(parentType='folder',
-                                              parent=folder, user=user))
-        for frontend in frontends:
-            ds = list(
-                self.model('folder').childFolders(parentType='folder',
-                                                  parent=frontend, user=user))
-
-            examples = [dict(code=get_code(_), description=_["description"],
-                             filename=_["name"], size=sizeof_fmt(_["size"]),
-                             url=download_path(_["_id"], "folder"))
-                        for _ in ds]
-            ds = list(self.model('folder').childItems(folder=frontend))
-            examples += [dict(code=get_code(_), description=_["description"],
-                              filename=_["name"], size=sizeof_fmt(_["size"]),
-                              url=download_path(_["_id"], "item"))
-                         for _ in ds]
-            result[frontend["name"]] = examples
-
-        return result
