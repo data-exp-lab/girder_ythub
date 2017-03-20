@@ -24,6 +24,8 @@ import six.moves.urllib as urllib
 import requests
 import rdflib
 
+from girder.api.rest import RestException
+
 # http://blog.crossref.org/2015/08/doi-regular-expressions.html
 _DOI_REGEX = re.compile('(10.\d{4,9}/[-._;()/:A-Z0-9]+)', re.IGNORECASE)
 D1_BASE = "https://cn.dataone.org/cn/v2"
@@ -52,13 +54,13 @@ def query(q, fields=["identifier"], rows=1000, start=0):
 
     # Fail if the Solr query failed rather than fail later
     if content['responseHeader']['status'] != 0:
-        raise Exception(
+        raise RestException(
             "Solr query was not successful.\n{}\n{}".format(query_url, content))
 
     # Stop if the number of results is equal to the number of rows requested
     # Fix this in the future by supporting paginated queries.
     if content['response']['numFound'] == rows:
-        raise Exception(
+        raise RestException(
             "Number of results returned equals number of rows requested. "
             "This could mean the query result is truncated. "
             "Implement paged queries.")
@@ -69,7 +71,6 @@ def query(q, fields=["identifier"], rows=1000, start=0):
 def find_package_pid(pid):
     """Find the PID of the resource map for a given PID, which may be a resource
     map"""
-    package_pid = None
 
     result = query(
         "identifier:\"{}\"".format(esc(pid)),
@@ -77,9 +78,9 @@ def find_package_pid(pid):
     result_len = int(result['response']['numFound'])
 
     if result_len == 0:
-        raise Exception('No object was found in the index for {}.'.format(pid))
+        raise RestException('No object was found in the index for {}.'.format(pid))
     elif result_len > 1:
-        raise Exception(
+        raise RestException(
             'More than one object was found in the index for the identifier '
             '{} which is an unexpected state.'.format(pid))
 
@@ -94,10 +95,8 @@ def find_package_pid(pid):
     # still do here is determine the most likely resource map given the set.
     # Usually we do this by rejecting any obsoleted resource maps and that
     # usually leaves us with one.
-    raise Exception(
+    raise RestException(
         "Multiple resource maps were found and this is not implemented.")
-
-    return package_pid
 
 
 def find_initial_pid(path):
@@ -189,7 +188,7 @@ def process_package(pid):
                     "fileName", "documents"])
 
     if 'response' not in result or 'docs' not in result['response']:
-        raise Exception(
+        raise RestException(
             "Failed to get a result for the query\n {}".format(result))
 
     docs = result['response']['docs']
@@ -204,7 +203,7 @@ def process_package(pid):
     pids = set([unesc(doc['identifier']) for doc in docs])
 
     if aggregation != pids:
-        raise Exception(
+        raise RestException(
             "The contents of the Resource Map don't match what's in the Solr "
             "index. This is unexpected and unhandled.")
 
@@ -215,7 +214,7 @@ def process_package(pid):
 
     # Stop now if multiple objects document others
     if len(documenting) != 1:
-        raise Exception(
+        raise RestException(
             "Found two objects in the resource map documenting other objects. "
             "This is unexpected and unhandled.")
 
@@ -234,8 +233,8 @@ def process_package(pid):
     primary_metadata = [doc for doc in metadata if 'documents' in doc]
 
     if len(primary_metadata) > 1:
-        raise Exception("Multiple documenting metadata objects found. "
-                        "This isn't implemented.")
+        raise RestException("Multiple documenting metadata objects found. "
+                            "This isn't implemented.")
 
     # Create a Dict to store folders' information
     # the data key is a concatenation of the data and any metadata objects
@@ -269,7 +268,7 @@ def lookup(path):
                     "fileName", "documents"])
 
     if 'response' not in result or 'docs' not in result['response']:
-        raise Exception(
+        raise RestException(
             "Failed to get a result for the query\n {}".format(result))
 
     docs = result['response']['docs']
@@ -277,7 +276,7 @@ def lookup(path):
     # Filter the Solr result by TYPE so we can construct the package
     metadata = [doc for doc in docs if doc['formatType'] == 'METADATA']
     if not metadata:
-        raise Exception('No metadata found.')
+        raise RestException('No metadata found.')
 
     dataMap = {
         'dataId': package_pid,
