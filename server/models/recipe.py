@@ -2,8 +2,7 @@
 
 import datetime
 import re
-
-from github import Github, GithubException
+import requests
 
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
@@ -38,14 +37,26 @@ class Recipe(AccessControlledModel):
         repo = _GIT_REPO_REGEX.match(recipe['url']).groups()[-1].split('/')
         if len(repo) < 2:
             raise ValidationException(
-                'URL does not contain repository name: %s.' % recipe['url'])
+                'URL does not contain repository name: %s.' % recipe['url'],
+                field='url')
         try:
-            g = Github()
-            g.get_user(repo[0]).get_repo(repo[1]).get_commit(recipe['commitId'])
-        except GithubException:
+            resp = requests.get(
+                'https://api.github.com/repos/%s/%s' % (repo[0], repo[1]))
+            resp.raise_for_status()
+        except requests.HTTPError:
+            raise ValidationException(
+                'Cannot access %s or it does not exist' % recipe['url'],
+                field='url')
+
+        try:
+            resp = requests.get(
+                'https://api.github.com/repos/%s/%s/commits/%s' %
+                (repo[0], repo[1], recipe['commitId']))
+            resp.raise_for_status()
+        except requests.HTTPError:
             raise ValidationException(
                 'Commit Id %s does not exist in repository %s/%s' % (
-                    recipe['commitId'], repo[0], repo[1]))
+                    recipe['commitId'], repo[0], repo[1]), field='commitId')
         q = {
             'url': recipe['url'],
             'commitId': recipe['commitId']
@@ -103,6 +114,9 @@ class Recipe(AccessControlledModel):
             'url': url
         }
 
+        if creator is not None:
+            self.setUserAccess(recipe, user=creator, level=AccessType.ADMIN,
+                               save=False)
         if public is not None and isinstance(public, bool):
             self.setPublic(recipe, public, save=False)
 
