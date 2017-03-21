@@ -140,7 +140,7 @@ class Recipe(Resource):
     def getRecipe(self, recipe, params):
         return recipe
 
-    @access.user
+    @access.user(scope=TokenScope.DATA_WRITE)
     @autoDescribeRoute(
         Description('Update an existing recipe.')
         .modelParam('id', model='recipe', plugin='wholetale', level=AccessType.WRITE,
@@ -180,7 +180,7 @@ class Recipe(Resource):
     def deleteRecipe(self, recipe, params):
         self.model('recipe', 'wholetale').remove(recipe)
 
-    @access.user
+    @access.user(scope=TokenScope.DATA_WRITE)
     @filtermodel(model='recipe', plugin='wholetale')
     @autoDescribeRoute(
         Description('Create a new recipe.')
