@@ -57,6 +57,7 @@ class Recipe(AccessControlledModel):
             raise ValidationException(
                 'Commit Id %s does not exist in repository %s/%s' % (
                     recipe['commitId'], repo[0], repo[1]), field='commitId')
+
         q = {
             'url': recipe['url'],
             'commitId': recipe['commitId']
@@ -90,9 +91,6 @@ class Recipe(AccessControlledModel):
             parentId = parent['_id']
         else:
             parentId = None
-
-        if name is None:
-            name = 'TODO: extract from url'
 
         if tags is None:
             tags = ['latest']
