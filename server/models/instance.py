@@ -55,7 +55,7 @@ class Instance(AccessControlledModel):
         """
         cursor_def = {}
         if user is not None:
-            cursor_def['userId'] = user['_id']
+            cursor_def['creatorId'] = user['_id']
         if tale is not None:
             cursor_def['taleId'] = tale['_id']
         cursor = self.find(cursor_def, sort=sort)
