@@ -25,6 +25,7 @@ class Tale(AccessControlledModel):
                           fields={'_id', 'config', 'creatorId', 'folderId',
                                   'created', 'imageId', 'name',
                                   'updated', 'description', 'public'})
+        self.exposeFields(level=AccessType.ADMIN, fields={'published'})
 
     def validate(self, tale):
         return tale
@@ -91,7 +92,9 @@ class Tale(AccessControlledModel):
         }
         if public is not None and isinstance(public, bool):
             self.setPublic(tale, public, save=False)
-
+        if creator is not None:
+            self.setUserAccess(tale, user=creator, level=AccessType.ADMIN,
+                               save=False)
         if save:
             tale = self.save(tale)
         return tale
