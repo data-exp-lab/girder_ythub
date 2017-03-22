@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from girder import events
-from girder.models.notification import ProgressState
 
 
 API_VERSION = '2.0'
@@ -127,13 +126,6 @@ class InstanceStatus(object):
 
         return status in (InstanceStatus.RUNNING, InstanceStatus.ERROR)
 
-    @staticmethod
-    def toNotificationStatus(status):
-        if status == InstanceStatus.RUNNING:
-            return ProgressState.ACTIVE
-        else:
-            return ProgressState.ERROR
-
 
 class ImageStatus(object):
     INVALID = 0
@@ -150,14 +142,3 @@ class ImageStatus(object):
 
         return status in (ImageStatus.INVALID, ImageStatus.UNAVAILABLE,
                           ImageStatus.BUILDING, ImageStatus.AVAILABLE)
-
-    @staticmethod
-    def toNotificationStatus(status):
-        if status in ImageStatus.UNAVAILABLE:
-            return ProgressState.QUEUED
-        if status == ImageStatus.BUILDING:
-            return ProgressState.ACTIVE
-        if status == ImageStatus.AVAILABLE:
-            return ProgressState.SUCCESS
-        else:
-            return ProgressState.ERROR
