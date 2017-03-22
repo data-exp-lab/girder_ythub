@@ -2,8 +2,10 @@
 import httmock
 import json
 import os
-import re
 from tests import base
+from .tests_helpers import \
+    GOOD_REPO, GOOD_COMMIT, \
+    mockOtherRequest, mockCommitRequest, mockReposRequest
 
 
 def setUpModule():
@@ -16,44 +18,6 @@ def tearDownModule():
 
 
 class RecipeTestCase(base.TestCase):
-
-    @httmock.all_requests
-    def mockOtherRequest(self, url, request):
-        raise Exception('Unexpected url %s' % str(request.url))
-
-    @httmock.urlmatch(scheme='https', netloc='^api\.github\.com$',
-                      path='^/repos/([\w\-]+)/([\w\-]+)$', method='GET')
-    def mockReposRequest(self, url, request):
-        owner, repo = re.match(
-            '^/repos/([\w\-]+)/([\w\-]+)$', url.path).groups()
-        repo_slug = os.path.join(owner, repo)
-        headers = {'content-type': 'application/json'}
-        if repo_slug == self.good_repo:
-            return httmock.response(
-                200, {'full_url': repo_slug}, headers, None, 5, request)
-
-        content = {u'documentation_url': u'https://developer.github.com/v3',
-                   u'message': u'Not Found'}
-        return httmock.response(404, content, headers, None, 5, request)
-
-    @httmock.urlmatch(scheme='https', netloc='^api\.github\.com$',
-                      path='^/repos/([\w\-]+)/([\w\-]+)/commits/(\w+)$',
-                      method='GET')
-    def mockCommitRequest(self, url, request):
-        owner, repo, commit = re.match(
-            '^/repos/([\w\-]+)/([\w\-]+)/commits/(\w+)$',
-            url.path).groups()
-        headers = {'content-type': 'application/json'}
-        if commit == self.good_commit:
-            return httmock.response(
-                200, {'sha': self.good_commit}, headers, None, 5, request)
-        elif commit == self.good_child:
-            return httmock.response(
-                200, {'sha': self.good_child}, headers, None, 5, request)
-
-        content = {u'documentation_url': u'https://developer.github.com/v3',
-                   u'message': u'Not Found'}
-        return httmock.response(404, content, headers, None, 5, request)
 
     def setUp(self):
         super(RecipeTestCase, self).setUp()
@@ -73,15 +37,11 @@ class RecipeTestCase(base.TestCase):
         self.admin, self.user = [self.model('user').createUser(**user)
                                  for user in users]
 
-        self.good_repo = 'whole-tale/jupyter-base'
-        self.good_commit = 'b45f9a57'
-        self.good_child = '4b35fe6'
-
     def testRecipeFlow(self):
         # TODO: these should be mocked...
 
-        with httmock.HTTMock(self.mockReposRequest, self.mockCommitRequest,
-                             self.mockOtherRequest):
+        with httmock.HTTMock(mockReposRequest, mockCommitRequest,
+                             mockOtherRequest):
             # Verify that only authorized users can create a new recipe
             resp = self.request(
                 path='/recipe', method='POST',
@@ -105,20 +65,22 @@ class RecipeTestCase(base.TestCase):
 
             resp = self.request(
                 path='/recipe', method='POST', user=self.user,
-                params={'url': 'https://github.com/whole-tale',
-                        'commitId': 'abcdef123'})
+                params={
+                    'url': 'https://github.com/' + os.path.dirname(GOOD_REPO),
+                    'commitId': 'abcdef123'})
             self.assertStatus(resp, 400)
             self.assertEqual(resp.json, {
                 'field': 'url',
                 'message': ('URL does not contain repository name: '
-                            'https://github.com/whole-tale.'),
+                            'https://github.com/%s.' %
+                            os.path.dirname(GOOD_REPO)),
                 'type': 'validation'
             })
 
             # Check commit validation
             resp = self.request(
                 path='/recipe', method='POST', user=self.user,
-                params={'url': 'https://github.com/whole-tale/jupyter-base',
+                params={'url': 'https://github.com/' + GOOD_REPO,
                         'commitId': 'abcdef123'})
             self.assertStatus(resp, 400)
             self.assertEqual(resp.json, {
@@ -131,8 +93,8 @@ class RecipeTestCase(base.TestCase):
             # Create a new recipe
             resp = self.request(
                 path='/recipe', method='POST', user=self.user,
-                params={'url': 'https://github.com/whole-tale/jupyter-base',
-                        'commitId': self.good_commit,
+                params={'url': 'https://github.com/' + GOOD_REPO,
+                        'commitId': GOOD_COMMIT,
                         'description': 'Text     '})
             self.assertStatusOk(resp)
             recipe = resp.json
@@ -141,8 +103,8 @@ class RecipeTestCase(base.TestCase):
             # Verify that recipe is a singleton
             resp = self.request(
                 path='/recipe', method='POST', user=self.user,
-                params={'url': 'https://github.com/whole-tale/jupyter-base',
-                        'commitId': self.good_commit})
+                params={'url': 'https://github.com/' + GOOD_REPO,
+                        'commitId': GOOD_COMMIT})
             self.assertStatus(resp, 400)
             self.assertEqual(resp.json, {
                 'field': 'commitId',
@@ -153,10 +115,10 @@ class RecipeTestCase(base.TestCase):
             # TODO: parentage does not work currently
             # resp = self.request(
             #    path='/recipe', method='POST', user=self.user,
-            #    params={'url': 'https://github.com/whole-tale/jupyter-base',
-            #            'commitId': self.good_child})
+            #    params={'url': 'https://github.com/' + GOOD_REPO,
+            #            'commitId': GOOD_CHILD})
             # self.assertStatusOk(resp)
-            #child = resp.json
+            # child = resp.json
 
         # Update the recipe
         resp = self.request(
