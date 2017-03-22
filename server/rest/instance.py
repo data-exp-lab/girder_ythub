@@ -125,4 +125,5 @@ class Instance(Resource):
             taleId, user=user, level=AccessType.READ)
 
         instanceModel = self.model('instance', 'wholetale')
-        return instanceModel.createInstance(tale, user, token, save=True)
+        return instanceModel.createInstance(tale, user, token, name=name,
+                                            save=True)

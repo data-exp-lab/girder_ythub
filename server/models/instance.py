@@ -76,13 +76,16 @@ class Instance(AccessControlledModel):
         # TODO: handle error
         self.remove(instance)
 
-    def createInstance(self, tale, user, token, save=True):
+    def createInstance(self, tale, user, token, name=None, save=True):
         existing = self.findOne({
             'taleId': tale['_id'],
             'userId': user['_id'],
         })
         if existing:
             return existing
+
+        if not name:
+            name = tale['name']
 
         now = datetime.datetime.utcnow()
         hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
@@ -115,6 +118,7 @@ class Instance(AccessControlledModel):
             'creatorId': user['_id'],
             'lastActivity': now,
             'containerInfo': resp,
+            'name': name,
             'status': InstanceStatus.RUNNING,   # be optimistic for now
             'url': resp['containerPath'],
         }
