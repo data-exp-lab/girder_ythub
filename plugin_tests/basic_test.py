@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 import six
 from tests import base
 
@@ -16,19 +17,27 @@ def tearDownModule():
 
 class WholeTaleTestCase(base.TestCase):
 
+    def setUp(self):
+        super(WholeTaleTestCase, self).setUp()
+        users = ({
+            'email': 'root@dev.null',
+            'login': 'admin',
+            'firstName': 'Root',
+            'lastName': 'van Klompf',
+            'password': 'secret'
+        }, {
+            'email': 'joe@dev.null',
+            'login': 'joeregular',
+            'firstName': 'Joe',
+            'lastName': 'Regular',
+            'password': 'secret'
+        })
+        self.admin, self.user = [self.model('user').createUser(**user)
+                                 for user in users]
+
     def testConfigValidators(self):
         from girder.plugins.wholetale.constants import PluginSettings
-        adminDef = {
-            'email': 'root0@dev.null',
-            'login': 'admin0',
-            'firstName': 'Root0',
-            'lastName': 'van Klompf0',
-            'password': 'secret0',
-            'admin': True
-        }
-        user = self.model('user').createUser(**adminDef)
-
-        resp = self.request('/system/setting', user=user, method='PUT',
+        resp = self.request('/system/setting', user=self.admin, method='PUT',
                             params={'key': PluginSettings.TMPNB_URL,
                                     'value': ''})
         self.assertStatus(resp, 400)
@@ -45,7 +54,7 @@ class WholeTaleTestCase(base.TestCase):
                 'key': v,
                 'value': ''
             }
-            resp = self.request('/system/setting', user=user, method='PUT',
+            resp = self.request('/system/setting', user=self.admin, method='PUT',
                                 params=params)
             self.assertStatus(resp, 400)
             self.assertEqual(resp.json, {
@@ -58,7 +67,7 @@ class WholeTaleTestCase(base.TestCase):
                 'key': v,
                 'value': 'blah'
             }
-            resp = self.request('/system/setting', user=user, method='PUT',
+            resp = self.request('/system/setting', user=self.admin, method='PUT',
                                 params=params)
             self.assertStatus(resp, 400)
             self.assertEqual(resp.json, {
@@ -67,15 +76,7 @@ class WholeTaleTestCase(base.TestCase):
             })
 
     def testListing(self):
-        adminDef = {
-            'email': 'root2@dev.null',
-            'login': 'admin2',
-            'firstName': 'Root2',
-            'lastName': 'van Klompf2',
-            'password': 'secret2',
-            'admin': True
-        }
-        user = self.model('user').createUser(**adminDef)
+        user = self.user
         c1 = self.model('collection').createCollection('c1', user)
         f1 = self.model('folder').createFolder(
             c1, 'f1', parentType='collection')
@@ -115,17 +116,9 @@ class WholeTaleTestCase(base.TestCase):
         from girder.plugins.wholetale.constants import PluginSettings
         self.model('setting').set(
             PluginSettings.TMPNB_URL, 'https://tmpnb.null')
-        adminDef = {
-            'email': 'root@dev.null',
-            'login': 'admin',
-            'firstName': 'Root',
-            'lastName': 'van Klompf',
-            'password': 'secret',
-            'admin': True
-        }
-        admin = self.model('user').createUser(**adminDef)
 
-        resp = self.request(path='/wholetale/genkey', user=admin, method='POST')
+        resp = self.request(path='/wholetale/genkey', user=self.admin,
+                            method='POST')
         self.assertStatusOk(resp)
         self.assertIn(PluginSettings.HUB_PUB_KEY, resp.json)
         self.assertIn(PluginSettings.HUB_PRIV_KEY, resp.json)
@@ -136,3 +129,28 @@ class WholeTaleTestCase(base.TestCase):
         self.assertStatusOk(resp)
         self.assertEqual(resp.json['url'], 'https://tmpnb.null')
         self.assertEqual(resp.json['pubkey'], pubkey)
+
+    def testUserSettings(self):
+        resp = self.request(path='/user/settings', method='GET')
+        self.assertStatus(resp, 401)
+
+        resp = self.request(
+            path='/user/settings', method='PUT', user=self.user,
+            type='application/json',
+            body=json.dumps({'key1': 1, 'key2': 'value2'}))
+        self.assertStatusOk(resp)
+        self.assertEqual(resp.json['meta']['key1'], 1)
+        self.assertEqual(resp.json['meta']['key2'], 'value2')
+
+        resp = self.request(
+            path='/user/settings', method='GET', user=self.user)
+        self.assertStatusOk(resp)
+        self.assertEqual(resp.json, {'key1': 1, 'key2': 'value2'})
+
+        resp = self.request(
+            path='/user/settings', method='PUT', user=self.user,
+            type='application/json',
+            body=json.dumps({'key1': 2, 'key2': None}))
+        self.assertStatusOk(resp)
+        self.assertEqual(resp.json['meta']['key1'], 2)
+        self.assertNotIn('key2', resp.json['meta'])

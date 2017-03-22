@@ -13,6 +13,7 @@ from girder.api.rest import \
 from girder.constants import AccessType, TokenScope
 from girder.models.model_base import ValidationException
 from girder.utility import assetstore_utilities, setting_utilities
+from girder.utility.model_importer import ModelImporter
 
 from .constants import PluginSettings
 from .rest.recipe import Recipe
@@ -189,7 +190,7 @@ def folderRootpath(self, folder, params):
         folder, user=self.getCurrentUser())
 
 
-@access.public(scope=TokenScope.USER_INFO_READ)
+@access.user
 @describeRoute(
     Description('Update the user settings.')
     .errorResponse('Read access was denied.', 403)
@@ -197,12 +198,10 @@ def folderRootpath(self, folder, params):
 @boundHandler()
 def getUserMetadata(self, params):
     user = self.getCurrentUser()
-    if user is None:
-        return {}
     return user.get('meta', {})
 
 
-@access.public(scope=TokenScope.USER_INFO_READ)
+@access.user
 @describeRoute(
     Description('Get the user settings.')
     .param('body', 'A JSON object containing the metadata keys to add',
@@ -212,9 +211,6 @@ def getUserMetadata(self, params):
 @boundHandler()
 def setUserMetadata(self, params):
     user = self.getCurrentUser()
-    if user is None:
-        return {}
-
     metadata = self.getBodyJson()
 
     # Make sure we let user know if we can't accept a metadata key
@@ -258,3 +254,5 @@ def load(info):
 
     info['apiRoot'].user.route('PUT', ('settings',), setUserMetadata)
     info['apiRoot'].user.route('GET', ('settings',), getUserMetadata)
+    ModelImporter.model('user').exposeFields(
+        level=AccessType.WRITE, fields=('meta',))
