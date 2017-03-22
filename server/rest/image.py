@@ -247,7 +247,7 @@ class Image(Resource):
         .jsonParam('tags', 'A human readable labels for the image.',
                    required=False, schema=tagsSchema)
         .jsonParam('config', 'Default image runtime configuration',
-                   required=False, schema=containerConfigSchema, paramType='body')
+                   required=False, schema=containerConfigSchema)
         .responseClass('image')
         .errorResponse('Query parameter was invalid')
     )
