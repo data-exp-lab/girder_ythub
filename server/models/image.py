@@ -84,7 +84,9 @@ class Image(AccessControlledModel):
 
         if public is not None and isinstance(public, bool):
             self.setPublic(image, public, save=False)
-
+        if creator is not None:
+            self.setUserAccess(image, user=creator, level=AccessType.ADMIN,
+                               save=False)
         if save:
             image = self.save(image)
         return image
