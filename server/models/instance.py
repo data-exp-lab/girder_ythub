@@ -76,7 +76,7 @@ class Instance(AccessControlledModel):
     def createInstance(self, tale, user, token, name=None, save=True):
         existing = self.findOne({
             'taleId': tale['_id'],
-            'userId': user['_id'],
+            'creatorId': user['_id'],
         })
         if existing:
             return existing

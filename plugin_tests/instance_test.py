@@ -120,6 +120,14 @@ class TaleTestCase(base.TestCase):
             self.assertStatusOk(resp)
             instance_three = resp.json
 
+            # Make sure that instance is a singleton
+            resp = self.request(
+                path='/instance', method='POST', user=self.admin,
+                params={'taleId': str(self.tale_one['_id'])},
+            )
+            self.assertStatusOk(resp)
+            self.assertEqual(resp.json['_id'], instance_three['_id'])
+
         resp = self.request(
             path='/instance', method='GET', user=self.user,
             params={}
