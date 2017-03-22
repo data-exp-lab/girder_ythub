@@ -67,23 +67,30 @@ class Instance(Resource):
     @filtermodel(model='instance', plugin='wholetale')
     @autoDescribeRoute(
         Description('Return all the running instances accessible by the user')
+        .param('userId', "The ID of the instance's creator.", required=False)
         .param('taleId',  'List all the instanes using this tale.', required=False)
         .param('text', 'Perform a full text search for a tale with a matching '
                'name.', required=False)
         .responseClass('instance', array=True)
         .pagingParams(defaultSort='created', defaultSortDir=SortDir.DESCENDING)
     )
-    def listInstances(self, taleId, text, limit, offset, sort, params):
-        user = self.getCurrentUser()
+    def listInstances(self, userId, taleId, text, limit, offset, sort, params):
+        currentUser = self.getCurrentUser()
         if taleId:
             tale = self.model('tale', 'wholetale').load(
-                taleId, user=user, level=AccessType.READ)
+                taleId, user=currentUser, level=AccessType.READ)
         else:
             tale = None
+
+        if userId:
+            user = self.model('user').load(userId, force=True, exc=True)
+        else:
+            user = None
+
         # TODO allow to search for instances that belongs to specific user
         return list(self.model('instance', 'wholetale').list(
             user=user, tale=tale, offset=offset, limit=limit,
-            sort=sort, currentUser=user))
+            sort=sort, currentUser=currentUser))
 
     @access.user
     @autoDescribeRoute(
