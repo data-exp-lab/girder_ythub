@@ -6,7 +6,6 @@ import json
 import requests
 import six
 
-from girder import events
 from ..constants import PluginSettings, API_VERSION, InstanceStatus
 from girder.api.rest import RestException
 from girder.constants import AccessType, SortDir
@@ -31,8 +30,6 @@ class Instance(AccessControlledModel):
         self.exposeFields(
             level=AccessType.WRITE,
             fields={'containerInfo', 'lastActivity', 'status', 'url'})
-        events.bind('model.user.save.created', 'wholetale',
-                    self._addDefaultFolders)
 
     def validate(self, instance):
         if not InstanceStatus.isValid(instance['status']):
@@ -128,10 +125,3 @@ class Instance(AccessControlledModel):
             instance = self.save(instance)
 
         return instance
-
-    def _addDefaultFolders(self, event):
-        user = event.info
-        instanceFolder = self.model('folder').createFolder(
-            user, 'Instances', parentType='user', public=True, creator=user)
-        self.model('folder').setUserAccess(
-            instanceFolder, user, AccessType.ADMIN, save=True)
