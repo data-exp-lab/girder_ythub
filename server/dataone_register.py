@@ -16,8 +16,6 @@ which, after being run, would write a file in the working directory named like
 'wt-package....json'.
 '''
 
-import sys
-import time
 import re
 import json
 import six.moves.urllib as urllib
@@ -177,83 +175,6 @@ def get_documenting_identifiers(pid):
     return pids
 
 
-def process_package(pid):
-    """Create a package description (Dict) suitable for dumping to JSON."""
-
-    print(("Processing package {}.".format(pid)))
-
-    # query for things in the resource map
-    result = query("resourceMap:\"{}\"".format(esc(pid)),
-                   ["identifier", "formatType", "title", "size", "formatId",
-                    "fileName", "documents"])
-
-    if 'response' not in result or 'docs' not in result['response']:
-        raise RestException(
-            "Failed to get a result for the query\n {}".format(result))
-
-    docs = result['response']['docs']
-
-    # Filter the Solr result by TYPE so we can construct the package
-    metadata = [doc for doc in docs if doc['formatType'] == 'METADATA']
-    data = [doc for doc in docs if doc['formatType'] == 'DATA']
-    children = [doc for doc in docs if doc['formatType'] == 'RESOURCE']
-
-    # Verify what's in Solr is matching
-    aggregation = get_aggregated_identifiers(pid)
-    pids = set([unesc(doc['identifier']) for doc in docs])
-
-    if aggregation != pids:
-        raise RestException(
-            "The contents of the Resource Map don't match what's in the Solr "
-            "index. This is unexpected and unhandled.")
-
-    # Find the primary/documenting metadata so we can later on find the
-    # folder name
-    # TODO: Grabs the resmap a second time, fix this
-    documenting = get_documenting_identifiers(pid)
-
-    # Stop now if multiple objects document others
-    if len(documenting) != 1:
-        raise RestException(
-            "Found two objects in the resource map documenting other objects. "
-            "This is unexpected and unhandled.")
-
-    # Add in URLs to resolve each metadata/data object by
-    for i in range(len(metadata)):
-        metadata[i]['url'] = \
-            "{}/resolve/{}".format(D1_BASE, metadata[i]['identifier'])
-
-    for i in range(len(data)):
-        data[i]['url'] = \
-            "{}/resolve/{}".format(D1_BASE, data[i]['identifier'])
-
-    # Determine the folder name. This is usually the title of the metadata file
-    # in the package but when there are multiple metadata files in the package,
-    # we need to figure out which one is the 'main' or 'documenting' one.
-    primary_metadata = [doc for doc in metadata if 'documents' in doc]
-
-    if len(primary_metadata) > 1:
-        raise RestException("Multiple documenting metadata objects found. "
-                            "This isn't implemented.")
-
-    # Create a Dict to store folders' information
-    # the data key is a concatenation of the data and any metadata objects
-    # that aren't the main or documenting metadata
-    package = {
-        'name': primary_metadata[0]['title'],
-        'identifier': pid,
-        'data': data + [doc for doc in metadata
-                        if doc['identifier'] != primary_metadata[0]['identifier']],
-    }
-
-    # Recurse and add child packages if any exist
-    if children is not None and len(children) > 0:
-        package['children'] = [
-            process_package(child['identifier']) for child in children]
-
-    return package
-
-
 def lookup(path):
     """Create the map (JSON) describing a Data Package."""
     initial_pid = find_initial_pid(path)
@@ -286,33 +207,3 @@ def lookup(path):
         'repository': 'DataONE',
     }
     return dataMap
-
-
-def create_map(dataMap):
-    return process_package(dataMap['dataId'])
-
-
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: wt-registry-dataone path")
-        return
-
-    path = sys.argv[1]
-    print("Getting '{}'...".format(path))
-
-    dataMap = lookup(path)
-    print('DataMap :')
-    print(dataMap)
-    result = create_map(dataMap)
-
-    outfile_path = 'wt-package-{}.json'.format(time.strftime("%Y%m%d%H%M%S"))
-
-    with open(outfile_path, 'w') as outfile:
-        json.dump(result, outfile)
-
-    return
-
-
-if __name__ == "__main__":
-    main()
-    sys.exit()
