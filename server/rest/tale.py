@@ -170,7 +170,10 @@ class Tale(Resource):
         if name:
             tale['name'] = name
         if config:
-            tale['config'].update(config)
+            try:
+                tale['config'].update(config)
+            except AttributeError:
+                tale['config'] = config
         if public is not None:
             taleModel.setPublic(tale, public)
         if published is not None:
