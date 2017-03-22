@@ -22,6 +22,7 @@ import six.moves.urllib as urllib
 import requests
 import rdflib
 
+from girder import logger
 from girder.api.rest import RestException
 
 # http://blog.crossref.org/2015/08/doi-regular-expressions.html
@@ -178,10 +179,10 @@ def get_documenting_identifiers(pid):
 def lookup(path):
     """Create the map (JSON) describing a Data Package."""
     initial_pid = find_initial_pid(path)
-    print("Parsed initial PID of {}.".format(initial_pid))
+    logger.debug('Parsed initial PID of {}.'.format(initial_pid))
 
     package_pid = find_package_pid(initial_pid)
-    print("Found package PID of {}.".format(package_pid))
+    logger.debug('Found package PID of {}.'.format(package_pid))
 
     # query for things in the resource map
     result = query('resourceMap:"{}"'.format(esc(package_pid)),
