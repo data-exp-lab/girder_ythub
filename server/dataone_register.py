@@ -16,16 +16,17 @@ which, after being run, would write a file in the working directory named like
 'wt-package....json'.
 '''
 
-import sys
-import time
 import re
 import json
 import six.moves.urllib as urllib
 import requests
 import rdflib
 
-from .rest.harvester import _DOI_REGEX
+from girder import logger
+from girder.api.rest import RestException
 
+# http://blog.crossref.org/2015/08/doi-regular-expressions.html
+_DOI_REGEX = re.compile('(10.\d{4,9}/[-._;()/:A-Z0-9]+)', re.IGNORECASE)
 D1_BASE = "https://cn.dataone.org/cn/v2"
 
 
@@ -52,13 +53,13 @@ def query(q, fields=["identifier"], rows=1000, start=0):
 
     # Fail if the Solr query failed rather than fail later
     if content['responseHeader']['status'] != 0:
-        raise Exception(
+        raise RestException(
             "Solr query was not successful.\n{}\n{}".format(query_url, content))
 
     # Stop if the number of results is equal to the number of rows requested
     # Fix this in the future by supporting paginated queries.
     if content['response']['numFound'] == rows:
-        raise Exception(
+        raise RestException(
             "Number of results returned equals number of rows requested. "
             "This could mean the query result is truncated. "
             "Implement paged queries.")
@@ -69,7 +70,6 @@ def query(q, fields=["identifier"], rows=1000, start=0):
 def find_package_pid(pid):
     """Find the PID of the resource map for a given PID, which may be a resource
     map"""
-    package_pid = None
 
     result = query(
         "identifier:\"{}\"".format(esc(pid)),
@@ -77,9 +77,9 @@ def find_package_pid(pid):
     result_len = int(result['response']['numFound'])
 
     if result_len == 0:
-        raise Exception('No object was found in the index for {}.'.format(pid))
+        raise RestException('No object was found in the index for {}.'.format(pid))
     elif result_len > 1:
-        raise Exception(
+        raise RestException(
             'More than one object was found in the index for the identifier '
             '{} which is an unexpected state.'.format(pid))
 
@@ -94,10 +94,8 @@ def find_package_pid(pid):
     # still do here is determine the most likely resource map given the set.
     # Usually we do this by rejecting any obsoleted resource maps and that
     # usually leaves us with one.
-    raise Exception(
+    raise RestException(
         "Multiple resource maps were found and this is not implemented.")
-
-    return package_pid
 
 
 def find_initial_pid(path):
@@ -178,90 +176,13 @@ def get_documenting_identifiers(pid):
     return pids
 
 
-def process_package(pid):
-    """Create a package description (Dict) suitable for dumping to JSON."""
-
-    print(("Processing package {}.".format(pid)))
-
-    # query for things in the resource map
-    result = query("resourceMap:\"{}\"".format(esc(pid)),
-                   ["identifier", "formatType", "title", "size", "formatId",
-                    "fileName", "documents"])
-
-    if 'response' not in result or 'docs' not in result['response']:
-        raise Exception(
-            "Failed to get a result for the query\n {}".format(result))
-
-    docs = result['response']['docs']
-
-    # Filter the Solr result by TYPE so we can construct the package
-    metadata = [doc for doc in docs if doc['formatType'] == 'METADATA']
-    data = [doc for doc in docs if doc['formatType'] == 'DATA']
-    children = [doc for doc in docs if doc['formatType'] == 'RESOURCE']
-
-    # Verify what's in Solr is matching
-    aggregation = get_aggregated_identifiers(pid)
-    pids = set([unesc(doc['identifier']) for doc in docs])
-
-    if aggregation != pids:
-        raise Exception(
-            "The contents of the Resource Map don't match what's in the Solr "
-            "index. This is unexpected and unhandled.")
-
-    # Find the primary/documenting metadata so we can later on find the
-    # folder name
-    # TODO: Grabs the resmap a second time, fix this
-    documenting = get_documenting_identifiers(pid)
-
-    # Stop now if multiple objects document others
-    if len(documenting) != 1:
-        raise Exception(
-            "Found two objects in the resource map documenting other objects. "
-            "This is unexpected and unhandled.")
-
-    # Add in URLs to resolve each metadata/data object by
-    for i in range(len(metadata)):
-        metadata[i]['url'] = \
-            "{}/resolve/{}".format(D1_BASE, metadata[i]['identifier'])
-
-    for i in range(len(data)):
-        data[i]['url'] = \
-            "{}/resolve/{}".format(D1_BASE, data[i]['identifier'])
-
-    # Determine the folder name. This is usually the title of the metadata file
-    # in the package but when there are multiple metadata files in the package,
-    # we need to figure out which one is the 'main' or 'documenting' one.
-    primary_metadata = [doc for doc in metadata if 'documents' in doc]
-
-    if len(primary_metadata) > 1:
-        raise Exception("Multiple documenting metadata objects found. "
-                        "This isn't implemented.")
-
-    # Create a Dict to store folders' information
-    # the data key is a concatenation of the data and any metadata objects
-    # that aren't the main or documenting metadata
-    package = {
-        'name': primary_metadata[0]['title'],
-        'identifier': pid,
-        'data': data + [doc for doc in metadata
-                        if doc['identifier'] != primary_metadata[0]['identifier']],
-    }
-
-    # Recurse and add child packages if any exist
-    if children is not None and len(children) > 0:
-        package['children'] = [
-            process_package(child['identifier']) for child in children]
-
-    return package
-
-
 def lookup(path):
     """Create the map (JSON) describing a Data Package."""
     initial_pid = find_initial_pid(path)
-    print("Parsed initial PID of {}.".format(initial_pid))
+    logger.debug('Parsed initial PID of {}.'.format(initial_pid))
 
     package_pid = find_package_pid(initial_pid)
-    print("Found package PID of {}.".format(package_pid))
+    logger.debug('Found package PID of {}.'.format(package_pid))
 
     # query for things in the resource map
     result = query('resourceMap:"{}"'.format(esc(package_pid)),
@@ -269,7 +190,7 @@ def lookup(path):
                     "fileName", "documents"])
 
     if 'response' not in result or 'docs' not in result['response']:
-        raise Exception(
+        raise RestException(
             "Failed to get a result for the query\n {}".format(result))
 
     docs = result['response']['docs']
@@ -277,7 +198,7 @@ def lookup(path):
     # Filter the Solr result by TYPE so we can construct the package
     metadata = [doc for doc in docs if doc['formatType'] == 'METADATA']
     if not metadata:
-        raise Exception('No metadata found.')
+        raise RestException('No metadata found.')
 
     dataMap = {
         'dataId': package_pid,
@@ -287,33 +208,3 @@ def lookup(path):
         'repository': 'DataONE',
     }
     return dataMap
-
-
-def create_map(dataMap):
-    return process_package(dataMap['dataId'])
-
-
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: wt-registry-dataone path")
-        return
-
-    path = sys.argv[1]
-    print("Getting '{}'...".format(path))
-
-    dataMap = lookup(path)
-    print('DataMap :')
-    print(dataMap)
-    result = create_map(dataMap)
-
-    outfile_path = 'wt-package-{}.json'.format(time.strftime("%Y%m%d%H%M%S"))
-
-    with open(outfile_path, 'w') as outfile:
-        json.dump(result, outfile)
-
-    return
-
-
-if __name__ == "__main__":
-    main()
-    sys.exit()

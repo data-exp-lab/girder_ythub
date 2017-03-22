@@ -1,7 +1,7 @@
-import NotebookModel from './NotebookModel';
+import InstanceModel from './InstanceModel';
 import FrontendModel from './FrontendModel';
 
 export {
-  NotebookModel,
+  InstanceModel,
   FrontendModel
 };

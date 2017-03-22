@@ -8,25 +8,25 @@ import { getCurrentUser } from 'girder/auth';
 import { SORT_DESC } from 'girder/constants';
 import { restRequest } from 'girder/rest';
 
-import NotebookCollection from '../collections/NotebookCollection';
-import NotebookListWidgetTemplate from '../templates/NotebookListWidget.pug';
-import NotebookStatus from '../NotebookStatus';
+import InstanceCollection from '../collections/InstanceCollection';
+import InstanceListWidgetTemplate from '../templates/InstanceListWidget.pug';
+import InstanceStatus from '../InstanceStatus';
 
-import '../stylesheets/notebookListWidget.styl';
+import '../stylesheets/instanceListWidget.styl';
 
 
-var NotebookListWidget = View.extend({
+var InstanceListWidget = View.extend({
     events: {
-        'click .g-notebook-trigger-link': function (e) {
+        'click .g-instance-trigger-link': function (e) {
             var cid = $(e.target).attr('cid');
-            this.trigger('g:notebookClicked', this.collection.get(cid));
+            this.trigger('g:instanceClicked', this.collection.get(cid));
         },
 
-   'click .g-notebook-delete-link': function (e) {
-        var url = $(e.currentTarget).attr('notebook-id');
+   'click .g-instance-delete-link': function (e) {
+        var url = $(e.currentTarget).attr('instance-id');
             var widget = this;
             var _delParams = {
-                path: 'notebook/' + url,
+                path: 'instance/' + url,
                 type: 'DELETE',
                 error: null
             };
@@ -40,7 +40,7 @@ var NotebookListWidget = View.extend({
         this.columns = settings.columns || this.columnEnum.COLUMN_ALL;
         this.filter = settings.filter || {};
 
-        this.collection = new NotebookCollection();
+        this.collection = new InstanceCollection();
         this.collection.sortField = settings.sortField || 'created';
         this.collection.sortDir = settings.sortDir || SORT_DESC;
         this.collection.pageLimit = settings.pageLimit || this.collection.pageLimit;
@@ -57,7 +57,7 @@ var NotebookListWidget = View.extend({
             collection: this.collection,
             parentView: this
         });
-        eventStream.on('g:event.notebook_status', this._statusChange, this);
+        eventStream.on('g:event.instance_status', this._statusChange, this);
     },
 
     columnEnum: defineFlags([
@@ -72,44 +72,44 @@ var NotebookListWidget = View.extend({
     render: function () {
         var widget = this;
 
-        restRequest({path: 'ythub'}).done(function (resp) {
-            widget.$el.html(NotebookListWidgetTemplate({
-                notebooks: widget.collection.toArray(),
+        restRequest({path: 'wholetale'}).done(function (resp) {
+            widget.$el.html(InstanceListWidgetTemplate({
+                instances: widget.collection.toArray(),
                 showHeader: widget.showHeader,
                 columns: widget.columns,
                 hubUrl: resp["url"],
                 columnEnum: widget.columnEnum,
-                NotebookStatus: NotebookStatus,
+                InstanceStatus: InstanceStatus,
                 formatDate: formatDate,
                 DATE_SECOND: DATE_SECOND
             }));
         });
 
         if (this.showPaging) {
-            this.paginateWidget.setElement(this.$('.g-notebook-pagination')).render();
+            this.paginateWidget.setElement(this.$('.g-instance-pagination')).render();
         }
 
         return this;
     },
 
     _statusChange: function (event) {
-        var notebook = event.data,
-            tr = this.$('tr[notebookId=' + notebook._id + ']');
+        var instance = event.data,
+            tr = this.$('tr[instanceId=' + instance._id + ']');
 
         if (!tr.length) {
             return;
         }
 
         if (this.columns & this.columnEnum.COLUMN_STATUS_ICON) {
-            tr.find('td.g-status-icon-container').attr('status', notebook.status)
-              .find('i').removeClass().addClass(NotebookStatus.icon(notebook.status));
+            tr.find('td.g-status-icon-container').attr('status', instance.status)
+              .find('i').removeClass().addClass(InstanceStatus.icon(instance.status));
         }
         if (this.columns & this.columnEnum.COLUMN_STATUS) {
-            tr.find('td.g-notebook-status-cell').text(NotebookStatus.text(notebook.status));
+            tr.find('td.g-instance-status-cell').text(InstanceStatus.text(instance.status));
         }
         if (this.columns & this.columnEnum.COLUMN_CREATED) {
-            tr.find('td.g-notebook-created-cell').text(
-                formatDate(notebook.created, DATE_SECOND));
+            tr.find('td.g-instance-created-cell').text(
+                formatDate(instance.created, DATE_SECOND));
         }
 
         tr.addClass('g-highlight');
@@ -120,4 +120,4 @@ var NotebookListWidget = View.extend({
     }
 });
 
-export default NotebookListWidget;
+export default InstanceListWidget;

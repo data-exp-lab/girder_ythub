@@ -1,8 +1,8 @@
 import _ from 'underscore';
 
 
-// The same notebook status enum as the server.
-var NotebookStatus = {
+// The same instance status enum as the server.
+var InstanceStatus = {
     _map: {},
 
     text: function (status) {
@@ -29,7 +29,7 @@ var NotebookStatus = {
     },
 
     /**
-     * Add new notebook statuses. The argument should be an object mapping the enum
+     * Add new instance statuses. The argument should be an object mapping the enum
      * symbol name to an information object for that status. The info object
      * must include a "value" field (its integer value), a "text" field, which
      * is how the status should be rendered as text, and an "icon" field for
@@ -46,7 +46,7 @@ var NotebookStatus = {
     }
 };
 
-NotebookStatus.registerStatus({
+InstanceStatus.registerStatus({
     RUNNING: {
         value: 0,
         text: 'Running',
@@ -59,4 +59,4 @@ NotebookStatus.registerStatus({
     },
 });
 
-export default NotebookStatus;
+export default InstanceStatus;

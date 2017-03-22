@@ -1,5 +1,5 @@
-name: ytHub
-description: integration with tmpnb
+name: WholeTale
+description: WholeTale plugin for Girder
 version: 1.0.0
 #dependencies:
 #    - jobs

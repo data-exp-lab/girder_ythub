@@ -5,8 +5,8 @@ import FrontendSelectorWidget from './widgets/FrontendSelectorWidget';
 import { restRequest } from 'girder/rest';
 import { wrap } from 'girder/utilities/PluginUtils';
 import { getCurrentUser } from 'girder/auth';
-import ytHubHierarchyWidget from '../templates/ytHubHierarchyWidget.pug';
-import ytHubFolderMenu from '../templates/ytHubFolderMenu.pug';
+import WholeTaleHierarchyWidget from '../templates/WholeTaleHierarchyWidget.pug';
+import WholeTaleFolderMenu from '../templates/WholeTaleFolderMenu.pug';
 
 
 wrap(HierarchyWidget, 'render', function (render) {
@@ -14,7 +14,7 @@ wrap(HierarchyWidget, 'render', function (render) {
 
     if (getCurrentUser() && widget.parentModel.resourceName === 'folder') {
         var _restParams = {
-            path: 'notebook',
+            path: 'instance',
             type: 'GET',
             data: {
                 userId: getCurrentUser().id,
@@ -22,15 +22,15 @@ wrap(HierarchyWidget, 'render', function (render) {
             },
             error: null
         };
-        restRequest(_restParams).done(function (notebooks) {
+        restRequest(_restParams).done(function (instances) {
             // Call the underlying render function that we are wrapping
             render.call(widget);
-            if (notebooks.length < 1) {
-                $(ytHubFolderMenu({
+            if (instances.length < 1) {
+                $(WholeTaleFolderMenu({
                     goUrl: '/dev/null',
                     delUrl: '0',
                 })).appendTo(widget.$('.g-folder-actions-menu'));
-                $(ytHubHierarchyWidget()).prependTo(widget.$('.g-folder-header-buttons'));
+                $(WholeTaleHierarchyWidget()).prependTo(widget.$('.g-folder-header-buttons'));
                 document.getElementById("go_nb").style.display = "none";
                 document.getElementById("stop_nb").style.display = "none";
                 document.getElementById("start_nb").style.display = "list-item";
@@ -38,12 +38,12 @@ wrap(HierarchyWidget, 'render', function (render) {
                 document.getElementsByClassName("g-gonb-button")[0].style.display = "none";
                 document.getElementsByClassName("g-stopnb-button")[0].style.display = "none";
             } else {
-                var notebook = notebooks[0];
-                $(ytHubFolderMenu({
-                    goUrl: notebook.url,
-                    delUrl: notebook._id
+                var instance = instances[0];
+                $(WholeTaleFolderMenu({
+                    goUrl: instance.url,
+                    delUrl: instance._id
                 })).appendTo(widget.$('.g-folder-actions-menu'));
-                $(ytHubHierarchyWidget()).prependTo(widget.$('.g-folder-header-buttons'));
+                $(WholeTaleHierarchyWidget()).prependTo(widget.$('.g-folder-header-buttons'));
                 document.getElementById("go_nb").style.display = "list-item";
                 document.getElementById("stop_nb").style.display = "list-item";
                 document.getElementById("start_nb").style.display = "none";
@@ -59,7 +59,7 @@ wrap(HierarchyWidget, 'render', function (render) {
 
 function _visit_nb (e) {
     restRequest({
-        path: 'notebook',
+        path: 'instance',
         type: 'GET',
         data: {
             folderId: this.parentModel.id,
@@ -67,7 +67,7 @@ function _visit_nb (e) {
         }
     }).done(_.bind(function (resp) {
        var nb_url = resp[0]['containerPath'];
-       restRequest({path: 'ythub'}).done(function (resp) {
+       restRequest({path: 'wholetale'}).done(function (resp) {
            window.location.assign(resp["url"] + nb_url);
        });
     }, this));
@@ -75,7 +75,7 @@ function _visit_nb (e) {
 
 function _stop_nb (e) {
     restRequest({
-        path: 'notebook',
+        path: 'instance',
         type: 'GET',
         data: {
             folderId: this.parentModel.id,
@@ -84,7 +84,7 @@ function _stop_nb (e) {
     }).done(_.bind(function (resp) {
        var nbId = resp[0]['_id'];
        var _delParams = {
-           path: 'notebook/' + nbId,
+           path: 'instance/' + nbId,
            type: 'DELETE',
            error: null
        };
@@ -107,9 +107,9 @@ function _start_nb () {
     }).render();
 };
 
-HierarchyWidget.prototype.events['click a.g-visit-notebook'] = _visit_nb
-HierarchyWidget.prototype.events['click a.g-start-notebook'] = _start_nb
-HierarchyWidget.prototype.events['click a.g-stop-notebook'] = _stop_nb
+HierarchyWidget.prototype.events['click a.g-visit-instance'] = _visit_nb
+HierarchyWidget.prototype.events['click a.g-start-instance'] = _start_nb
+HierarchyWidget.prototype.events['click a.g-stop-instance'] = _stop_nb
 HierarchyWidget.prototype.events['click .g-runnb-button'] = _start_nb
 HierarchyWidget.prototype.events['click .g-gonb-button'] = _visit_nb
 HierarchyWidget.prototype.events['click .g-stopnb-button'] = _stop_nb

@@ -35,15 +35,15 @@ var FrontendSelectorWidget = View.extend({
    },
 
    _runFrontend: function(folderId, frontendId) {
-      restRequest({path: 'ythub'}).done(function (hub) {
+      restRequest({path: 'wholetale'}).done(function (hub) {
          restRequest({
-            path: 'notebook/' + folderId,
+            path: 'instance/' + folderId,
             data: {
                frontendId: frontendId 
             },
             type: 'POST'
-         }).done(function (notebook) {
-            window.location.assign(hub["url"] + '/' + notebook["containerPath"]);
+         }).done(function (instance) {
+            window.location.assign(hub["url"] + '/' + instance["containerPath"]);
          });
       });
    },
