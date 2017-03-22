@@ -75,6 +75,7 @@ class Instance(Resource):
         .pagingParams(defaultSort='created', defaultSortDir=SortDir.DESCENDING)
     )
     def listInstances(self, userId, taleId, text, limit, offset, sort, params):
+        # TODO: text search is ignored
         currentUser = self.getCurrentUser()
         if taleId:
             tale = self.model('tale', 'wholetale').load(
