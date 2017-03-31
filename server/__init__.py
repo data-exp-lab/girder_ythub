@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives import serialization
 import six
 
 from girder.api import access
-from girder.api.describe import Description, describeRoute
+from girder.api.describe import Description, describeRoute, autoDescribeRoute
 from girder.api.rest import \
     boundHandler, loadmodel, RestException
 from girder.constants import AccessType, TokenScope
@@ -183,6 +183,35 @@ def setUserMetadata(self, params):
     return self.model('user').save(user)
 
 
+@access.user
+@autoDescribeRoute(
+    Description('Get a set of items and folders.')
+    .jsonParam('resources', 'A JSON-encoded set of resources to get. Each type '
+               'is a list of ids. Only folders and items may be specified. '
+               'For example: {"item": [(item id 1), (item id2)], "folder": '
+               '[(folder id 1)]}.', requireObject=True)
+    .errorResponse('Unsupport or unknown resource type.')
+    .errorResponse('Invalid resources format.')
+    .errorResponse('Resource type not supported.')
+    .errorResponse('No resources specified.')
+    .errorResponse('Resource not found.')
+    .errorResponse('ID was invalid.')
+)
+@boundHandler()
+def listResources(self, resources, params):
+    user = self.getCurrentUser()
+    result = {}
+    for kind in resources:
+        try:
+            model = self.model(kind)
+            result[kind] = [
+                model.load(id=id, user=user, level=AccessType.READ, exc=True)
+                for id in resources[kind]]
+        except ImportError:
+            pass
+    return result
+
+
 def load(info):
     info['apiRoot'].wholetale = wholeTale()
     info['apiRoot'].instance = Instance()
@@ -194,6 +223,7 @@ def load(info):
     info['apiRoot'].folder.route('GET', ('registered',), listImportedData)
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
     info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
+    info['apiRoot'].resource.route('GET', (), listResources)
 
     info['apiRoot'].user.route('PUT', ('settings',), setUserMetadata)
     info['apiRoot'].user.route('GET', ('settings',), getUserMetadata)
