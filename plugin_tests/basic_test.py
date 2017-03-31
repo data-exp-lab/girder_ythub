@@ -154,3 +154,51 @@ class WholeTaleTestCase(base.TestCase):
         self.assertStatusOk(resp)
         self.assertEqual(resp.json['meta']['key1'], 2)
         self.assertNotIn('key2', resp.json['meta'])
+
+    def testListingResources(self):
+        user = self.user
+        c1 = self.model('collection').createCollection('c1', user)
+        f1 = self.model('folder').createFolder(
+            c1, 'f1', parentType='collection')
+        f2 = self.model('folder').createFolder(
+            c1, 'f2', parentType='collection')
+        i1 = self.model('item').createItem('i1', user, f1)
+        i2 = self.model('item').createItem('i2', user, f1)
+
+        data = {'item': [str(i1['_id']), str(i2['_id'])]}
+        items = []
+        for item in (i1, i2):
+            resp = self.request(
+                path='/item/{_id}'.format(**item), user=self.user)
+            items.append(resp.json)
+
+        resp = self.request(
+            path='/resource', method='GET', user=self.user,
+            params={'resources': json.dumps(data)})
+        self.assertStatusOk(resp)
+        self.assertEqual('folder' in resp.json, False)
+        for iel, el in enumerate(resp.json['item']):
+            for key in el:
+                if key in ('lowerName', ):
+                    continue
+                self.assertEqual(el[key], items[iel][key])
+
+        data = {'item': [str(i1['_id'])],
+                'folder': [str(f1['_id']), str(f2['_id'])],
+                'blah': []}
+        folders = []
+        for folder in (f1, f2):
+            resp = self.request(
+                path='/folder/{_id}'.format(**folder), user=self.user)
+            folders.append(resp.json)
+
+        resp = self.request(
+            path='/resource', method='GET', user=self.user,
+            params={'resources': json.dumps(data)})
+        self.assertStatusOk(resp)
+        self.assertEqual('item' in resp.json, True)
+        for iel, el in enumerate(resp.json['folder']):
+            for key in el:
+                if key in ('lowerName', 'access'):
+                    continue
+                self.assertEqual(el[key], folders[iel][key])
