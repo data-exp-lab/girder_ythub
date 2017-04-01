@@ -74,6 +74,12 @@ def validateTmpNbUrl(doc):
             'TmpNB URL must not be empty.', 'value')
 
 
+@setting_utilities.validator(PluginSettings.REDIRECT_URL)
+def validateTmpNbRedirectUrl(doc):
+    if not doc['value']:
+        return ''
+
+
 @setting_utilities.validator(PluginSettings.CULLING_PERIOD)
 def validateCullingPeriod(doc):
     if not doc['value']:

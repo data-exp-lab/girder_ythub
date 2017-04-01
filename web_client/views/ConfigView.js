@@ -9,27 +9,36 @@ import ConfigViewTemplate from '../templates/configView.pug';
 import '../stylesheets/configView.styl';
 
 var ConfigView = View.extend({
+    SETTING_KEYS: [
+        'ythub.tmpnb_internal_url',
+        'ythub.tmpnb_redirect_url',
+        'ythub.culling_period',
+        'ythub.culling_frequency',
+        'ythub.priv_key',
+        'ythub.pub_key'
+    ],
+
+    settingControlId: function(key) {
+        return '#' + key.replace(/(_|\.)/g, '-');
+    },
+
     events: {
         'submit #g-ythub-config-form': function (event) {
             event.preventDefault();
             this.$('#g-ythub-error-message').empty();
 
-            this._saveSettings([{
-                key: 'ythub.tmpnb_url',
-                value: this.$('#ythub_tmpnb').val().trim()
-            }, {
-                key: 'ythub.culling_period',
-                value: this.$('#ythub_culling').val().trim()
-            }, {
-                key: 'ythub.culling_frequency',
-                value: this.$('#ythub_cullingfq').val().trim()
-            }, {
-                key: 'ythub.priv_key',
-                value: this.$('#ythub_priv_key').val()
-            }, {
-                key: 'ythub.pub_key',
-                value: this.$('#ythub_pub_key').val()
-            }]);
+            var settingsList = this.SETTING_KEYS.map(function(key) {
+                let value = this.$(this.settingControlId(key)).val()
+                if (typeof value !== 'undefined' && !/key/.test(key)) {
+                    value = value.trim();
+                }
+                return {
+                    key: key,
+                    value: value
+                }
+            }, this);
+
+            this._saveSettings(settingsList);
         },
         'click .g-generate-key': function (event) {
             event.preventDefault();
@@ -38,8 +47,8 @@ var ConfigView = View.extend({
                path: 'ythub/genkey',
                data: {}
             }).done(_.bind(function (resp) {
-               this.$('#ythub_priv_key').val(resp['ythub.priv_key']);
-               this.$('#ythub_pub_key').val(resp['ythub.pub_key']);
+               this.$('#ythub-priv-key').val(resp['ythub.priv_key']);
+               this.$('#ythub-pub-key').val(resp['ythub.pub_key']);
             }, this));
         }
     },
@@ -48,21 +57,11 @@ var ConfigView = View.extend({
             type: 'GET',
             path: 'system/setting',
             data: {
-                list: JSON.stringify([
-                    'ythub.tmpnb_url',
-                    'ythub.culling_period',
-                    'ythub.culling_frequency',
-                    'ythub.priv_key',
-                    'ythub.pub_key'
-                ])
+                list: JSON.stringify(this.SETTING_KEYS)
             }
         }).done(_.bind(function (resp) {
+            this.settingVals = resp;
             this.render();
-            this.$('#ythub_tmpnb').val(resp['ythub.tmpnb_url']);
-            this.$('#ythub_culling').val(resp['ythub.culling_period']);
-            this.$('#ythub_cullingfq').val(resp['ythub.culling_frequency']);
-            this.$('#ythub_priv_key').val(resp['ythub.priv_key']);
-            this.$('#ythub_pub_key').val(resp['ythub.pub_key']);
         }, this));
     },
 
@@ -75,6 +74,13 @@ var ConfigView = View.extend({
                 el: this.$('.g-config-breadcrumb-container'),
                 parentView: this
             }).render();
+        }
+
+        if (this.settingVals) {
+            for (var i in this.SETTING_KEYS) {
+                var key = this.SETTING_KEYS[i];
+                this.$(this.settingControlId(key)).val(this.settingVals[key]);
+            }
         }
 
         return this;

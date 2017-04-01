@@ -10,7 +10,8 @@ API_VERSION = '1.1'
 class PluginSettings:
     CULLING_PERIOD = 'ythub.culling_period'
     CULLING_FREQUENCY = 'ythub.culling_frequency'
-    TMPNB_URL = 'ythub.tmpnb_url'
+    TMPNB_URL = 'ythub.tmpnb_internal_url'
+    REDIRECT_URL = 'ythub.tmpnb_redirect_url'
     HUB_PRIV_KEY = 'ythub.priv_key'
     HUB_PUB_KEY = 'ythub.pub_key'
 

@@ -1,19 +1,22 @@
 .g-config-breadcrumb-container
 form#g-ythub-config-form(role="form")
   .form-group
-    label.control-label(for="ythub_tmpnb") tmpnb URL
-    input.input-sm.form-control#ythub_tmpnb(
+    label.control-label(for="ythub-tmpnb-internal-url") tmpnb internal URL
+    input.input-sm.form-control#ythub-tmpnb-internal-url(
+      type="text", placeholder="Temporary notebook redirect URL (if different than above)")
+    label.control-label(for="ythub-tmpnb-redirect-url") tmpnb redirect URL
+    input.input-sm.form-control#ythub-tmpnb-redirect-url(
       type="text", placeholder="Temporary notebook server's URL")
-    label.control-label(for="ythub_culling") How long can a notebook be inactive before it's removed (in hours)
-    input.input-sm.form-control#ythub_culling(
+    label.control-label(for="#ythub-culling-period") How long can a notebook be inactive before it's removed (in hours)
+    input.input-sm.form-control#ythub-culling-period(
       type="text", placeholder="Maximum inactivity period (hours) before notebook is deleted")
-    label.control-label(for="ythub_cullingfq") How often to check for inactive notebooks (in hours)
-    input.input-sm.form-control#ythub_cullingfq(
+    label.control-label(for="ythub-culling-frequency") How often to check for inactive notebooks (in hours)
+    input.input-sm.form-control#ythub-culling-frequency(
       type="text", placeholder="Culling check frequency in hours")
-    label.control-label(for="ythub_priv_key") yt Hub's private RSA key
-    textarea#ythub_priv_key.form-control= privkey
-    label.control-label(for="ythub_pub_key") yt Hub's public RSA key
-    textarea#ythub_pub_key.form-control= pubkey
+    label.control-label(for="ythub-priv-key") yt Hub's private RSA key
+    textarea#ythub-priv-key.form-control= privkey
+    label.control-label(for="ythub-pub-key") yt Hub's public RSA key
+    textarea#ythub-pub-key.form-control= pubkey
 
   p#g-ythub-error-message.g-validation-failed-message
   button.g-generate-key.btn.btn-small.btn-primary(title="Generate Key")
