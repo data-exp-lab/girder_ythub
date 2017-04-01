@@ -265,3 +265,11 @@ class YtHubTestCase(base.TestCase):
         self.assertStatusOk(resp)
         self.assertEqual(resp.json['url'], 'https://tmpnb.null')
         self.assertEqual(resp.json['pubkey'], pubkey)
+
+        resp = self.request('/system/setting', user=admin, method='PUT',
+                            params={'key': PluginSettings.REDIRECT_URL,
+                                    'value': 'https://blah.null'})
+        self.assertStatusOk(resp)
+        resp = self.request(path='/ythub', method='GET')
+        self.assertStatusOk(resp)
+        self.assertEqual(resp.json['url'], 'https://blah.null')
