@@ -175,15 +175,24 @@ class YtHubTestCase(base.TestCase):
             'admin': True
         }
         user = self.model('user').createUser(**adminDef)
+        resp = self.request(
+                path='/assetstore', method='POST', user=user,
+                params={'type': 0, 'name': 'test', 'root': '/tmp/girder'})
+        self.assertStatusOk(resp)
+        assetstore = resp.json
+
         c1 = self.model('collection').createCollection('c1', user)
         f1 = self.model('folder').createFolder(
             c1, 'f1', parentType='collection')
         i1 = self.model('item').createItem('i1', user, f1)
         i2 = self.model('item').createItem('i2', user, f1)
-        assetstore = {'_id': 0}
         fl1 = self.model('file').createFile(user, i1, 'foo1', 7, assetstore)
         fl2 = self.model('file').createFile(user, i1, 'foo2', 13, assetstore)
         fl3 = self.model('file').createFile(user, i2, 'foo3', 19, assetstore)
+        for ofile in (fl1, fl2, fl3):
+            ofile['path'] = '/nonexistent/path/%s' % ofile['name']
+            ofile = self.model('file').save(ofile)
+
         f2 = self.model('folder').createFolder(
             f1, 'f2', parentType='folder')
         i3 = self.model('item').createItem('i3', user, f2)

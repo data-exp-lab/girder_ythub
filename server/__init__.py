@@ -5,6 +5,7 @@ import cherrypy
 from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
+import six
 
 from girder import events, logger
 from girder.models.model_base import ValidationException
@@ -27,10 +28,9 @@ def validateHubPrivKey(doc):
     if not doc['value']:
         raise ValidationException(
             'PRIV_KEY must not be empty.', 'value')
-    try:
-        key = doc['value'].encode('utf8')
-    except AttributeError:
-        key = doc['value']
+    key = doc['value']
+    if isinstance(key, six.string_types):
+        key = key.encode('utf-8')
     try:
         serialization.load_pem_private_key(
             key, password=None, backend=default_backend()
@@ -51,10 +51,9 @@ def validateHubPubKey(doc):
     if not doc['value']:
         raise ValidationException(
             'PUB_KEY must not be empty.', 'value')
-    try:
-        key = doc['value'].encode('utf8')
-    except AttributeError:
-        key = doc['value']
+    key = doc['value']
+    if isinstance(key, six.string_types):
+        key = key.encode('utf-8')
     try:
         serialization.load_pem_public_key(
             key, backend=default_backend()
