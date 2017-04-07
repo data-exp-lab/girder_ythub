@@ -20,33 +20,37 @@ instanceModel = {
         '_accessLevel': 2,
         '_id': '587506670791d3000121b68d',
         '_modelType': 'instance',
-        'containerId': '7086458236c55f336f78bb0e3cbe7233df07499abb0f943f2',
-        'containerPath': 'user/kvmKuSBUDydo',
-        'created': '2017-01-10T16:05:56.296000+00:00',
-        'folderId': '5873dc0faec030000144d232',
-        'frontendId': '5873dcdbaec030000144d233',
-        'lastActivity': '2017-01-10T16:05:56.296000+00:00',
-        'mountPoint': '/var/lib/docker/volumes/5873dc0faec0300_root/_data',
+        'containerInfo': {
+            'containerId': '397914f6bf9e4d153dd86',
+            'containerPath': 'user/.../login?token=...',
+            'host': '172.17.0.1',
+            'mountPoint': '/var/lib/docker/volumes/58caa69f9fcbde0001/_data',
+            'volumeName': '58ca9fcbde0001df4d26_foo'
+        },
+        'created': '2017-04-07T17:04:04.777000+00:00',
+        'creatorId': '57c099af86ed1d0001733722',
+        'lastActivity': '2017-04-07T17:04:04.777000+00:00',
+        'name': 'test',
         'status': 0,
-        'userId': '586fe9414bd053000185b45d',
-        'when': '2017-01-10T16:05:56.296000+00:00'
+        'taleId': '58caa69f9fcbde0001df4d26',
+        'url': 'user/hkhHpMloA4Pp/login?token=babf41833c9641a4a92bece48a34e5b7'
     },
     'properties': {
         '_accessLevel': {'type': 'integer', 'format': 'int32'},
         '_id': {'type': 'string'},
         '_modelType': {'type': 'string'},
-        'containerId': {'type': 'string'},
-        'containerPath': {'type': 'string'},
+        'containerInfo': {
+            '$ref': '#/definitions/containerInfo'
+        },
         'created': {'type': 'string', 'format': 'date'},
-        'folderId': {'type': 'string'},
-        'frontendId': {'type': 'string'},
+        'creatorId': {'type': 'string'},
         'lastActivity': {'type': 'string', 'format': 'date'},
-        'mountPoint': {'type': 'string'},
+        'name': {'type': 'string'},
         'status': {'type': 'integer', 'format': 'int32',
                    'allowEmptyValue': False,
                    'maximum': 1, 'minimum': 0},
-        'userId': {'type': 'string'},
-        'when': {'type': 'string', 'format': 'date'},
+        'taleId': {'type': 'string'},
+        'url': {'type': 'string'}
     }
 }
 addModel('instance', instanceModel, resources='instance')
