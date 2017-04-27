@@ -132,9 +132,13 @@ def process_package(parent, parentType, progress, user, pid, name=None):
 
     fileModel = ModelImporter.model('file')
     for fileObj in data:
+        try:
+            fileName = fileObj['fileName']
+        except KeyError:
+            fileName = fileObj['identifier']
         fileDoc = fileModel.createLinkFile(
             url=fileObj['url'], parent=gc_folder,
-            name=fileObj['fileName'], parentType='folder',
+            name=fileName, parentType='folder',
             creator=user, size=int(fileObj['size']),
             mimeType=fileObj['formatId'])
         gc_file = fileModel.filter(fileDoc, user)
