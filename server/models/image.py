@@ -103,7 +103,6 @@ class Image(AccessControlledModel):
         return self.save(image)
 
     def buildImage(self, image):
-        # TODO: create and schedule a job that will b
         image['status'] = ImageStatus.BUILDING
         return self.save(image)
 

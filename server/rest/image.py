@@ -5,7 +5,8 @@ from girder.api.docs import addModel
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, filtermodel, RestException
 from girder.constants import AccessType, SortDir, TokenScope
-from ..constants import containerConfigSchema, tagsSchema
+from girder.plugins.jobs.constants import JobStatus
+from ..constants import containerConfigSchema, tagsSchema, ImageStatus
 
 
 imageModel = {
@@ -270,7 +271,39 @@ class Image(Resource):
         .errorResponse('Admin access was denied for the image.', 403)
     )
     def buildImage(self, image, params):
-        return self.model('image', 'wholetale').buildImage(image)
+        # TODO: create and schedule a job that will b
+        user = self.getCurrentUser()
+        jobTitle = 'Building image %s' % image['fullName']
+        jobModel = self.model('job', 'jobs')
+
+        job = jobModel.createJob(
+            title=jobTitle, type='build_image', handler='worker_handler',
+            user=user)
+
+        job.update({
+            'celeryTaskName': 'gwvolman.tasks.build_image',
+            'args': [str(image['_id'])]
+        })
+        job = jobModel.save(job)
+        jobModel.scheduleJob(job)
+        return image
+
+    def updateImageStatus(self, event):
+        params = event.info['params']
+        job = event.info['job']
+        if job['type'] == 'build_image':
+            user = self.getCurrentUser()
+            status = int(params['status'])
+            # FIXME: Who should be able to build images?
+            image = self.model('image', 'wholetale').load(
+                job['args'][0], force=True)
+            if status == JobStatus.SUCCESS:
+                image['status'] = ImageStatus.AVAILABLE
+            elif status == JobStatus.ERROR:
+                image['status'] = ImageStatus.INVALID
+            elif status in (JobStatus.QUEUED, JobStatus.RUNNING):
+                image['status'] = ImageStatus.BUILDING
+            self.model('image', 'wholetale').save(image)
 
     @access.admin
     @autoDescribeRoute(

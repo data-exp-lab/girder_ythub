@@ -6,6 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 import six
 
+from girder import events
 from girder.api import access
 from girder.api.describe import Description, describeRoute, autoDescribeRoute
 from girder.api.rest import \
@@ -217,7 +218,9 @@ def load(info):
     info['apiRoot'].instance = Instance()
     info['apiRoot'].tale = Tale()
     info['apiRoot'].recipe = Recipe()
-    info['apiRoot'].image = Image()
+    image = Image()
+    info['apiRoot'].image = image
+    events.bind('jobs.job.update', 'wholetale', image.updateImageStatus)
     info['apiRoot'].repository = Repository()
     info['apiRoot'].folder.route('POST', ('register',), importData)
     info['apiRoot'].folder.route('GET', ('registered',), listImportedData)
