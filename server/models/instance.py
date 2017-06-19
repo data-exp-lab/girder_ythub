@@ -66,9 +66,16 @@ class Instance(AccessControlledModel):
         }
 
         instanceTask = getCeleryApp().send_task(
-            'gwvolman.tasks.shutdown_container', args=[payload]
+            'gwvolman.tasks.shutdown_container', args=[payload],
+            queue='manager',
         )
         instanceTask.get()
+
+        volumeTask = getCeleryApp().send_task(
+            'gwvolman.tasks.remove_volume', args=[payload],
+            queue=instance['containerInfo']['nodeId']
+        )
+        volumeTask.get()
 
         # TODO: handle error
         self.remove(instance)
@@ -92,20 +99,28 @@ class Instance(AccessControlledModel):
             'api_version': API_VERSION
         }
 
-        instanceTask = getCeleryApp().send_task(
-            'gwvolman.tasks.launch_container', args=[payload]
+        volumeTask = getCeleryApp().send_task(
+            'gwvolman.tasks.create_volume', args=[payload]
         )
-        resp = instanceTask.get()
+        volume = volumeTask.get()
+        payload.update(volume)
+
+        serviceTask = getCeleryApp().send_task(
+            'gwvolman.tasks.launch_container', args=[payload],
+            queue='manager'
+        )
+        service = serviceTask.get()
+        service.update(volume)
 
         instance = {
             'taleId': tale['_id'],
             'created': now,
             'creatorId': user['_id'],
             'lastActivity': now,
-            'containerInfo': resp,
+            'containerInfo': service,
             'name': name,
             'status': InstanceStatus.RUNNING,   # be optimistic for now
-            'url': resp['containerPath'],
+            'url': service['containerPath'],
         }
 
         self.setUserAccess(instance, user=user, level=AccessType.ADMIN)
