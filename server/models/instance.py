@@ -2,15 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import json
-import requests
-import six
 
-from ..constants import PluginSettings, API_VERSION, InstanceStatus
-from girder.api.rest import RestException
+from ..constants import API_VERSION, InstanceStatus
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
+from girder.plugins.worker import getCeleryApp, getWorkerApiUrl
 
 
 class Instance(AccessControlledModel):
@@ -65,11 +62,14 @@ class Instance(AccessControlledModel):
         payload = {
             'instanceId': str(instance['_id']),
             'girder_token': str(token['_id']),
+            'apiUrl': getWorkerApiUrl()
         }
-        headers = {'docker-host': str(instance['containerInfo']['host']),
-                   'content-type': 'application/json'}
-        requests.delete(self.model('setting').get(PluginSettings.TMPNB_URL),
-                        json=payload, headers=headers)
+
+        instanceTask = getCeleryApp().send_task(
+            'gwvolman.tasks.shutdown_container', args=[payload]
+        )
+        instanceTask.get()
+
         # TODO: handle error
         self.remove(instance)
 
@@ -85,29 +85,17 @@ class Instance(AccessControlledModel):
             name = tale['name']
 
         now = datetime.datetime.utcnow()
-        hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
-        payload = {'girder_token': str(token['_id']),
-                   'taleId': str(tale['_id']),
-                   'api_version': API_VERSION}
+        payload = {
+            'girder_token': str(token['_id']),
+            'apiUrl': getWorkerApiUrl(),
+            'taleId': str(tale['_id']),
+            'api_version': API_VERSION
+        }
 
-        resp = requests.post(hub_url, json=payload)
-        content = resp.content
-
-        if isinstance(content, six.binary_type):
-            content = content.decode('utf8')
-
-        try:
-            resp.raise_for_status()
-        except requests.HTTPError:
-            raise RestException(
-                'Got %s code from tmpnb, response="%s"/' % (
-                    resp.status_code, content
-                ), code=502)
-
-        try:
-            resp = json.loads(content)
-        except ValueError:
-            raise RestException('Non-JSON response: %s' % content, code=502)
+        instanceTask = getCeleryApp().send_task(
+            'gwvolman.tasks.launch_container', args=[payload]
+        )
+        resp = instanceTask.get()
 
         instance = {
             'taleId': tale['_id'],

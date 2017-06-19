@@ -292,7 +292,6 @@ class Image(Resource):
         params = event.info['params']
         job = event.info['job']
         if job['type'] == 'build_image':
-            user = self.getCurrentUser()
             status = int(params['status'])
             # FIXME: Who should be able to build images?
             image = self.model('image', 'wholetale').load(
