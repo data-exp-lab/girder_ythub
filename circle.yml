@@ -21,7 +21,7 @@ dependencies:
     - git clone https://github.com/girder/girder "$HOME"/girder
     - ln -s "$HOME"/girder_ythub "$HOME"/girder/plugins/wholetale
     - cd "$HOME"/girder
-    - sudo apt-get -qqy update; sudo apt-get install -qqy libgif-dev
+    - sudo apt-get -qqy update; sudo apt-get install -qqy libgif-dev libsasl2-dev python-dev libldap2-dev libssl-dev
     - cd "$HOME"/girder; ./scripts/install_cmake.sh
     - npm config set progress false
     - cd "$HOME"/girder; npm update; npm prune
