@@ -2,14 +2,41 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import time
 
 from ..constants import API_VERSION, InstanceStatus
+from girder import logger
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
 from girder.plugins.worker import getCeleryApp, getWorkerApiUrl
 from girder.api.rest import getApiUrl
 from six.moves import urllib
+
+from tornado.httpclient import HTTPRequest, HTTPError, AsyncHTTPClient
+# FIXME look into removing tornado
+
+
+def _wait_for_server(url, timeout=10, wait_time=0.2):
+    '''Wait for a server to show up within a newly launched instance.'''
+    tic = time.time()
+    # Fudge factor of IPython notebook bootup.
+    time.sleep(0.5)
+
+    http_client = AsyncHTTPClient()
+    req = HTTPRequest(url)
+
+    while time.time() - tic < timeout:
+        try:
+            http_client.fetch(req)
+        except HTTPError as http_error:
+            code = http_error.code
+            logger.info(
+                'Booting server at [%s], getting HTTP status [%s]',
+                url, code)
+            time.sleep(wait_time)
+        else:
+            break
 
 
 class Instance(AccessControlledModel):
@@ -117,6 +144,9 @@ class Instance(AccessControlledModel):
         netloc = urllib.parse.urlsplit(getApiUrl()).netloc
         domain = '{}.{}'.format(
             service['name'], netloc.split(':')[0].split('.', 1)[1])
+        url = 'https://{}/{}'.format(domain, service.get('urlPath', ''))
+
+        _wait_for_server(url)
 
         instance = {
             'taleId': tale['_id'],
@@ -126,7 +156,7 @@ class Instance(AccessControlledModel):
             'containerInfo': service,
             'name': name,
             'status': InstanceStatus.RUNNING,   # be optimistic for now
-            'url': 'https://{}/{}'.format(domain, service.get('urlPath', ''))
+            'url': url
         }
 
         self.setUserAccess(instance, user=user, level=AccessType.ADMIN)
