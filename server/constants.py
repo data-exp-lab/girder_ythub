@@ -60,9 +60,6 @@ containerConfigSchema = {
     'description': 'A subset of docker runtime configuration used for Tales',
     'type': 'object',
     'properties': {
-        'port': {
-            'type': 'integer',
-        },
         'command': {
             'type': 'string',
         },
@@ -72,9 +69,18 @@ containerConfigSchema = {
         'memLimit': {
             'type': 'string',
         },
+        'port': {
+            'type': 'integer',
+        },
         'user': {
             'type': 'string',
         },
+        'targetMount': {
+            'type': 'string',
+        },
+        'urlPath': {
+            'type': 'string',
+        }
     }
 }
 
@@ -88,14 +94,23 @@ containerInfoSchema = {
             'type': 'string',
             'format': 'date-time',
         },
-        'containerId': {
+        'name': {
+            'type': 'string',
+        },
+        'nodeId': {
             'type': 'string',
         },
         'mountPoint': {
             'type': 'string',
         },
+        'volumeName': {
+            'type': 'string',
+        },
+        'urlPath': {
+            'type': 'string',
+        }
     },
-    'required': ['containerId', 'mountPoint'],
+    'required': ['name', 'mountPoint', 'nodeId', 'volumeName'],
 }
 
 

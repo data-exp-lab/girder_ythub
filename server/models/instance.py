@@ -8,6 +8,8 @@ from girder.constants import AccessType, SortDir
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
 from girder.plugins.worker import getCeleryApp, getWorkerApiUrl
+from girder.api.rest import getApiUrl
+from six.moves import urllib
 
 
 class Instance(AccessControlledModel):
@@ -112,6 +114,10 @@ class Instance(AccessControlledModel):
         service = serviceTask.get()
         service.update(volume)
 
+        netloc = urllib.parse.urlsplit(getApiUrl()).netloc
+        domain = '{}.{}'.format(
+            service['name'], netloc.split(':')[0].split('.', 1)[1])
+
         instance = {
             'taleId': tale['_id'],
             'created': now,
@@ -120,7 +126,7 @@ class Instance(AccessControlledModel):
             'containerInfo': service,
             'name': name,
             'status': InstanceStatus.RUNNING,   # be optimistic for now
-            'url': service['containerPath'],
+            'url': 'https://{}/{}'.format(domain, service.get('urlPath', ''))
         }
 
         self.setUserAccess(instance, user=user, level=AccessType.ADMIN)
