@@ -105,7 +105,7 @@ def listFolder(self, folder, params):
                         self.model('assetstore').load(fileitem['assetstoreId'])
                     adapter = assetstore_utilities.getAssetstoreAdapter(store)
                     fileitem["path"] = adapter.fullPath(fileitem)
-                except ValidationException:
+                except (ValidationException, AttributeError):
                     pass
             files.append(fileitem)
         else:
@@ -132,7 +132,7 @@ def listItem(self, item, params):
                     self.model('assetstore').load(fileitem['assetstoreId'])
                 adapter = assetstore_utilities.getAssetstoreAdapter(store)
                 fileitem["path"] = adapter.fullPath(fileitem)
-            except ValidationException:
+            except (ValidationException, AttributeError):
                 pass
         files.append(fileitem)
     return {'folders': [], 'files': files}
