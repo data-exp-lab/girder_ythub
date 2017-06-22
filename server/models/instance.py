@@ -3,6 +3,7 @@
 
 import datetime
 import time
+import ssl
 
 from ..constants import API_VERSION, InstanceStatus
 from girder import logger
@@ -13,17 +14,17 @@ from girder.plugins.worker import getCeleryApp, getWorkerApiUrl
 from girder.api.rest import getApiUrl
 from six.moves import urllib
 
-from tornado.httpclient import HTTPRequest, HTTPError, AsyncHTTPClient
+from tornado.httpclient import HTTPRequest, HTTPError, HTTPClient
 # FIXME look into removing tornado
 
 
-def _wait_for_server(url, timeout=10, wait_time=0.2):
+def _wait_for_server(url, timeout=10, wait_time=0.5):
     '''Wait for a server to show up within a newly launched instance.'''
     tic = time.time()
     # Fudge factor of IPython notebook bootup.
     time.sleep(0.5)
 
-    http_client = AsyncHTTPClient()
+    http_client = HTTPClient()
     req = HTTPRequest(url)
 
     while time.time() - tic < timeout:
@@ -34,6 +35,8 @@ def _wait_for_server(url, timeout=10, wait_time=0.2):
             logger.info(
                 'Booting server at [%s], getting HTTP status [%s]',
                 url, code)
+            time.sleep(wait_time)
+        except ssl.SSLError:
             time.sleep(wait_time)
         else:
             break
