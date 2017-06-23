@@ -222,7 +222,9 @@ class DataONEHarversterTestCase(base.TestCase):
                 'sortdir': -1
             })
         self.assertStatusOk(resp)
-        folder = resp.json[0]
+        for folder in resp.json:
+            if folder['name'].startswith('Thaw'):
+                break
         self.assertEqual(folder['name'], dataMap[0]['name'])
         self.assertEqual(folder['meta']['provider'], dataMap[0]['repository'])
         self.assertEqual(folder['meta']['identifier'], dataMap[0]['doi'])
