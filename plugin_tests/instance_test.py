@@ -1,6 +1,5 @@
-
+import mock
 import httmock
-import json
 from tests import base
 from .tests_helpers import \
     GOOD_REPO, GOOD_COMMIT, \
@@ -14,6 +13,20 @@ def setUpModule():
 
 def tearDownModule():
     base.stopServer()
+
+
+class FakeAsyncResult(object):
+    def __init__(self):
+        self.task_id = 'fake_id'
+
+    def get(self):
+        return dict(
+            nodeId='123456',
+            mountPoint='/foo/bar',
+            volumeName='blah_volume',
+            name='tmp-blah',
+            urlPath='?token=foo'
+        )
 
 
 class TaleTestCase(base.TestCase):
@@ -66,46 +79,31 @@ class TaleTestCase(base.TestCase):
             self.image, self.userPublicFolder, creator=self.user,
             name='tale one', public=True, config={'memLimit': '1g'})
 
-    @httmock.urlmatch(scheme='https', netloc='^tmpnb.null$',
-                      path='^/$', method='POST')
-    def mockTmpnbHubPost(self, url, request):
-        try:
-            params = json.loads(request.body.decode('utf8'))
-            self.assertIn(
-                params['taleId'], (str(self.tale_one['_id']),
-                                   str(self.tale_two['_id'])))
-        except (KeyError, AssertionError) as e:
-            return json.dumps({
-                'status_code': 401,
-                'content': json.dumps({'error': repr(e)})
-            })
-
-        return json.dumps({
-            'mountPoint': '/var/lib/blah',
-            'volumeName': '%s_%s' % (params['taleId'], str(self.user['_id'])),
-            'containerId': '123456',
-            'containerPath': '/user/blah',
-            'host': '172.168.1.16'
-        })
-
     def testInstanceFlow(self):
         # Grab the default user folders
 
-        with httmock.HTTMock(self.mockTmpnbHubPost, mockOtherRequest):
-            resp = self.request(
-                path='/instance', method='POST', user=self.user,
-                params={'taleId': str(self.tale_one['_id']),
-                        'name': 'tale one'}
-            )
+        with mock.patch('celery.Celery') as celeryMock:
+            with mock.patch('tornado.httpclient.HTTPClient') as tornadoMock:
+                instance = celeryMock.return_value
+                instance.send_task.return_value = FakeAsyncResult()
+
+                req = tornadoMock.return_value
+                req.fetch.return_value = {}
+
+                resp = self.request(
+                    path='/instance', method='POST', user=self.user,
+                    params={'taleId': str(self.tale_one['_id']),
+                            'name': 'tale one'}
+                )
         self.assertStatusOk(resp)
-        self.assertEqual(resp.json['url'], '/user/blah')
+        self.assertEqual(resp.json['url'], 'https://tmp-blah.0.0.1/?token=foo')
         self.assertEqual(resp.json['name'], 'tale one')
-        self.assertEqual(resp.json['containerInfo']['volumeName'],
-                         '%s_%s' % (str(self.tale_one['_id']),
-                                    str(self.user['_id'])))
+        self.assertEqual(resp.json['containerInfo']['volumeName'], 'blah_volume')
         instance_one = resp.json
 
-        with httmock.HTTMock(self.mockTmpnbHubPost, mockOtherRequest):
+        with mock.patch('celery.Celery') as celeryMock:
+            instance = celeryMock.return_value
+            instance.send_task.return_value = FakeAsyncResult()
             resp = self.request(
                 path='/instance', method='POST', user=self.user,
                 params={'taleId': str(self.tale_two['_id'])},
@@ -153,26 +151,9 @@ class TaleTestCase(base.TestCase):
         self.assertEqual(set([_['_id'] for _ in resp.json]),
                          {instance_three['_id']})
 
-        @httmock.urlmatch(scheme='https', netloc='^tmpnb.null$',
-                          path='^/$', method='DELETE')
-        def mockTmpnbHubDelete(url, request):
-            try:
-                params = json.loads(request.body.decode('utf8'))
-                self.assertEqual(
-                    params['instanceId'], str(instance_two['_id']))
-                self.assertEqual(request.headers['docker-host'],
-                                 instance_two['containerInfo']['host'])
-                self.assertEqual(request.headers['content-type'],
-                                 'application/json')
-            except (KeyError, AssertionError) as e:
-                return json.dumps({
-                    'status_code': 401,
-                    'content': json.dumps({'error': repr(e)})
-                })
-            return httmock.response(
-                200, None, None, None, 5, request)
-
-        with httmock.HTTMock(mockTmpnbHubDelete, mockOtherRequest):
+        with mock.patch('celery.Celery') as celeryMock:
+            instance = celeryMock.return_value
+            instance.send_task.return_value = FakeAsyncResult()
             resp = self.request(
                 path='/instance/{_id}'.format(**instance_two), method='DELETE',
                 user=self.user)
