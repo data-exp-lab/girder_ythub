@@ -11,7 +11,7 @@ from girder.api import access
 from girder.api.describe import Description, describeRoute, autoDescribeRoute
 from girder.api.rest import \
     boundHandler, loadmodel, RestException
-from girder.constants import AccessType, TokenScope
+from girder.constants import AccessType, TokenScope, CoreEventHandler
 from girder.models.model_base import ValidationException
 from girder.utility import assetstore_utilities, setting_utilities
 from girder.utility.model_importer import ModelImporter
@@ -213,6 +213,21 @@ def listResources(self, resources, params):
     return result
 
 
+def addDefaultFolders(event):
+    user = event.info
+    folderModel = ModelImporter.model('folder')
+    defaultFolders = [
+        ('Home', False),
+        ('Data', False),
+        ('Workspace', False)
+    ]
+
+    for folderName, public in defaultFolders:
+        folder = folderModel.createFolder(
+            user, folderName, parentType='user', public=public, creator=user)
+        folderModel.setUserAccess(folder, user, AccessType.ADMIN, save=True)
+
+
 def load(info):
     info['apiRoot'].wholetale = wholeTale()
     info['apiRoot'].instance = Instance()
@@ -221,6 +236,8 @@ def load(info):
     image = Image()
     info['apiRoot'].image = image
     events.bind('jobs.job.update', 'wholetale', image.updateImageStatus)
+    events.unbind('model.user.save.created', CoreEventHandler.USER_DEFAULT_FOLDERS)
+    events.bind('model.user.save.created', 'wholetale', addDefaultFolders)
     info['apiRoot'].repository = Repository()
     info['apiRoot'].folder.route('POST', ('register',), importData)
     info['apiRoot'].folder.route('GET', ('registered',), listImportedData)
