@@ -5,79 +5,9 @@ from girder.api.docs import addModel
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, filtermodel, RestException
 from girder.constants import AccessType, SortDir
-from ..constants import containerConfigSchema
+from ..schema.tale import taleModel
 
-taleModel = {
-    "description": "Object representing a Tale.",
-    "required": [
-        "_id",
-        "folderId",
-        "imageId"
-    ],
-    "properties": {
-        "_id": {
-            "type": "string",
-            "description": "internal unique identifier"
-        },
-        "name": {
-            "type": "string",
-            "description": "A user-friendly name"
-        },
-        "description": {
-            "type": "string"
-        },
-        "imageId": {
-            "type": "string",
-            "description": "ID of a WT Image used by the Tale"
-        },
-        "folderId": {
-            "type": "string",
-            "description": "ID of a data folder used by the Tale"
-        },
-        "public": {
-            "type": "boolean",
-            "description": "If set to true the Tale is accessible by anyone.",
-            "default": True
-        },
-        "published": {
-            "type": "boolean",
-            "default": False,
-            "description": "If set to true the Tale cannot be deleted or made unpublished."
-        },
-        "config": {
-            "$ref": "#/definitions/containerConfig"
-        },
-        "created": {
-            "type": "string",
-            "format": "date-time",
-            "description": "The time when the tale was created."
-        },
-        "creatorId": {
-            "type": "string",
-            "description": "A unique identifier of the user that created the tale."
-        },
-        "updated": {
-            "type": "string",
-            "format": "date-time",
-            "description": "The last time when the tale was modified."
-        }
-    },
-    'example': {
-        '_accessLevel': 2,
-        '_id': '5873dcdbaec030000144d233',
-        'creatorId': '5873dcdbaec030000144d233',
-        'imageId': '5873dcdbaec030000144d233',
-        'folderId': '5873dcdbaec030000144d233',
-        'config': 'null',
-        '_modelType': 'tale',
-        'created': '2017-01-09T18:56:27.262000+00:00',
-        'name': 'Jupyter Lab',
-        'description': 'Run Jupyter Lab',
-        'public': True,
-        'published': True,
-        'updated': '2017-01-10T16:15:17.313000+00:00',
-    },
-}
+
 addModel('tale', taleModel, resources='tale')
 
 
@@ -101,7 +31,7 @@ class Tale(Resource):
         .param('imageId', "The ID of the tale's image.", required=False)
         .param('folderId', "The ID of the tale's folder.", required=False)
         .param('text', ('Perform a full text search for recipe with matching '
-                        'name or description.'), required=False)
+                        'Title or description.'), required=False)
         .responseClass('tale', array=True)
         .pagingParams(defaultSort='lowerName',
                       defaultSortDir=SortDir.DESCENDING)
@@ -150,35 +80,24 @@ class Tale(Resource):
     @access.user
     @autoDescribeRoute(
         Description('Update an existing tale.')
-        .modelParam('id', model='tale', plugin='wholetale', level=AccessType.WRITE)
-        .param('name', 'A name of the tale.', required=False)
-        .param('description', 'A description of the tale', required=False)
-        .param('public', 'Whether the tale should be publicly visible.',
-               dataType='boolean', required=False)
-        .param('published', 'If set to true, the Tale cannot be deleted or '
-               'made unpublished.', dataType='boolean', required=False)
-        .jsonParam('config', "The tale's runtime configuration",
-                   required=False, schema=containerConfigSchema)
+        .modelParam('id', model='tale', plugin='wholetale',
+                    level=AccessType.WRITE, destName='taleObj')
+        .jsonParam('tale', 'Updated tale', paramType='body', schema=taleModel)
         .responseClass('tale')
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the tale.', 403)
     )
-    def updateTale(self, tale, name, description, public, published, config, params):
+    def updateTale(self, taleObj, tale, params):
         taleModel = self.model('tale', 'wholetale')
-        if description:
-            tale['description'] = description
-        if name:
-            tale['name'] = name
-        if config:
+        for keyword in taleModel.modifiableFields:
             try:
-                tale['config'].update(config)
-            except AttributeError:
-                tale['config'] = config
-        if public is not None:
-            taleModel.setPublic(tale, public)
-        if published is not None:
-            taleModel.setPublished(tale, published)
-        return taleModel.updateTale(tale)
+                taleObj[keyword] = tale.pop(keyword)
+            except KeyError:
+                pass
+        taleModel.setPublic(taleObj, taleObj['public'])
+        # if taleObj['published']:
+        #     taleModel.setPublished(taleObj, True)
+        return taleModel.updateTale(taleObj)
 
     @access.admin
     @autoDescribeRoute(
@@ -193,42 +112,27 @@ class Tale(Resource):
     @access.user
     @autoDescribeRoute(
         Description('Create a new tale.')
-        .param('imageId', 'The ID of an image used to build the tale.',
-               required=False)
-        .param('folderId', 'The ID of a folder used to build the tale.',
-               required=False)
-        .param('instanceId', 'The ID of a running instance to save as a tale.',
-               required=False)
-        .param('name', 'A name of the tale.', required=False)
-        .param('description', 'A description of the tale.', required=False)
-        .param('public', 'Whether the tale should be publicly visible.'
-               ' Defaults to True.', dataType='boolean', required=False,
-               default=True)
-        .jsonParam('config', "The tale's runtime configuration",
-                   required=False, schema=containerConfigSchema)
+        .jsonParam('tale', 'A new tale', paramType='body', schema=taleModel)
         .responseClass('tale')
-        .errorResponse('You are not authorized to create collections.', 403)
+        .errorResponse('You are not authorized to create tales.', 403)
     )
-    def createTale(self, imageId, folderId, instanceId, name, description,
-                   public, config, params):
+    def createTale(self, tale, params):
 
         user = self.getCurrentUser()
-        if instanceId:
+        if 'instanceId' in tale:
             # check if instance exists
             # save disk state to a new folder
             # save config
             # create a tale
             raise RestException('Not implemented yet')
-        elif all((imageId, folderId)):
-            image = self.model('image', 'wholetale').load(
-                imageId, user=user, level=AccessType.READ, exc=True)
-            folder = self.model('folder').load(
-                folderId, user=user, level=AccessType.READ, exc=True)
-            return self.model('tale', 'wholetale').createTale(
-                image, folder, creator=user, save=True, name=name,
-                description=description, public=public, config=config,
-                published=False)
         else:
-            raise RestException(
-                'You need to specify either an "instanceId" or'
-                ' an "imageId" and a "folderId".')
+            image = self.model('image', 'wholetale').load(
+                tale['imageId'], user=user, level=AccessType.READ, exc=True)
+            folder = self.model('folder').load(
+                tale['folderId'], user=user, level=AccessType.READ, exc=True)
+            return self.model('tale', 'wholetale').createTale(
+                image, folder, creator=user, save=True,
+                title=tale.get('title'), description=tale.get('description'),
+                public=tale.get('public'), config=tale.get('config'),
+                published=False
+            )

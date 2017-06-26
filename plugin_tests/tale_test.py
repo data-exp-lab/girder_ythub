@@ -47,12 +47,13 @@ class TaleTestCase(base.TestCase):
     def testTaleFlow(self):
         resp = self.request(
             path='/tale', method='POST', user=self.user,
-            params={'imageId': str(self.image['_id'])}
+            type='application/json',
+            body=json.dumps({'imageId': str(self.image['_id'])})
         )
         self.assertStatus(resp, 400)
         self.assertEqual(resp.json, {
-            'message': ('You need to specify either an "instanceId"'
-                        ' or an "imageId" and a "folderId".'),
+            'message': ("Invalid JSON object for parameter tale: 'folderId' "
+                        "is a required property"),
             'type': 'rest'
         })
 
@@ -61,7 +62,7 @@ class TaleTestCase(base.TestCase):
             path='/folder', method='GET', user=self.user, params={
                 'parentType': 'user',
                 'parentId': self.user['_id'],
-                'sort': 'name',
+                'sort': 'title',
                 'sortdir': 1
             })
         privateFolder = resp.json[0]
@@ -71,7 +72,7 @@ class TaleTestCase(base.TestCase):
             path='/folder', method='GET', user=self.admin, params={
                 'parentType': 'user',
                 'parentId': self.admin['_id'],
-                'sort': 'name',
+                'sort': 'title',
                 'sortdir': 1
             })
         # adminPrivateFolder = resp.json[0]
@@ -79,39 +80,47 @@ class TaleTestCase(base.TestCase):
 
         resp = self.request(
             path='/tale', method='POST', user=self.user,
-            params={'imageId': str(self.image['_id']),
-                    'folderId': publicFolder['_id']}
+            type='application/json',
+            body=json.dumps(
+                {'imageId': str(self.image['_id']),
+                 'folderId': publicFolder['_id']})
         )
         self.assertStatusOk(resp)
         tale = resp.json
 
         resp = self.request(
             path='/tale/{_id}'.format(**tale), method='PUT',
-            user=self.user, params={
-                'name': 'new name',
+            type='application/json',
+            user=self.user, body=json.dumps({
+                'folderId': tale['folderId'],
+                'imageId': tale['imageId'],
+                'title': 'new name',
                 'description': 'new description',
-                'config': json.dumps({'memLimit': '2g'}),
+                'config': {'memLimit': '2g'},
                 'public': True,
                 'published': False
-            }
+            })
         )
         self.assertStatusOk(resp)
-        self.assertEqual(resp.json['name'], 'new name')
+        self.assertEqual(resp.json['title'], 'new name')
         tale = resp.json
 
         resp = self.request(
             path='/tale', method='POST', user=self.user,
-            params={'imageId': str(self.image['_id']),
-                    'folderId': privateFolder['_id']}
+            type='application/json',
+            body=json.dumps({'imageId': str(self.image['_id']),
+                             'folderId': privateFolder['_id']})
         )
         self.assertStatusOk(resp)
         new_tale = resp.json
 
         resp = self.request(
             path='/tale', method='POST', user=self.admin,
-            params={'imageId': str(self.image['_id']),
-                    'folderId': adminPublicFolder['_id'],
-                    'public': False}
+            type='application/json',
+            body=json.dumps(
+                {'imageId': str(self.image['_id']),
+                 'folderId': adminPublicFolder['_id'],
+                 'public': False})
         )
         self.assertStatusOk(resp)
         # admin_tale = resp.json

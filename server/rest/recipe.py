@@ -5,7 +5,7 @@ from girder.api.docs import addModel
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, filtermodel, RestException
 from girder.constants import AccessType, SortDir, TokenScope
-from ..constants import tagsSchema
+from ..schema.misc import tagsSchema
 
 recipeModel = {
     'properties': {

@@ -68,10 +68,10 @@ class TaleTestCase(base.TestCase):
 
         self.tale_one = self.model('tale', 'wholetale').createTale(
             self.image, self.userPrivateFolder, creator=self.user,
-            name='tale one', public=True, config={'memLimit': '2g'})
+            title='tale one', public=True, config={'memLimit': '2g'})
         self.tale_two = self.model('tale', 'wholetale').createTale(
             self.image, self.userPublicFolder, creator=self.user,
-            name='tale one', public=True, config={'memLimit': '1g'})
+            title='tale one', public=True, config={'memLimit': '1g'})
 
     def testInstanceFromImage(self):
         with mock.patch('celery.Celery') as celeryMock:

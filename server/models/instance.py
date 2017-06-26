@@ -121,7 +121,7 @@ class Instance(AccessControlledModel):
             return existing
 
         if not name:
-            name = tale['name']
+            name = tale.get('title', '')
 
         now = datetime.datetime.utcnow()
         payload = {

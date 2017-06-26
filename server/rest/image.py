@@ -6,7 +6,8 @@ from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, filtermodel, RestException
 from girder.constants import AccessType, SortDir, TokenScope
 from girder.plugins.jobs.constants import JobStatus
-from ..constants import containerConfigSchema, tagsSchema, ImageStatus
+from ..constants import ImageStatus
+from ..schema.misc import containerConfigSchema, tagsSchema
 
 
 imageModel = {

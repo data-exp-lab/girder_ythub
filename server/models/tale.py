@@ -14,18 +14,22 @@ class Tale(AccessControlledModel):
     def initialize(self):
         self.name = 'tale'
         self.ensureIndices(
-            ('folderId', 'name', 'imageId',
-             ([('folderId', 1), ('name', 1), ('imageId', 1)], {}))
+            ('folderId', 'title', 'imageId',
+             ([('folderId', 1), ('title', 1), ('imageId', 1)], {}))
         )
         self.ensureTextIndex({
-            'name': 10,
+            'title': 10,
             'description': 1
         })
         self.exposeFields(level=AccessType.READ,
                           fields={'_id', 'config', 'creatorId', 'folderId',
-                                  'created', 'imageId', 'name',
+                                  'created', 'imageId', 'title',
                                   'updated', 'description', 'public'})
         self.exposeFields(level=AccessType.ADMIN, fields={'published'})
+        self.modifiableFields = {
+            'title', 'description', 'public', 'config', 'updated', 'authors',
+            'category', 'icon'
+        }
 
     def validate(self, tale):
         return tale
@@ -67,15 +71,15 @@ class Tale(AccessControlledModel):
                 limit=limit, offset=offset):
             yield r
 
-    def createTale(self, image, folder, creator=None, save=True, name=None,
+    def createTale(self, image, folder, creator=None, save=True, title=None,
                    description=None, public=None, config=None, published=False):
         if creator is None:
             creatorId = None
         else:
             creatorId = creator.get('_id', None)
 
-        if name is None:
-            name = '{} with {}'.format(image['fullName'], folder['name'])
+        if title is None:
+            title = '{} with {}'.format(image['fullName'], folder['name'])
 
         now = datetime.datetime.utcnow()
         tale = {
@@ -85,7 +89,7 @@ class Tale(AccessControlledModel):
             'folderId': ObjectId(folder['_id']),
             'created': now,
             'imageId': ObjectId(image['_id']),
-            'name': name,
+            'title': title,
             'public': public,
             'published': published,
             'updated': now
