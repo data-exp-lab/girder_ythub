@@ -82,7 +82,8 @@ class Tale(Resource):
         Description('Update an existing tale.')
         .modelParam('id', model='tale', plugin='wholetale',
                     level=AccessType.WRITE, destName='taleObj')
-        .jsonParam('tale', 'Updated tale', paramType='body', schema=taleModel)
+        .jsonParam('tale', 'Updated tale', paramType='body', schema=taleModel,
+                   dataType='tale')
         .responseClass('tale')
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the tale.', 403)
@@ -112,7 +113,8 @@ class Tale(Resource):
     @access.user
     @autoDescribeRoute(
         Description('Create a new tale.')
-        .jsonParam('tale', 'A new tale', paramType='body', schema=taleModel)
+        .jsonParam('tale', 'A new tale', paramType='body', schema=taleModel,
+                   dataType='tale')
         .responseClass('tale')
         .errorResponse('You are not authorized to create tales.', 403)
     )
