@@ -104,9 +104,10 @@ class Recipe(Resource):
     )
     def listRecipes(self, parentId, text, tag, limit, offset, sort, params):
         user = self.getCurrentUser()
+        recipeModel = self.model('recipe', 'wholetale')
 
         if parentId:
-            parent = self.model('recipe', 'wholetale').load(
+            parent = recipeModel.load(
                 parentId, user=user, level=AccessType.READ, exc=True)
 
             filters = {}
@@ -117,16 +118,17 @@ class Recipe(Resource):
             if tag:
                 print('Do filtering by tag when I figure it out')
 
-            return list(self.model('recipe', 'wholetale').childRecipes(
+            return list(recipeModel.childRecipes(
                 parent=parent, user=user,
                 offset=offset, limit=limit, sort=sort, filters=filters))
         elif text:
-            return list(self.model('recipe', 'wholetale').textSearch(
+            return list(recipeModel.textSearch(
                 text, user=user, limit=limit, offset=offset, sort=sort))
         elif tag:
             raise RestException('Can filter by tag. yet...')
         else:
-            raise RestException('Invalid search mode.')
+            return list(recipeModel.list(user=user, offset=offset, limit=limit,
+                                         sort=sort))
 
     @access.public(scope=TokenScope.DATA_READ)
     @filtermodel(model='recipe', plugin='wholetale')
