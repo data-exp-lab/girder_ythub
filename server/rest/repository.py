@@ -95,14 +95,14 @@ class Repository(Resource):
                    description='List of external datasets identificators.')
         .responseClass('dataMap', array=True))
     def lookupData(self, dataId, params):
-        from concurrent.futures import ThreadPoolExecutor
-        pool = ThreadPoolExecutor(len(dataId) * 2)
+        from concurrent.futures import ThreadPoolExecutor, as_completed
 
-        futures = []
-        for pid in dataId:
-            futures.append(pool.submit(D1_lookup, (pid)))
-            futures.append(pool.submit(_http_lookup, (pid)))
+        futures = {}
+        result = []
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            for pid in dataId:
+                futures[executor.submit(D1_lookup, pid)] = pid
+                futures[executor.submit(_http_lookup, pid)] = pid
 
-        while not all([_.done() for _ in futures]):
-            time.sleep(0.2)
-        return [_.result() for _ in futures if _.result()]
+            return [future.result() for future in as_completed(futures)
+                    if future.result()]
