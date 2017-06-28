@@ -17,14 +17,16 @@ machine:
 dependencies:
   cache_directories:
     - "~/cache"
+    - "~/.npm"
   override:
     - git clone https://github.com/girder/girder "$HOME"/girder
     - ln -s "$HOME"/girder_ythub "$HOME"/girder/plugins/wholetale
     - cd "$HOME"/girder
     - sudo apt-get -qqy update; sudo apt-get install -qqy libgif-dev libsasl2-dev python-dev libldap2-dev libssl-dev
     - cd "$HOME"/girder; ./scripts/install_cmake.sh
+    - cd "$HOME"/girder; rm -rf ./node_modules
+    - npm install -g npm
     - npm config set progress false
-    - cd "$HOME"/girder; npm update; npm prune
     - set -o pipefail; cd "$HOME"/girder; pyenv exec pip install -U pip | cat
     - set -o pipefail; cd "$HOME"/girder; pyenv exec pip install -r requirements-dev.txt -r plugins/wholetale/requirements.txt -e .[plugins,sftp] -e clients/python | cat
     - pyenv rehash
