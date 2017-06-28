@@ -30,7 +30,7 @@ dependencies:
     - set -o pipefail; cd "$HOME"/girder; pyenv exec pip install -U pip | cat
     - set -o pipefail; cd "$HOME"/girder; pyenv exec pip install -r requirements-dev.txt -r plugins/wholetale/requirements.txt -e .[plugins,sftp] -e clients/python | cat
     - pyenv rehash
-    - set -o pipefail; cd "$HOME"/girder; pyenv exec girder-install web --plugins=wholetale --dev | cat
+    - set -o pipefail; cd "$HOME"/girder; pyenv exec girder-install web --all --dev | cat
 
 test:
   override:
