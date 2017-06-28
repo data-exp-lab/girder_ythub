@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
+import re
+import requests
+import time
+from urllib.parse import urlparse
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.docs import addModel
 from girder.api.rest import Resource
-from ..dataone_register import lookup
+from ..dataone_register import D1_lookup
 
 
 dataMap = {
@@ -48,6 +53,30 @@ dataMap = {
 addModel('dataMap', dataMap)
 
 
+def _http_lookup(pid):
+    url = urlparse(pid)
+    if url.scheme not in ('http', 'https'):
+        return
+    headers = requests.head(pid).headers
+
+    valid_target = headers.get('Content-Type') in \
+        ('application/octet-stream', 'text/plain')
+    valid_target = valid_target and 'Content-Length' in headers
+    if not valid_target:
+        return
+
+    if 'Content-Disposition' in headers:
+        fname = re.search('^.*filename=([\w.]+).*$',
+                          headers['Content-Disposition'])
+        if fname:
+            fname = fname.groups()[0]
+    else:
+        fname = os.path.basename(url.path.rstrip('/'))
+
+    return dict(dataId=pid, doi='unknown', name=fname, repository='HTTP',
+                size=int(headers['Content-Length']))
+
+
 class Repository(Resource):
 
     def __init__(self):
@@ -66,4 +95,14 @@ class Repository(Resource):
                    description='List of external datasets identificators.')
         .responseClass('dataMap', array=True))
     def lookupData(self, dataId, params):
-        return list(map(lookup, dataId))
+        from concurrent.futures import ThreadPoolExecutor
+        pool = ThreadPoolExecutor(len(dataId) * 2)
+
+        futures = []
+        for pid in dataId:
+            futures.append(pool.submit(D1_lookup, (pid)))
+            futures.append(pool.submit(_http_lookup, (pid)))
+
+        while not all([_.done() for _ in futures]):
+            time.sleep(0.2)
+        return [_.result() for _ in futures if _.result()]

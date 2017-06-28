@@ -108,21 +108,15 @@ def find_initial_pid(path):
         - The D1 v2 Resolve URI (/resolve)
     """
 
-    package_pid = None
     doi = _DOI_REGEX.search(path)
-
     if re.search(r'^http[s]?:\/\/search.dataone.org\/#view\/', path):
-        package_pid = re.sub(
+        return re.sub(
             r'^http[s]?:\/\/search.dataone.org\/#view\/', '', path)
     elif re.search(r'^http[s]?://cn.dataone.org/cn/d1/v[\d]/\w+/', path):
-        package_pid = re.sub(
+        return re.sub(
             r'^http[s]?://cn.dataone.org/cn/d1/v[\d]/\w+/', '', path)
     elif doi is not None:
-        package_pid = 'doi:{}'.format(doi.group())
-    else:
-        package_pid = path
-
-    return package_pid
+        return 'doi:{}'.format(doi.group())
 
 
 def get_aggregated_identifiers(pid):
@@ -176,9 +170,11 @@ def get_documenting_identifiers(pid):
     return pids
 
 
-def lookup(path):
+def D1_lookup(path):
     """Create the map (JSON) describing a Data Package."""
     initial_pid = find_initial_pid(path)
+    if initial_pid is None:
+        return
     logger.debug('Parsed initial PID of {}.'.format(initial_pid))
 
     package_pid = find_package_pid(initial_pid)
