@@ -3,12 +3,11 @@
 import os
 import re
 import requests
-import time
 from urllib.parse import urlparse
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.docs import addModel
-from girder.api.rest import Resource
+from girder.api.rest import Resource, RestException
 from ..dataone_register import D1_lookup
 
 
@@ -96,13 +95,18 @@ class Repository(Resource):
         .responseClass('dataMap', array=True))
     def lookupData(self, dataId, params):
         from concurrent.futures import ThreadPoolExecutor, as_completed
-
+        results = []
         futures = {}
-        result = []
         with ThreadPoolExecutor(max_workers=4) as executor:
             for pid in dataId:
                 futures[executor.submit(D1_lookup, pid)] = pid
                 futures[executor.submit(_http_lookup, pid)] = pid
 
-            return [future.result() for future in as_completed(futures)
-                    if future.result()]
+            for future in as_completed(futures):
+                try:
+                    if future.result():
+                        results.append(future.result())
+                except RestException:
+                    pass
+
+            return sorted(results, key=lambda k: k['name'])
