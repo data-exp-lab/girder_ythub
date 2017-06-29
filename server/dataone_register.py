@@ -117,6 +117,8 @@ def find_initial_pid(path):
             r'^http[s]?://cn.dataone.org/cn/d1/v[\d]/\w+/', '', path)
     elif doi is not None:
         return 'doi:{}'.format(doi.group())
+    else:
+        return path
 
 
 def get_aggregated_identifiers(pid):
