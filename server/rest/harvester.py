@@ -63,23 +63,13 @@ def importData(self, parentId, parentType, public, dataMap, params):
                                 data['dataId'], name=data['name'])
             elif data['repository'] == 'HTTP':
                 register_http_resource(parent, parentType, ctx, user,
-                                       data['dataId'], name=data['name'])
+                                       data['dataId'], data['name'])
     return parent
 
 
-def register_http_resource(parent, parentType, progress, user, url, name=None):
+def register_http_resource(parent, parentType, progress, user, url, name):
     progress.update(increment=1, message='Processing file {}.'.format(url))
     headers = requests.head(url).headers
-
-    if not name:
-        if 'Content-Disposition' in headers:
-            name = re.search('^.*filename=([\w.]+).*$',
-                             headers['Content-Disposition'])
-            if name:
-                name = name.groups()[0]
-        else:
-            name = os.path.basename(urlparse(url).path.rstrip('/'))
-
     fileModel = ModelImporter.model('file')
     fileDoc = fileModel.createLinkFile(
         url=url, parent=parent, name=name, parentType=parentType,
