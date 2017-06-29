@@ -8,6 +8,7 @@ import os
 import six
 from tests import base
 from girder.constants import ROOT_DIR
+from girder.api.rest import RestException
 
 
 D1_QUERY_URL = (
@@ -169,39 +170,71 @@ class DataONEHarversterTestCase(base.TestCase):
         resp = self.request(
             path='/repository/lookup', method='GET',
             params={'dataId': json.dumps(['blah'])})
-        self.assertStatus(resp, 400)
-        self.assertEqual(resp.json, {
-            'type': 'rest',
-            'message': 'No object was found in the index for blah.'
-        })
+        self.assertStatus(resp, 200)
+        self.assertEqual(resp.json, [])
 
         @httmock.urlmatch(scheme='https', netloc='^cn.dataone.org$',
                           path='^/cn/v2/query/solr/$', method='GET')
         def mockSearchDataONE(url, request):
+            if '944d8537' in request.url:
+                raise RestException(
+                    'No object was found in the index for %s.' % request.url)
             if url.query.startswith('q=identifier'):
                 return json.dumps(D1_QUERY)
             elif url.query.startswith('q=resourceMap'):
                 return json.dumps(D1_MAP)
             raise Exception('Unexpected query in url %s' % str(request.url))
 
-        with httmock.HTTMock(mockSearchDataONE, self.mockOtherRequest):
+        @httmock.urlmatch(scheme='http', netloc='^use.yt$',
+                          path='^/upload/944d8537$', method='HEAD')
+        def mockCurldrop(url, request):
+            headers = {
+                'Content-Type': 'application/octet-stream',
+                'Content-Length': '8792',
+                'Content-Disposition': 'attachment; filename=nginx.tmpl'
+            }
+            return httmock.response(200, {}, headers, None, 5, request)
+
+        with httmock.HTTMock(mockSearchDataONE, mockCurldrop,
+                             self.mockOtherRequest):
             resp = self.request(
                 path='/repository/lookup', method='GET',
                 params={'dataId':
-                        json.dumps(['urn:uuid:c878ae53-06cf-40c9-a830-7f6f564133f9'])})
+                        json.dumps(['urn:uuid:c878ae53-06cf-40c9-a830-7f6f564133f9',
+                                    'http://use.yt/upload/944d8537'])})
             self.assertStatus(resp, 200)
             dataMap = resp.json
 
         self.assertEqual(
-            dataMap, [{
-                'dataId': 'resource_map_urn:uuid:c878ae53-06cf-40c9-a830-7f6f564133f9',
-                'doi': 'urn:uuid:c878ae53-06cf-40c9-a830-7f6f564133f9',
-                'name': 'Thaw depth in the ITEX plots at Barrow and Atqasuk, Alaska',
-                'repository': 'DataONE',
-                'size': 21702}]
+            dataMap, [
+                {
+                    'dataId': 'resource_map_urn:uuid:c878ae53-06cf-40c9-a830-7f6f564133f9',
+                    'doi': 'urn:uuid:c878ae53-06cf-40c9-a830-7f6f564133f9',
+                    'name': 'Thaw depth in the ITEX plots at Barrow and Atqasuk, Alaska',
+                    'repository': 'DataONE',
+                    'size': 21702
+                }, {
+                    'dataId': 'http://use.yt/upload/944d8537',
+                    'doi': 'unknown',
+                    'name': 'nginx.tmpl',
+                    'repository': 'HTTP',
+                    'size': 8792
+                }]
         )
 
-        with httmock.HTTMock(mockSearchDataONE, self.mockOtherRequest):
+        resp = self.request(
+            path='/folder', method='GET', user=self.user, params={
+                'parentType': 'user',
+                'parentId': str(self.user['_id']),
+                'text': 'Data',
+                'sort': 'name',
+                'sortdir': -1
+            })
+        self.assertStatusOk(resp)
+        dataFolder = resp.json[0]
+
+        with httmock.HTTMock(mockSearchDataONE, mockCurldrop,
+                             self.mockOtherRequest):
             resp = self.request(
                 path='/folder/register', method='POST',
                 params={'dataMap': json.dumps(dataMap)})
@@ -211,20 +244,20 @@ class DataONEHarversterTestCase(base.TestCase):
                 path='/folder/register', method='POST',
                 params={'dataMap': json.dumps(dataMap)}, user=self.user)
             self.assertStatusOk(resp)
-            self.assertEqual(str(self.user['_id']), resp.json['_id'])
+            self.assertEqual(dataFolder['_id'], resp.json['_id'])
 
-        # Grab the default user folders
+        # Grab the default user Data folders
         resp = self.request(
             path='/folder', method='GET', user=self.user, params={
-                'parentType': 'user',
-                'parentId': self.user['_id'],
+                'parentType': 'folder',
+                'parentId': dataFolder['_id'],
+                'text': 'Thaw',
                 'sort': 'name',
                 'sortdir': -1
             })
         self.assertStatusOk(resp)
-        for folder in resp.json:
-            if folder['name'].startswith('Thaw'):
-                break
+        self.assertEqual(len(resp.json), 1)
+        folder = resp.json[0]
         self.assertEqual(folder['name'], dataMap[0]['name'])
         self.assertEqual(folder['meta']['provider'], dataMap[0]['repository'])
         self.assertEqual(folder['meta']['identifier'], dataMap[0]['doi'])
@@ -248,6 +281,16 @@ class DataONEHarversterTestCase(base.TestCase):
         self.assertStatusOk(resp)
         self.assertEqual(len(resp.json), 1)
         self.assertEqual(folder, resp.json[0])
+
+        resp = self.request(
+            path='/item', method='GET', user=self.user, params={
+                'folderId': dataFolder['_id'],
+                'text': 'nginx'
+            })
+        self.assertStatusOk(resp)
+        self.assertEqual(len(resp.json), 1)
+        item = resp.json[0]
+        self.assertEqual(item['name'], 'nginx.tmpl')
 
     def tearDown(self):
         self.model('user').remove(self.user)

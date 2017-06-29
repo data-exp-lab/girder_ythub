@@ -1,10 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import re
+import os
+import requests
+from urllib.parse import urlparse
+
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import boundHandler, RestException, filtermodel
 from girder.constants import AccessType, TokenScope
 from girder.utility.model_importer import ModelImporter
+from girder.utility import path as path_util
 from girder.utility.progress import ProgressContext
 from ..dataone_register import \
     D1_BASE, \
@@ -41,19 +47,50 @@ def importData(self, parentId, parentType, public, dataMap, params):
     user = self.getCurrentUser()
 
     if not parentId:
-        parentId = user['_id']
-        parentType = 'user'
-
-    parent = self.model(parentType).load(
-        parentId, user=user, level=AccessType.WRITE, exc=True)
+        parent = path_util.lookUpPath('/user/%s/Data' % user['login'], user)
+        parentType = parent['model']
+        parent = parent['document']
+    else:
+        parent = self.model(parentType).load(
+            parentId, user=user, level=AccessType.WRITE, exc=True)
 
     progress = True
     with ProgressContext(progress, user=user,
-                         title='Registering DataONE resources') as ctx:
+                         title='Registering resources') as ctx:
         for data in dataMap:
-            process_package(parent, parentType, ctx, user,
-                            data['dataId'], name=data['name'])
+            if data['repository'] == 'DataONE':
+                process_package(parent, parentType, ctx, user,
+                                data['dataId'], name=data['name'])
+            elif data['repository'] == 'HTTP':
+                register_http_resource(parent, parentType, ctx, user,
+                                       data['dataId'], name=data['name'])
     return parent
+
+
+def register_http_resource(parent, parentType, progress, user, url, name=None):
+    progress.update(increment=1, message='Processing file {}.'.format(url))
+    headers = requests.head(url).headers
+
+    if not name:
+        if 'Content-Disposition' in headers:
+            name = re.search('^.*filename=([\w.]+).*$',
+                             headers['Content-Disposition'])
+            if name:
+                name = name.groups()[0]
+        else:
+            name = os.path.basename(urlparse(url).path.rstrip('/'))
+
+    fileModel = ModelImporter.model('file')
+    fileDoc = fileModel.createLinkFile(
+        url=url, parent=parent, name=name, parentType=parentType,
+        creator=user, size=int(headers['Content-Length']),
+        mimeType=headers['Content-Type'])
+    gc_file = fileModel.filter(fileDoc, user)
+
+    gc_item = ModelImporter.model('item').load(
+        gc_file['itemId'], force=True)
+    gc_item['meta'] = {'identifier': 'unknown'}
+    gc_item = ModelImporter.model('item').updateItem(gc_item)
 
 
 def process_package(parent, parentType, progress, user, pid, name=None):
