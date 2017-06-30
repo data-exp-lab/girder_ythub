@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import re
-import os
 import requests
-from urllib.parse import urlparse
 
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
@@ -46,7 +43,7 @@ from ..constants import dataMapListSchema
 def importData(self, parentId, parentType, public, dataMap, params):
     user = self.getCurrentUser()
 
-    if not parentId:
+    if not parentId or parentType not in ('folder', 'item'):
         parent = path_util.lookUpPath('/user/%s/Data' % user['login'], user)
         parentType = parent['model']
         parent = parent['document']
