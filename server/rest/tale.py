@@ -132,9 +132,15 @@ class Tale(Resource):
                 tale['imageId'], user=user, level=AccessType.READ, exc=True)
             folder = self.model('folder').load(
                 tale['folderId'], user=user, level=AccessType.READ, exc=True)
+            default_author = ' '.join((user['firstName'], user['lastName']))
             return self.model('tale', 'wholetale').createTale(
                 image, folder, creator=user, save=True,
                 title=tale.get('title'), description=tale.get('description'),
                 public=tale.get('public'), config=tale.get('config'),
+                icon=tale.get('icon', ('https://raw.githubusercontent.com/'
+                                       'whole-tale/dashboard/master/public/'
+                                       'images/whole_tale_logo.png')),
+                authors=tale.get('authors', default_author),
+                category=tale.get('category', 'science'),
                 published=False
             )

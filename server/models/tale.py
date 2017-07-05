@@ -72,7 +72,8 @@ class Tale(AccessControlledModel):
             yield r
 
     def createTale(self, image, folder, creator=None, save=True, title=None,
-                   description=None, public=None, config=None, published=False):
+                   description=None, public=None, config=None, published=False,
+                   authors=None, icon=None, category=None):
         if creator is None:
             creatorId = None
         else:
@@ -83,11 +84,14 @@ class Tale(AccessControlledModel):
 
         now = datetime.datetime.utcnow()
         tale = {
+            'authors': authors,
+            'category': category,
             'config': config,
             'creatorId': creatorId,
             'description': description,
             'folderId': ObjectId(folder['_id']),
             'created': now,
+            'icon': icon,
             'imageId': ObjectId(image['_id']),
             'title': title,
             'public': public,
