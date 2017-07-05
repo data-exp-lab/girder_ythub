@@ -21,15 +21,15 @@ class Tale(AccessControlledModel):
             'title': 10,
             'description': 1
         })
-        self.exposeFields(level=AccessType.READ,
-                          fields={'_id', 'config', 'creatorId', 'folderId',
-                                  'created', 'imageId', 'title',
-                                  'updated', 'description', 'public'})
-        self.exposeFields(level=AccessType.ADMIN, fields={'published'})
         self.modifiableFields = {
             'title', 'description', 'public', 'config', 'updated', 'authors',
             'category', 'icon'
         }
+        self.exposeFields(
+            level=AccessType.READ,
+            fields=({'_id', 'folderId', 'imageId', 'creatorId', 'created'} |
+                    self.modifiableFields))
+        self.exposeFields(level=AccessType.ADMIN, fields={'published'})
 
     def validate(self, tale):
         return tale
