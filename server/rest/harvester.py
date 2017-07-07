@@ -23,7 +23,7 @@ def register_http_resource(parent, parentType, progress, user, url, name):
     fileDoc = fileModel.createLinkFile(
         url=url, parent=parent, name=name, parentType=parentType,
         creator=user, size=int(headers['Content-Length']),
-        mimeType=headers['Content-Type'])
+        mimeType=headers['Content-Type'], reuseExisting=True)
     gc_file = fileModel.filter(fileDoc, user)
 
     gc_item = ModelImporter.model('item').load(
@@ -117,7 +117,7 @@ def register_DataONE_resource(parent, parentType, progress, user, pid, name=None
             url=fileObj['url'], parent=gc_folder,
             name=fileName, parentType='folder',
             creator=user, size=int(fileObj['size']),
-            mimeType=fileObj['formatId'])
+            mimeType=fileObj['formatId'], reuseExisting=True)
         gc_file = fileModel.filter(fileDoc, user)
 
         gc_item = ModelImporter.model('item').load(
