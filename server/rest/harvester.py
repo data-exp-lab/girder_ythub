@@ -78,7 +78,9 @@ def importData(self, parentId, parentType, public, copyToHome, dataMap,
                                            data['dataId'], data['name'])
                 )
 
-        if copyToHome:
+    if copyToHome:
+        with ProgressContext(progress, user=user,
+                             title='Copying to workspace') as ctx:
             userDataFolder = path_util.lookUpPath('/user/%s/Data' % user['login'], user)
             for folder in importedData['folder']:
                 self.model('folder').copyFolder(
@@ -91,8 +93,6 @@ def importData(self, parentId, parentType, public, copyToHome, dataMap,
                     item, creator=user, name=item['name'],
                     folder=userDataFolder['document'],
                     description=item['description'])
-
-    return parent
 
 
 def register_http_resource(parent, parentType, progress, user, url, name):
