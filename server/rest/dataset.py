@@ -4,9 +4,16 @@ from girder.api import access
 from girder.api.docs import addModel
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource
-from girder.constants import AccessType, SortDir
+from girder.constants import AccessType, SortDir, TokenScope
 from girder.models.model_base import ValidationException
-from .harvester import getOrCreateCatalogFolder
+from girder.utility import path as path_util
+from girder.utility.model_importer import ModelImporter
+from girder.utility.progress import ProgressContext
+from ..constants import dataMapListSchema, CATALOG_NAME
+from .harvester import \
+    register_http_resource, \
+    register_DataONE_resource
+
 
 datasetModel = {
     "description": "Object representing registered data.",
@@ -79,6 +86,14 @@ def _itemOrFolderToDataset(obj):
     return ds
 
 
+def getOrCreateCatalogFolder():
+    collection = ModelImporter.model('collection').createCollection(
+        CATALOG_NAME, public=False, reuseExisting=True)
+    folder = ModelImporter.model('folder').createFolder(
+        collection, CATALOG_NAME, parentType='collection', public=True, reuseExisting=True)
+    return folder
+
+
 class Dataset(Resource):
 
     def __init__(self):
@@ -87,6 +102,7 @@ class Dataset(Resource):
 
         self.route('GET', (), self.listDatasets)
         self.route('GET', (':id',), self.getDataset)
+        self.route('POST', ('register',), self.importData)
 
     @access.public
     @autoDescribeRoute(
@@ -107,10 +123,12 @@ class Dataset(Resource):
         for folder in folderModel.childFolders(
                 parentType='folder', parent=parent, user=user,
                 limit=limit, offset=offset, sort=sort):
+            folder['_modelType'] = 'folder'
             datasets.append(_itemOrFolderToDataset(folder))
 
         for item in folderModel.childItems(
-                folder=folder, limit=limit, offset=offset, sort=sort):
+                folder=parent, limit=limit, offset=offset, sort=sort):
+            item['_modelType'] = 'item'
             datasets.append(_itemOrFolderToDataset(item))
         return datasets
 
@@ -125,10 +143,81 @@ class Dataset(Resource):
         .errorResponse('ID was invalid.')
         .errorResponse('Read access was denied for the resource.', 403)
     )
-    def getResource(self, id, type, params):
+    def getDataset(self, id, params):
         user = self.getCurrentUser()
         try:
             doc = self.model('folder').load(id=id, user=user, level=AccessType.READ, exc=True)
+            doc['_modelType'] = 'folder'
         except ValidationException:
             doc = self.model('item').load(id=id, user=user, level=AccessType.READ, exc=True)
+            doc['_modelType'] = 'item'
+        if 'meta' not in doc or 'provider' not in doc['meta']:
+            raise ValidationException('No such item: %s' % str(doc['_id']), 'id')
         return _itemOrFolderToDataset(doc)
+
+    @access.user(scope=TokenScope.DATA_WRITE)
+    @autoDescribeRoute(
+        Description('Create a folder containing references to an external data')
+        .notes('This does not upload or copy the existing data, it just creates '
+               'references to it in the Girder data hierarchy. Deleting '
+               'those references will not delete the underlying data. This '
+               'operation is currently only supported for DataONE repositories.\n'
+               'If the parentId and the parentType is not provided, data will be '
+               'registered into home directory of the user calling the endpoint')
+        .param('parentId', 'Parent ID for the new parent of this folder.',
+               required=False)
+        .param('parentType', "Type of the folder's parent", required=False,
+               enum=['folder', 'user', 'collection'], strip=True, default='folder')
+        .param('public', 'Whether the folder should be publicly visible. '
+               'Defaults to True.',
+               required=False, dataType='boolean', default=True)
+        .param('copyToHome', 'Whether to copy imported data to /User/Data/. '
+               'Defaults to True.',
+               required=False, dataType='boolean', default=True)
+        .jsonParam('dataMap', 'A list of data mappings',
+                   paramType='body', schema=dataMapListSchema)
+        .errorResponse('Write access denied for parent collection.', 403)
+    )
+    def importData(self, parentId, parentType, public, copyToHome, dataMap,
+                   params):
+        user = self.getCurrentUser()
+
+        if not parentId or parentType not in ('folder', 'item'):
+            parent = getOrCreateCatalogFolder()
+            parentType = 'folder'
+        else:
+            parent = self.model(parentType).load(
+                parentId, user=user, level=AccessType.WRITE, exc=True)
+
+        progress = True
+        importedData = dict(folder=[], item=[])
+        with ProgressContext(progress, user=user,
+                             title='Registering resources') as ctx:
+            for data in dataMap:
+                if data['repository'] == 'DataONE':
+                    importedData['folder'].append(
+                        register_DataONE_resource(
+                            parent, parentType, ctx, user,
+                            data['dataId'], name=data['name'])
+                    )
+                elif data['repository'] == 'HTTP':
+                    importedData['item'].append(
+                        register_http_resource(parent, parentType, ctx, user,
+                                               data['dataId'], data['name'])
+                    )
+
+        if copyToHome:
+            with ProgressContext(progress, user=user,
+                                 title='Copying to workspace') as ctx:
+                userDataFolder = path_util.lookUpPath('/user/%s/Data' % user['login'], user)
+                for folder in importedData['folder']:
+                    self.model('folder').copyFolder(
+                        folder, creator=user, name=folder['name'],
+                        parentType='folder', parent=userDataFolder['document'],
+                        description=folder['description'],
+                        public=folder['public'], progress=ctx)
+                for item in importedData['item']:
+                    self.model('item').copyItem(
+                        item, creator=user, name=item['name'],
+                        folder=userDataFolder['document'],
+                        description=item['description'])

@@ -5,10 +5,8 @@ import requests
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import boundHandler, RestException, filtermodel
-from girder.constants import AccessType, TokenScope
+from girder.constants import TokenScope
 from girder.utility.model_importer import ModelImporter
-from girder.utility import path as path_util
-from girder.utility.progress import ProgressContext
 from ..dataone_register import \
     D1_BASE, \
     esc, \
@@ -16,83 +14,6 @@ from ..dataone_register import \
     get_documenting_identifiers, \
     query, \
     unesc
-from ..constants import dataMapListSchema, CATALOG_NAME
-
-
-def getOrCreateCatalogFolder():
-    collection = ModelImporter.model('collection').createCollection(
-        CATALOG_NAME, public=False, reuseExisting=True)
-    folder = ModelImporter.model('folder').createFolder(
-        collection, CATALOG_NAME, parentType='collection', public=True, reuseExisting=True)
-    return folder
-
-
-@access.user(scope=TokenScope.DATA_WRITE)
-@autoDescribeRoute(
-    Description('Create a folder containing references to an external data')
-    .notes('This does not upload or copy the existing data, it just creates '
-           'references to it in the Girder data hierarchy. Deleting '
-           'those references will not delete the underlying data. This '
-           'operation is currently only supported for DataONE repositories.\n'
-           'If the parentId and the parentType is not provided, data will be '
-           'registered into home directory of the user calling the endpoint')
-    .param('parentId', 'Parent ID for the new parent of this folder.',
-           required=False)
-    .param('parentType', "Type of the folder's parent", required=False,
-           enum=['folder', 'user', 'collection'], strip=True, default='folder')
-    .param('public', 'Whether the folder should be publicly visible. '
-           'Defaults to True.',
-           required=False, dataType='boolean', default=True)
-    .param('copyToHome', 'Whether to copy imported data to /User/Data/. '
-           'Defaults to True.',
-           required=False, dataType='boolean', default=True)
-    .jsonParam('dataMap', 'A list of data mappings',
-               paramType='body', schema=dataMapListSchema)
-    .errorResponse('Write access denied for parent collection.', 403)
-)
-@boundHandler()
-def importData(self, parentId, parentType, public, copyToHome, dataMap,
-               params):
-    user = self.getCurrentUser()
-
-    if not parentId or parentType not in ('folder', 'item'):
-        parent = getOrCreateCatalogFolder()
-        parentType = 'folder'
-    else:
-        parent = self.model(parentType).load(
-            parentId, user=user, level=AccessType.WRITE, exc=True)
-
-    progress = True
-    importedData = dict(folder=[], item=[])
-    with ProgressContext(progress, user=user,
-                         title='Registering resources') as ctx:
-        for data in dataMap:
-            if data['repository'] == 'DataONE':
-                importedData['folder'].append(
-                    process_package(parent, parentType, ctx, user,
-                                    data['dataId'], name=data['name'])
-                )
-            elif data['repository'] == 'HTTP':
-                importedData['item'].append(
-                    register_http_resource(parent, parentType, ctx, user,
-                                           data['dataId'], data['name'])
-                )
-
-    if copyToHome:
-        with ProgressContext(progress, user=user,
-                             title='Copying to workspace') as ctx:
-            userDataFolder = path_util.lookUpPath('/user/%s/Data' % user['login'], user)
-            for folder in importedData['folder']:
-                self.model('folder').copyFolder(
-                    folder, creator=user, name=folder['name'],
-                    parentType='folder', parent=userDataFolder['document'],
-                    description=folder['description'],
-                    public=folder['public'], progress=ctx)
-            for item in importedData['item']:
-                self.model('item').copyItem(
-                    item, creator=user, name=item['name'],
-                    folder=userDataFolder['document'],
-                    description=item['description'])
 
 
 def register_http_resource(parent, parentType, progress, user, url, name):
@@ -107,12 +28,12 @@ def register_http_resource(parent, parentType, progress, user, url, name):
 
     gc_item = ModelImporter.model('item').load(
         gc_file['itemId'], force=True)
-    gc_item['meta'] = {'identifier': 'unknown'}
+    gc_item['meta'] = {'identifier': 'unknown', 'provider': 'HTTP'}
     gc_item = ModelImporter.model('item').updateItem(gc_item)
     return gc_item
 
 
-def process_package(parent, parentType, progress, user, pid, name=None):
+def register_DataONE_resource(parent, parentType, progress, user, pid, name=None):
     """Create a package description (Dict) suitable for dumping to JSON."""
     progress.update(increment=1, message='Processing package {}.'.format(pid))
 
@@ -207,8 +128,8 @@ def process_package(parent, parentType, progress, user, pid, name=None):
     # Recurse and add child packages if any exist
     if children is not None and len(children) > 0:
         for child in children:
-            process_package(gc_folder, 'folder', progress, user,
-                            child['identifier'])
+            register_DataONE_resource(gc_folder, 'folder', progress, user,
+                                      child['identifier'])
     return gc_folder
 
 

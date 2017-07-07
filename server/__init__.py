@@ -17,10 +17,11 @@ from girder.utility import assetstore_utilities, setting_utilities
 from girder.utility.model_importer import ModelImporter
 
 from .constants import PluginSettings
+from .rest.dataset import Dataset
 from .rest.recipe import Recipe
 from .rest.image import Image
 from .rest.repository import Repository
-from .rest.harvester import importData, listImportedData
+from .rest.harvester import listImportedData
 from .rest.tale import Tale
 from .rest.instance import Instance
 from .rest.wholetale import wholeTale
@@ -233,13 +234,13 @@ def load(info):
     info['apiRoot'].instance = Instance()
     info['apiRoot'].tale = Tale()
     info['apiRoot'].recipe = Recipe()
+    info['apiRoot'].dataset = Dataset()
     image = Image()
     info['apiRoot'].image = image
     events.bind('jobs.job.update', 'wholetale', image.updateImageStatus)
     events.unbind('model.user.save.created', CoreEventHandler.USER_DEFAULT_FOLDERS)
     events.bind('model.user.save.created', 'wholetale', addDefaultFolders)
     info['apiRoot'].repository = Repository()
-    info['apiRoot'].folder.route('POST', ('register',), importData)
     info['apiRoot'].folder.route('GET', ('registered',), listImportedData)
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
     info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
