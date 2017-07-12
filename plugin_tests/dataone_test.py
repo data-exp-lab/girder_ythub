@@ -236,12 +236,12 @@ class DataONEHarversterTestCase(base.TestCase):
         with httmock.HTTMock(mockSearchDataONE, mockCurldrop,
                              self.mockOtherRequest):
             resp = self.request(
-                path='/folder/register', method='POST',
+                path='/dataset/register', method='POST',
                 params={'dataMap': json.dumps(dataMap)})
             self.assertStatus(resp, 401)
 
             resp = self.request(
-                path='/folder/register', method='POST',
+                path='/dataset/register', method='POST',
                 params={'dataMap': json.dumps(dataMap)}, user=self.user)
             self.assertStatusOk(resp)
 
