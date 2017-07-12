@@ -291,6 +291,16 @@ class DataONEHarversterTestCase(base.TestCase):
         item = resp.json[0]
         self.assertEqual(item['name'], 'nginx.tmpl')
 
+        # Dataset testing
+        resp = self.request('/dataset', method='GET', user=self.user)
+        self.assertStatusOk(resp)
+        self.assertEqual(len(resp.json), 2)
+
+        resp = self.request('/dataset/{}'.format(item['_id']), method='GET',
+                            user=self.user)
+        self.assertStatusOk(resp)
+        self.assertEqual(resp.json['name'], item['name'])
+
     def tearDown(self):
         self.model('user').remove(self.user)
         self.model('user').remove(self.admin)
