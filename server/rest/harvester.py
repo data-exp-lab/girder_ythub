@@ -5,10 +5,8 @@ import requests
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import boundHandler, RestException, filtermodel
-from girder.constants import AccessType, TokenScope
+from girder.constants import TokenScope
 from girder.utility.model_importer import ModelImporter
-from girder.utility import path as path_util
-from girder.utility.progress import ProgressContext
 from ..dataone_register import \
     D1_BASE, \
     esc, \
@@ -16,52 +14,6 @@ from ..dataone_register import \
     get_documenting_identifiers, \
     query, \
     unesc
-from ..constants import dataMapListSchema
-
-
-@access.user(scope=TokenScope.DATA_WRITE)
-@autoDescribeRoute(
-    Description('Create a folder containing references to an external data')
-    .notes('This does not upload or copy the existing data, it just creates '
-           'references to it in the Girder data hierarchy. Deleting '
-           'those references will not delete the underlying data. This '
-           'operation is currently only supported for DataONE repositories.\n'
-           'If the parentId and the parentType is not provided, data will be '
-           'registered into home directory of the user calling the endpoint')
-    .param('parentId', 'Parent ID for the new parent of this folder.',
-           required=False)
-    .param('parentType', "Type of the folder's parent", required=False,
-           enum=['folder', 'user', 'collection'], strip=True, default='folder')
-    .param('public', 'Whether the folder should be publicly visible. '
-           'Defaults to True.',
-           required=False, dataType='boolean', default=True)
-    .jsonParam('dataMap', 'A list of data mappings',
-               paramType='body', schema=dataMapListSchema)
-    .errorResponse('Write access denied for parent collection.', 403)
-)
-@boundHandler()
-def importData(self, parentId, parentType, public, dataMap, params):
-    user = self.getCurrentUser()
-
-    if not parentId or parentType not in ('folder', 'item'):
-        parent = path_util.lookUpPath('/user/%s/Data' % user['login'], user)
-        parentType = parent['model']
-        parent = parent['document']
-    else:
-        parent = self.model(parentType).load(
-            parentId, user=user, level=AccessType.WRITE, exc=True)
-
-    progress = True
-    with ProgressContext(progress, user=user,
-                         title='Registering resources') as ctx:
-        for data in dataMap:
-            if data['repository'] == 'DataONE':
-                process_package(parent, parentType, ctx, user,
-                                data['dataId'], name=data['name'])
-            elif data['repository'] == 'HTTP':
-                register_http_resource(parent, parentType, ctx, user,
-                                       data['dataId'], data['name'])
-    return parent
 
 
 def register_http_resource(parent, parentType, progress, user, url, name):
@@ -71,16 +23,17 @@ def register_http_resource(parent, parentType, progress, user, url, name):
     fileDoc = fileModel.createLinkFile(
         url=url, parent=parent, name=name, parentType=parentType,
         creator=user, size=int(headers['Content-Length']),
-        mimeType=headers['Content-Type'])
+        mimeType=headers['Content-Type'], reuseExisting=True)
     gc_file = fileModel.filter(fileDoc, user)
 
     gc_item = ModelImporter.model('item').load(
         gc_file['itemId'], force=True)
-    gc_item['meta'] = {'identifier': 'unknown'}
+    gc_item['meta'] = {'identifier': 'unknown', 'provider': 'HTTP'}
     gc_item = ModelImporter.model('item').updateItem(gc_item)
+    return gc_item
 
 
-def process_package(parent, parentType, progress, user, pid, name=None):
+def register_DataONE_resource(parent, parentType, progress, user, pid, name=None):
     """Create a package description (Dict) suitable for dumping to JSON."""
     progress.update(increment=1, message='Processing package {}.'.format(pid))
 
@@ -164,7 +117,7 @@ def process_package(parent, parentType, progress, user, pid, name=None):
             url=fileObj['url'], parent=gc_folder,
             name=fileName, parentType='folder',
             creator=user, size=int(fileObj['size']),
-            mimeType=fileObj['formatId'])
+            mimeType=fileObj['formatId'], reuseExisting=True)
         gc_file = fileModel.filter(fileDoc, user)
 
         gc_item = ModelImporter.model('item').load(
@@ -175,8 +128,8 @@ def process_package(parent, parentType, progress, user, pid, name=None):
     # Recurse and add child packages if any exist
     if children is not None and len(children) > 0:
         for child in children:
-            process_package(gc_folder, 'folder', progress, user,
-                            child['identifier'])
+            register_DataONE_resource(gc_folder, 'folder', progress, user,
+                                      child['identifier'])
     return gc_folder
 
 

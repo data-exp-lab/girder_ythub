@@ -5,6 +5,7 @@ from girder import events
 
 
 API_VERSION = '2.0'
+CATALOG_NAME = 'WholeTale Catalog'
 
 dataMapSchema = {
     'title': 'dataMap',
