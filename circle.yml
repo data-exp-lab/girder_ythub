@@ -12,14 +12,13 @@ machine:
     version: 6
   post:
     - pyenv global 3.4.4
-    - if [ "$CIRCLE_NODE_INDEX" -eq 1 ] ; then pyenv global 3.4.4 ; fi
 
 dependencies:
   cache_directories:
     - "~/cache"
     - "~/.npm"
   override:
-    - git clone https://github.com/girder/girder "$HOME"/girder
+    - git clone https://github.com/xarthisius/girder "$HOME"/girder
     - ln -s "$HOME"/girder_ythub "$HOME"/girder/plugins/wholetale
     - cd "$HOME"/girder
     - sudo apt-get -qqy update; sudo apt-get install -qqy libgif-dev libsasl2-dev python-dev libldap2-dev libssl-dev
