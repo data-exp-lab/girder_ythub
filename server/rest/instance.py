@@ -156,10 +156,10 @@ class Instance(Resource):
                 tale = next(taleModel.list(user=None, folder=folder, image=image,
                                            currentUser=user))
             except StopIteration:
-                name = 'Testing %s' % image['fullName']
+                title = 'Testing %s' % image['fullName']
                 tale = taleModel.createTale(
                     image, folder, creator=user, save=True,
-                    name=name, description=None, public=False)
+                    title=title, description=None, public=False)
 
         instanceModel = self.model('instance', 'wholetale')
         return instanceModel.createInstance(tale, user, token, name=name,
