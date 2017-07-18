@@ -9,7 +9,8 @@ from girder.models.model_base import ValidationException
 from girder.utility import path as path_util
 from girder.utility.model_importer import ModelImporter
 from girder.utility.progress import ProgressContext
-from ..constants import dataMapListSchema, CATALOG_NAME
+from ..constants import CATALOG_NAME
+from ..schema.misc import dataMapListSchema
 from .harvester import \
     register_http_resource, \
     register_DataONE_resource
