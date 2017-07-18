@@ -61,16 +61,10 @@ class TaleTestCase(base.TestCase):
             self.recipe, GOOD_REPO, name="my name", creator=self.user,
             public=True)
 
-        # Grab the default user folders
-        resp = self.request(
-            path='/folder', method='GET', user=self.user, params={
-                'parentType': 'user',
-                'parentId': self.user['_id'],
-                'sort': 'name',
-                'sortdir': 1
-            })
-        self.userPrivateFolder = resp.json[0]
-        self.userPublicFolder = resp.json[1]
+        self.userPrivateFolder = self.model('folder').createFolder(
+            self.user, 'PrivateFolder', parentType='user', public=False)
+        self.userPublicFolder = self.model('folder').createFolder(
+            self.user, 'PublicFolder', parentType='user', public=True)
 
         self.tale_one = self.model('tale', 'wholetale').createTale(
             self.image, self.userPrivateFolder, creator=self.user,
@@ -78,6 +72,38 @@ class TaleTestCase(base.TestCase):
         self.tale_two = self.model('tale', 'wholetale').createTale(
             self.image, self.userPublicFolder, creator=self.user,
             name='tale one', public=True, config={'memLimit': '1g'})
+
+    def testInstanceFromImage(self):
+        with mock.patch('celery.Celery') as celeryMock:
+            with mock.patch('tornado.httpclient.HTTPClient') as tornadoMock:
+                instance = celeryMock.return_value
+                instance.send_task.return_value = FakeAsyncResult()
+
+                req = tornadoMock.return_value
+                req.fetch.return_value = {}
+
+                resp = self.request(
+                    path='/instance', method='POST', user=self.user,
+                    params={})
+                self.assertStatus(resp, 400)
+                self.assertEqual(resp.json['message'],
+                                 'You need to provide "imageId" or "taleId".')
+                resp = self.request(
+                    path='/instance', method='POST', user=self.user,
+                    params={'imageId': str(self.image['_id'])})
+
+                self.assertStatusOk(resp)
+                self.assertEqual(
+                    resp.json['url'], 'https://tmp-blah.0.0.1/?token=foo')
+                self.assertEqual(
+                    resp.json['name'], 'Testing %s' % self.image['fullName'])
+                instanceId = resp.json['_id']
+
+                resp = self.request(
+                    path='/instance', method='POST', user=self.user,
+                    params={'imageId': str(self.image['_id'])})
+                self.assertStatusOk(resp)
+                self.assertEqual(resp.json['_id'], instanceId)
 
     def testInstanceFlow(self):
         # Grab the default user folders
@@ -174,10 +200,12 @@ class TaleTestCase(base.TestCase):
             self.assertEqual(resp.json[key], instance_one[key])
 
     def tearDown(self):
-        self.model('user').remove(self.user)
-        self.model('user').remove(self.admin)
+        self.model('folder').remove(self.userPrivateFolder)
+        self.model('folder').remove(self.userPublicFolder)
         self.model('recipe', 'wholetale').remove(self.recipe)
         self.model('image', 'wholetale').remove(self.image)
         self.model('tale', 'wholetale').remove(self.tale_one)
         self.model('tale', 'wholetale').remove(self.tale_two)
+        self.model('user').remove(self.user)
+        self.model('user').remove(self.admin)
         super(TaleTestCase, self).tearDown()

@@ -3,8 +3,9 @@
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.docs import addModel
-from girder.api.rest import Resource, filtermodel
+from girder.api.rest import Resource, filtermodel, RestException
 from girder.constants import AccessType, SortDir
+from girder.utility import path as path_util
 
 
 instanceModel = {
@@ -124,17 +125,41 @@ class Instance(Resource):
         Description('Create a new instance')
         .notes('Instantiate a tale.')
         .param('taleId', 'The ID of a tale used to create an instance.',
-               required=True)
+               required=False)
+        .param('imageId', 'The ID of an image used to create a temporary instance.',
+               required=False)
         .param('name', 'A user-friendly, short name of the tale.',
                required=False)
         .responseClass('instance')
         .errorResponse('Read access was denied for the tale.', 403)
     )
-    def createInstance(self, taleId, name, params):
+    def createInstance(self, taleId, imageId, name, params):
+        if taleId is None and imageId is None:
+            raise RestException(
+                'You need to provide "imageId" or "taleId".'
+            )
         user = self.getCurrentUser()
         token = self.getCurrentToken()
-        tale = self.model('tale', 'wholetale').load(
-            taleId, user=user, level=AccessType.READ)
+
+        taleModel = self.model('tale', 'wholetale')
+        if taleId:
+            tale = taleModel.load(
+                taleId, user=user, level=AccessType.READ)
+        elif imageId:
+            image = self.model('image', 'wholetale').load(
+                imageId, user=user, level=AccessType.READ)
+            userDataFolder = path_util.lookUpPath(
+                '/user/%s/Data' % user['login'], user)
+            folder = userDataFolder['document']
+            try:
+                # Check if it already exists
+                tale = next(taleModel.list(user=None, folder=folder, image=image,
+                                           currentUser=user))
+            except StopIteration:
+                name = 'Testing %s' % image['fullName']
+                tale = taleModel.createTale(
+                    image, folder, creator=user, save=True,
+                    name=name, description=None, public=False)
 
         instanceModel = self.model('instance', 'wholetale')
         return instanceModel.createInstance(tale, user, token, name=name,
