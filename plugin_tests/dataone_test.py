@@ -241,7 +241,8 @@ class DataONEHarversterTestCase(base.TestCase):
                              self.mockOtherRequest):
             resp = self.request(
                 path='/dataset/register', method='POST',
-                params={'dataMap': json.dumps(dataMap)})
+                params={'dataMap': json.dumps(dataMap),
+                        'copyToHome': True})
             self.assertStatus(resp, 401)
 
             resp = self.request(
@@ -299,11 +300,30 @@ class DataONEHarversterTestCase(base.TestCase):
         resp = self.request('/dataset', method='GET', user=self.user)
         self.assertStatusOk(resp)
         self.assertEqual(len(resp.json), 2)
+        folder_ds = next(_ for _ in resp.json if _['modelType'] == 'folder')
+        item_ds = next(_ for _ in resp.json if _['modelType'] == 'item')
 
-        resp = self.request('/dataset/{}'.format(item['_id']), method='GET',
+        resp = self.request('/dataset/{}'.format(item_ds['_id']), method='GET',
                             user=self.user)
         self.assertStatusOk(resp)
-        self.assertEqual(resp.json['name'], item['name'])
+        self.assertEqual(resp.json['name'], item_ds['name'])
+
+        resp = self.request(
+            '/dataset/{}'.format(item_ds['_id']), method='PUT', user=self.user,
+            type='application/json', body=json.dumps(item_ds))
+        self.assertStatusOk(resp)
+
+        resp = self.request(
+            '/dataset/{}'.format(folder_ds['_id']), method='PUT', user=self.user,
+            type='application/json', body=json.dumps(folder_ds))
+        self.assertStatusOk(resp)
+
+        resp = self.request(
+            path='/folder/{}/details'.format(dataFolder['_id']),
+            method='GET', user=self.user)
+        self.assertStatusOk(resp)
+        self.assertEqual(resp.json['nItems'], 2)
+        self.assertEqual(resp.json['nFolders'], 2)
 
     def tearDown(self):
         self.model('user').remove(self.user)
