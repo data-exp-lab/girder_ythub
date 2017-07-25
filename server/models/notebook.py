@@ -2,17 +2,43 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import json
-import requests
-import six
-import dateutil.parser
+from six.moves import urllib
+import ssl
+import time
 
 from girder import logger
-from ..constants import PluginSettings, API_VERSION, NotebookStatus
-from girder.api.rest import RestException
+from ..constants import API_VERSION, NotebookStatus
+from girder.api.rest import getApiUrl
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
+from girder.plugins.worker import getCeleryApp, getWorkerApiUrl
+from tornado.httpclient import HTTPRequest, HTTPError, HTTPClient
+# FIXME look into removing tornado
+
+
+def _wait_for_server(url, timeout=30, wait_time=0.5):
+    '''Wait for a server to show up within a newly launched instance.'''
+    tic = time.time()
+    # Fudge factor of IPython notebook bootup.
+    time.sleep(0.5)
+
+    http_client = HTTPClient()
+    req = HTTPRequest(url)
+
+    while time.time() - tic < timeout:
+        try:
+            http_client.fetch(req)
+        except HTTPError as http_error:
+            code = http_error.code
+            logger.info(
+                'Booting server at [%s], getting HTTP status [%s]',
+                url, code)
+            time.sleep(wait_time)
+        except ssl.SSLError:
+            time.sleep(wait_time)
+        else:
+            break
 
 
 class Notebook(AccessControlledModel):
@@ -20,17 +46,15 @@ class Notebook(AccessControlledModel):
     def initialize(self):
         self.name = 'notebook'
         compoundSearchIndex = (
-            ('userId', SortDir.ASCENDING),
+            ('creatorId', SortDir.ASCENDING),
             ('created', SortDir.DESCENDING)
         )
 
         self.ensureIndices([(compoundSearchIndex, {})])
-
         self.exposeFields(level=AccessType.WRITE,
-                          fields={'created', 'when', 'folderId', '_id',
-                                  'userId', 'url', 'status', 'frontendId',
-                                  'containerPath', 'containerId', 'host',
-                                  'mountPoint', 'lastActivity'})
+                          fields={'created', 'folderId', '_id',
+                                  'creatorId', 'status', 'frontendId',
+                                  'serviceInfo', 'url'})
         self.exposeFields(level=AccessType.SITE_ADMIN,
                           fields={'args', 'kwargs'})
 
@@ -55,7 +79,7 @@ class Notebook(AccessControlledModel):
         """
         cursor_def = {}
         if user is not None:
-            cursor_def['userId'] = user['_id']
+            cursor_def['creatorId'] = user['_id']
         if folder is not None:
             cursor_def['folderId'] = folder['_id']
         cursor = self.find(cursor_def, sort=sort)
@@ -67,108 +91,72 @@ class Notebook(AccessControlledModel):
 
     def deleteNotebook(self, notebook, token):
         payload = {
-            'containerId': str(notebook['containerId']),
-            'containerPath': str(notebook['containerPath']),
-            'mountPoint': str(notebook['mountPoint']),
-            'host': str(notebook['host']),
-            'folderId': str(notebook['folderId']),
+            'serviceInfo': notebook['serviceInfo'],
             'girder_token': str(token['_id']),
+            'apiUrl': getWorkerApiUrl()
         }
-        headers = {'docker-host': str(notebook['host']),
-                   'content-type': 'application/json'}
-        requests.delete(self.model('setting').get(PluginSettings.TMPNB_URL),
-                        json=payload, headers=headers)
-        # TODO: handle error
+
+        instanceTask = getCeleryApp().send_task(
+            'gwvolman.tasks.shutdown_container', args=[payload],
+            queue='manager',
+        )
+        instanceTask.get()
+
+        volumeTask = getCeleryApp().send_task(
+            'gwvolman.tasks.remove_volume', args=[payload],
+            queue=notebook['serviceInfo']['nodeId']
+        )
+        volumeTask.get()
+
         self.remove(notebook)
-
-    def cullNotebooks(self):
-        resp = requests.get(
-            self.model('setting').get(PluginSettings.TMPNB_URL))
-        content = resp.content
-        if isinstance(content, six.binary_type):
-            content = content.decode('utf8')
-        try:
-            resp.raise_for_status()
-        except requests.HTTPError:
-            raise RestException(
-                'Got %s code from tmpnb, response="%s"/' % (
-                    resp.status_code, content
-                ), code=502)
-        try:
-            activity = json.loads(content)
-        except ValueError:
-            raise RestException('Non-JSON response: %s' % content, code=502)
-
-        admin = next(_ for _ in self.model('user').getAdmins())
-        token = self.model('token').createToken(user=admin, days=1)
-
-        # Iterate over all notebooks, not the prettiest way...
-        cull_period = self.model('setting').get(
-            PluginSettings.CULLING_PERIOD, '4')
-        cull_time = datetime.datetime.utcnow() - \
-            datetime.timedelta(hours=float(cull_period))
-        for nb in self.find({}):
-            try:
-                last_activity = dateutil.parser.parse(
-                    activity[nb['containerId']], ignoretz=True)
-                if last_activity < cull_time:
-                    logger.info('Deleting nb %s' % nb['_id'])
-                    self.deleteNotebook(nb, token)
-            except KeyError:
-                # proxy is not aware of such container, kill it...
-                logger.info('Deleting nb %s' % nb['_id'])
-                self.deleteNotebook(nb, token)
 
     def createNotebook(self, folder, user, token, frontend, when=None,
                        save=True):
         existing = self.findOne({
             'folderId': folder['_id'],
-            'userId': user['_id'],
+            'creatorId': user['_id'],
             'frontendId': frontend['_id']
         })
-
         if existing:
             return existing
 
         now = datetime.datetime.utcnow()
-        when = when or now
-        hub_url = self.model('setting').get(PluginSettings.TMPNB_URL)
-        payload = {'girder_token': token['_id'],
-                   'folderId': str(folder['_id']),
-                   'frontendId': str(frontend['_id']),
-                   'api_version': API_VERSION}
+        payload = {
+            'girder_token': token['_id'],
+            'folder': {k: str(v) for k, v in folder.items()},
+            'frontend': {k: str(v) for k, v in frontend.items()},
+            'api_version': API_VERSION
+        }
 
-        resp = requests.post(hub_url, json=payload)
-        content = resp.content
+        # do the job
+        volumeTask = getCeleryApp().send_task(
+            'gwvolman.tasks.create_volume', args=[payload]
+        )
+        volumeInfo = volumeTask.get()
+        payload.update(volumeInfo)
 
-        if isinstance(content, six.binary_type):
-            content = content.decode('utf8')
+        serviceTask = getCeleryApp().send_task(
+            'gwvolman.tasks.launch_container', args=[payload],
+            queue='manager'
+        )
+        serviceInfo = serviceTask.get()
+        serviceInfo.update(volumeInfo)
 
-        try:
-            resp.raise_for_status()
-        except requests.HTTPError:
-            raise RestException(
-                'Got %s code from tmpnb, response="%s"/' % (
-                    resp.status_code, content
-                ), code=502)
+        netloc = urllib.parse.urlsplit(getApiUrl()).netloc
+        domain = '{}.{}'.format(
+            serviceInfo['serviceId'], netloc.split(':')[0].split('.', 1)[1])
+        url = 'https://{}/{}'.format(domain, serviceInfo.get('urlPath', ''))
 
-        try:
-            nb = json.loads(content)
-        except ValueError:
-            raise RestException('Non-JSON response: %s' % content, code=502)
+        # _wait_for_server(url)
 
         notebook = {
             'folderId': folder['_id'],
-            'userId': user['_id'],
+            'creatorId': user['_id'],
             'frontendId': frontend['_id'],
-            'containerId': nb['containerId'],
-            'containerPath': nb['containerPath'],
-            'mountPoint': nb['mountPoint'],
-            'host': nb['host'],
-            'lastActivity': now,
             'status': NotebookStatus.RUNNING,   # be optimistic for now
             'created': now,
-            'when': when,
+            'serviceInfo': serviceInfo,
+            'url': url
         }
 
         self.setPublic(notebook, public=False)

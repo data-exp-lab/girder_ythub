@@ -8,49 +8,34 @@ from girder.api.docs import addModel
 from girder.api.rest import Resource, filtermodel
 from girder.constants import AccessType, SortDir
 
-from ..constants import PluginSettings
-
 
 notebookModel = {
     'id': 'notebook',
     'type': 'object',
     'required': [
-        '_accessLevel', '_id', '_modelType', 'containerId',
-        'containerPath', 'created', 'folderId', 'frontendId',
-        'lastActivity', 'mountPoint', 'status', 'userId',
-        'when'
+        '_id', 'folderId', 'frontendId', 'creator', 'serviceInfo',
     ],
     'example': {
         '_accessLevel': 2,
         '_id': '587506670791d3000121b68d',
         '_modelType': 'notebook',
-        'containerId': '7086458236c55f336f78bb0e3cbe7233df07499abb0f943f2',
-        'containerPath': 'user/kvmKuSBUDydo',
         'created': '2017-01-10T16:05:56.296000+00:00',
         'folderId': '5873dc0faec030000144d232',
         'frontendId': '5873dcdbaec030000144d233',
-        'lastActivity': '2017-01-10T16:05:56.296000+00:00',
-        'mountPoint': '/var/lib/docker/volumes/5873dc0faec0300_root/_data',
         'status': 0,
         'userId': '586fe9414bd053000185b45d',
         'when': '2017-01-10T16:05:56.296000+00:00'
     },
     'properties': {
-        '_accessLevel': {'type': 'integer', 'format': 'int32'},
         '_id': {'type': 'string'},
-        '_modelType': {'type': 'string'},
-        'containerId': {'type': 'string'},
-        'containerPath': {'type': 'string'},
         'created': {'type': 'string', 'format': 'date'},
+        'creatorId': {'type': 'string'},
         'folderId': {'type': 'string'},
         'frontendId': {'type': 'string'},
         'lastActivity': {'type': 'string', 'format': 'date'},
-        'mountPoint': {'type': 'string'},
         'status': {'type': 'integer', 'format': 'int32',
                    'allowEmptyValue': False,
                    'maximum': 1, 'minimum': 0},
-        'userId': {'type': 'string'},
-        'when': {'type': 'string', 'format': 'date'},
     }
 }
 addModel('notebook', notebookModel, resources='notebook')
@@ -146,11 +131,3 @@ class Notebook(Resource):
         notebook = notebookModel.createNotebook(folder, user, token, frontend)
 
         return notebookModel.save(notebook)
-
-    def cullNotebooks(self, event):
-        culling_freq = float(
-            self.model('setting').get(PluginSettings.CULLING_FREQUENCY, 0.5))
-        culling_freq = datetime.timedelta(hours=culling_freq)
-        if datetime.datetime.utcnow() - culling_freq > self.lastCulling:
-            self.model('notebook', 'ythub').cullNotebooks()
-            self.lastCulling = datetime.datetime.utcnow()
