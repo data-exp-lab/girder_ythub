@@ -23,7 +23,7 @@ class Tale(AccessControlledModel):
         })
         self.modifiableFields = {
             'title', 'description', 'public', 'config', 'updated', 'authors',
-            'category', 'icon'
+            'category', 'icon', 'illustration'
         }
         self.exposeFields(
             level=AccessType.READ,
@@ -73,7 +73,7 @@ class Tale(AccessControlledModel):
 
     def createTale(self, image, folder, creator=None, save=True, title=None,
                    description=None, public=None, config=None, published=False,
-                   authors=None, icon=None, category=None):
+                   authors=None, icon=None, category=None, illustration=None):
         if creator is None:
             creatorId = None
         else:
@@ -81,6 +81,8 @@ class Tale(AccessControlledModel):
 
         if title is None:
             title = '{} with {}'.format(image['fullName'], folder['name'])
+        # if illustration is None:
+            # Get image from SILS
 
         now = datetime.datetime.utcnow()
         tale = {
@@ -93,6 +95,7 @@ class Tale(AccessControlledModel):
             'created': now,
             'icon': icon,
             'imageId': ObjectId(image['_id']),
+            'illustration': illustration,
             'title': title,
             'public': public,
             'published': published,

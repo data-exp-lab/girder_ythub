@@ -71,9 +71,13 @@ taleModel = {
             "type": "string",
             "description": "Keyword describing topic of the Tale"
         },
-        "icon": {
+        "illustration": {
             "type": "string",
             "description": "A URL to an image depicturing the content of the Tale"
+        },
+        "icon": {
+            "type": "string",
+            "description": "A URL to an image icon"
         }
     },
     'example': {
