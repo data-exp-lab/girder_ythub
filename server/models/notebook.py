@@ -110,7 +110,7 @@ class Notebook(AccessControlledModel):
 
         self.remove(notebook)
 
-    def createNotebook(self, folder, user, token, frontend, when=None,
+    def createNotebook(self, folder, user, token, frontend, scripts=None, when=None,
                        save=True):
         existing = self.findOne({
             'folderId': folder['_id'],
@@ -125,6 +125,7 @@ class Notebook(AccessControlledModel):
             'girder_token': token['_id'],
             'folder': {k: str(v) for k, v in folder.items()},
             'frontend': {k: str(v) for k, v in frontend.items()},
+            'scripts': scripts,
             'api_version': API_VERSION
         }
 

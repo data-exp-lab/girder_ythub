@@ -1,0 +1,13 @@
+.g-raft-list-header
+  .g-raft-pagination
+  button.g-raft-create-button.btn.btn-sm.btn-default
+    i.icon-plus-squared
+    |  Create raft
+
+.list-group.g-raft-list-container
+  each raft in rafts
+    a.list-group-item.g-execute-raft-link(
+        href=itemUrlFunc && itemUrlFunc(raft),
+        data-raft-id=raft.id)
+      h4.list-group-item-heading.g-execute-raft-link-header= raft.name()
+      .list-group-item-text.g-execute-raft-link-body= raft.get('description')

@@ -19,6 +19,7 @@ from girder.utility import assetstore_utilities, setting_utilities
 from .constants import PluginSettings
 from .rest.frontend import Frontend
 from .rest.notebook import Notebook
+from .rest.raft import Raft
 from .rest.ythub import ytHub
 
 
@@ -228,6 +229,7 @@ def load(info):
     info['apiRoot'].ythub = ytHub()
     info['apiRoot'].notebook = notebook
     info['apiRoot'].frontend = Frontend()
+    info['apiRoot'].raft = Raft()
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
     info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
     info['apiRoot'].item.route('PUT', (':id', 'check'), checkItem)

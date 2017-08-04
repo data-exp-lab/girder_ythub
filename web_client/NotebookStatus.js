@@ -1,6 +1,5 @@
 import _ from 'underscore';
 
-
 // The same notebook status enum as the server.
 var NotebookStatus = {
     _map: {},
@@ -56,7 +55,7 @@ NotebookStatus.registerStatus({
         value: 1,
         text: 'Error',
         icon: 'icon-cancel'
-    },
+    }
 });
 
 export default NotebookStatus;

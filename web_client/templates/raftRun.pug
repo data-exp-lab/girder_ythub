@@ -1,0 +1,16 @@
+.g-body-title Run raft #[a(href=`#item/${item.id}`)= item.name()]
+
+if item.get('description')
+  .g-raft-description-container!= renderMarkdown(item.get('description'))
+
+.g-panel-group.g-raft-setup-container
+  if hasInputs
+    .g-inputs-container.g-panel
+  if hasOutputs
+    .g-outputs-container.g-panel
+.g-run-container
+  .g-validation-failed-message
+  button.g-run-raft.btn.btn-lg.btn-success
+    i.icon-play
+    |  Run raft
+

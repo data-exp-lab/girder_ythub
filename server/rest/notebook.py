@@ -118,9 +118,12 @@ class Notebook(Resource):
                'of the container.', required=True)
         .param('frontendId', 'The ID of the frontend that is going to be '
                'started.', required=True)
+        .jsonParam('scripts', 'An array containing IDs of items that are '
+                  'going to be downloaded.',
+                  paramType='form', requireObject=True, required=False)
         .responseClass('notebook')
     )
-    def createNotebook(self, folderId, frontendId, params):
+    def createNotebook(self, folderId, frontendId, scripts, params):
         user = self.getCurrentUser()
         token = self.getCurrentToken()
         notebookModel = self.model('notebook', 'ythub')
@@ -128,6 +131,6 @@ class Notebook(Resource):
             frontendId, user=user, level=AccessType.READ)
         folder = self.model('folder').load(
             folderId, user=user, level=AccessType.READ)
-        notebook = notebookModel.createNotebook(folder, user, token, frontend)
+        notebook = notebookModel.createNotebook(folder, user, token, frontend, scripts)
 
         return notebookModel.save(notebook)
