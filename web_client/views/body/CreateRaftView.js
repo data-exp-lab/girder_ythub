@@ -10,56 +10,13 @@ import { getCurrentUser } from 'girder/auth';
 import { restRequest } from 'girder/rest';
 
 import CreateRaftViewTemplate from '../../templates/body/createRaftView.pug';
-import ScriptAddWidgetTemplate from '../../templates/widgets/scriptAddWidget.pug';
 import FrontendCollection from '../../collections/FrontendCollection';
+import ScriptAddWidget from '../widgets/ScriptAddWidget';
+import '../../stylesheets/createRaftView.styl';
 
 import 'girder/utilities/jquery/girderEnable';
-import 'girder/utilities/jquery/girderModal';
 
 var lastParent = null;
-
-var ScriptAddWidget = View.extend({
-    events: {
-        'click .g-script-delete-button': 'deleteScript',
-        'click .g-open-script-browser': '_openBrowser'
-    },
-
-    initialize: function (settings) {
-        this.item = settings.item || null;
-        this.scriptSelector = new BrowserWidget({
-            parentView: this,
-            showItems: true,
-            selectItem: true,
-            root: lastParent || getCurrentUser(),
-            titleText: 'Select an item',
-            helpText: 'Browse to a directory to select it, then click "Save"',
-            input: false,
-            showPreview: true,
-            validate: _.noop
-        });
-        this.listenTo(this.scriptSelector, 'g:saved', function (val) {
-            this.$('#g-script-id').val(val.id);
-        });
-        this.render();
-    },
-
-    render: function () {
-        this.$el.html(ScriptAddWidgetTemplate({
-            item: this.item
-        }));
-        return this;
-    },
-
-    deleteScript: function (e) {
-        e.preventDefault();
-        $(event.currentTarget).remove();
-    },
-
-    _openBrowser: function (e) {
-        e.preventDefault();
-        this.scriptSelector.setElement($('#g-dialog-container')).render();
-    }
-});
 
 var CreateRaftView = View.extend({
     events: {
@@ -104,6 +61,9 @@ var CreateRaftView = View.extend({
         'click button.g-script-add-button': function (e) {
             e.preventDefault();
             this.addNewScript(e);
+        },
+        'click a.g-cancel-raft': function (e) {
+            router.navigate('/rafts', {trigger: true});
         }
     },
 
