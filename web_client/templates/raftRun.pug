@@ -3,11 +3,23 @@
 if item.get('description')
   .g-raft-description-container!= renderMarkdown(item.get('description'))
 
-.g-panel-group.g-raft-setup-container
-  if hasInputs
-    .g-inputs-container.g-panel
-  if hasOutputs
-    .g-outputs-container.g-panel
+h4 Raft Info
+p.
+label Frontend:
+span
+  = frontend
+br
+label Data:
+span
+  = data
+br
+label Scripts:
+each script in scripts
+  br
+  span
+    i.icon-doc
+    = script
+
 .g-run-container
   .g-validation-failed-message
   button.g-run-raft.btn.btn-lg.btn-success

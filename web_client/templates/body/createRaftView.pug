@@ -1,7 +1,9 @@
 .g-body-title Create a new raft
 
 .g-creation-instruction.
-  Fancy description goes here
+  A raft is a basic way of sharing data with other users of the yt Hub. At the bare minimum it consists of a folder with
+  data and a frontend to interact with it. Additionally you can add any number of scripts (e.g. jupyter notebooks, text
+  files etc.). Any time the user starts the raft, each script will be downloaded and put in their home directory.
 
 form#g-item-edit-form.modal-form(role="form")
   .form-group
@@ -10,7 +12,7 @@ form#g-item-edit-form.modal-form(role="form")
   .form-group
     label.control-label Description (optional)
     .g-description-editor-container
-  .form-group
+  #g-data-group.form-group
     label.control-label Data
     .input-group.input-group-sm
       input#g-folder-data-id.form-control.input-sm(

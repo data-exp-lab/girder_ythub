@@ -21,6 +21,7 @@ var lastParent = null;
 var CreateRaftView = View.extend({
     events: {
         'submit #g-item-edit-form': function () {
+            this.$('.form-group').removeClass('has-error');
             var scripts = [];
             scripts.forEach.call(document.getElementsByClassName('g-script'), function (el) {
                 scripts.push(el.value);
@@ -47,7 +48,6 @@ var CreateRaftView = View.extend({
             this.descriptionEditor.saveText();
             this.$('button.g-save-item').girderEnable(false);
             this.$('.g-validation-failed-message').empty();
-
             return false;
         },
         'click .g-open-browser': '_openBrowser',
@@ -147,12 +147,12 @@ var CreateRaftView = View.extend({
             }));
             item.on('g:saved', function () {
                 this.trigger('g:saved', item);
+                router.navigate('/rafts', {trigger: true});
             }, this).on('g:error', function (err) {
                 this.$('.g-validation-failed-message').text(err.responseJSON.message);
                 this.$('button.g-save-item').girderEnable(true);
                 this.$('#g-' + err.responseJSON.field).focus();
             }, this).save();
-            router.navigate('/rafts', {trigger: true});
         });
     },
 
