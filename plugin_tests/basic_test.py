@@ -202,3 +202,14 @@ class WholeTaleTestCase(base.TestCase):
                 if key in ('lowerName', 'access'):
                     continue
                 self.assertEqual(el[key], folders[iel][key])
+
+        f3 = self.model('folder').createFolder(
+            f1, 'f3', parentType='folder')
+        self.model('item').createItem('i1', user, f3)
+        self.model('item').createItem('i2', user, f3)
+
+        resp = self.request(
+            path='/folder/{_id}/datamap'.format(**f1), user=self.user)
+        self.assertStatusOk(resp)
+        self.assertEqual({_['mountPoint'] for _ in resp.json},
+                         {'/i1', '/i2', '/f3/i1', '/f3/i2'})

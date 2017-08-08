@@ -115,6 +115,31 @@ def listFolder(self, folder, params):
 
 
 @access.public(scope=TokenScope.DATA_READ)
+@autoDescribeRoute(
+    Description('Convert folder content into DM dataSet')
+    .modelParam('id', 'The ID of the folder', model='folder',
+                level=AccessType.READ)
+)
+@boundHandler()
+def getDataMap(self, folder, params):
+    modelFolder = self.model('folder')
+
+    def _getPath(folder, user, path='/'):
+        dataSet = [
+            {'itemId': item['_id'], 'mountPoint': path + item['name']}
+            for item in modelFolder.childItems(folder=folder)
+        ]
+        for childFolder in modelFolder.childFolders(
+                parentType='folder', parent=folder, user=user):
+            dataSet += _getPath(childFolder, user,
+                                path + childFolder['name'] + '/')
+        return dataSet
+
+    user = self.getCurrentUser()
+    return _getPath(folder, user)
+
+
+@access.public(scope=TokenScope.DATA_READ)
 @loadmodel(model='item', level=AccessType.READ)
 @describeRoute(
     Description('List the content of an item.')
@@ -243,6 +268,7 @@ def load(info):
     info['apiRoot'].repository = Repository()
     info['apiRoot'].folder.route('GET', ('registered',), listImportedData)
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
+    info['apiRoot'].folder.route('GET', (':id', 'datamap'), getDataMap)
     info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
     info['apiRoot'].resource.route('GET', (), listResources)
 
