@@ -209,7 +209,7 @@ class WholeTaleTestCase(base.TestCase):
         self.model('item').createItem('i2', user, f3)
 
         resp = self.request(
-            path='/folder/{_id}/datamap'.format(**f1), user=self.user)
+            path='/folder/{_id}/dataset'.format(**f1), user=self.user)
         self.assertStatusOk(resp)
         self.assertEqual({_['mountPoint'] for _ in resp.json},
                          {'/i1', '/i2', '/f3/i1', '/f3/i2'})

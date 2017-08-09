@@ -121,7 +121,7 @@ def listFolder(self, folder, params):
                 level=AccessType.READ)
 )
 @boundHandler()
-def getDataMap(self, folder, params):
+def getDataSet(self, folder, params):
     modelFolder = self.model('folder')
 
     def _getPath(folder, user, path='/'):
@@ -268,7 +268,7 @@ def load(info):
     info['apiRoot'].repository = Repository()
     info['apiRoot'].folder.route('GET', ('registered',), listImportedData)
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
-    info['apiRoot'].folder.route('GET', (':id', 'datamap'), getDataMap)
+    info['apiRoot'].folder.route('GET', (':id', 'dataset'), getDataSet)
     info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
     info['apiRoot'].resource.route('GET', (), listResources)
 
