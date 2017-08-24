@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import mock
-import httmock
-import json
-import six
 from tests import base
 from girder.models.model_base import ValidationException
 
@@ -92,13 +89,6 @@ class NotebookTestCase(base.TestCase):
         self.admin, self.user = [self._getUser(user) for user in users]
 
     def testNotebooks(self):
-        tmpnb_response = {
-            'mountPoint': '/var/lib/blah',
-            'containerId': '123456',
-            'containerPath': '/user/blah',
-            'host': '172.168.1.16'
-        }
-
         # Grab the default user folders
         resp = self.request(
             path='/folder', method='GET', user=self.user, params={
