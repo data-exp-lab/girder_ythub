@@ -120,7 +120,7 @@ class Notebook(Resource):
                'started.', required=True)
         .jsonParam('scripts', 'An array containing IDs of items that are '
                    'going to be downloaded.',
-                   paramType='form', requireObject=True, required=False)
+                   paramType='form', requireArray=True, required=False)
         .responseClass('notebook')
     )
     def createNotebook(self, folderId, frontendId, scripts, params):
