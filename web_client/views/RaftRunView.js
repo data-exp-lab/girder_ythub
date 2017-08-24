@@ -67,7 +67,17 @@ const RaftRunView = View.extend({
     },
 
     execute: function (e) {
-        console.log('Would run raft');
+        restRequest({
+            url: 'notebook',
+            data: {
+                folderId: this._raftSpec.data,
+                frontendId: this._raftSpec.frontend,
+                scripts: JSON.stringify(this._raftSpec.scripts)
+            },
+            type: 'POST'
+        }).done(function (notebook) {
+            window.location.assign(notebook['url']);
+        });
     }
 });
 
