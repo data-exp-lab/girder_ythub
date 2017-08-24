@@ -106,6 +106,8 @@ class NotebookTestCase(base.TestCase):
             'memLimit': '2048m',
             'port': 12345,
             'user': 'user',
+            'targetMount': '/blah',
+            'urlPath': '?token={token}',
             'description': 'foo',
             'cpuShares': None,
             'public': True,
