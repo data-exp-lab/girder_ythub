@@ -110,8 +110,8 @@ class Notebook(AccessControlledModel):
 
         self.remove(notebook)
 
-    def createNotebook(self, folder, user, token, frontend, scripts=None, when=None,
-                       save=True):
+    def createNotebook(self, folder, user, token, frontend, scripts=None,
+                       when=None, save=True):
         existing = self.findOne({
             'folderId': folder['_id'],
             'creatorId': user['_id'],
@@ -131,13 +131,13 @@ class Notebook(AccessControlledModel):
 
         # do the job
         volumeTask = getCeleryApp().send_task(
-            'gwvolman.tasks.create_volume', args=[payload]
+            'gwvolman.tasks.create_volume', args=[payload], kwargs={},
         )
         volumeInfo = volumeTask.get()
         payload.update(volumeInfo)
 
         serviceTask = getCeleryApp().send_task(
-            'gwvolman.tasks.launch_container', args=[payload],
+            'gwvolman.tasks.launch_container', args=[payload], kwargs={},
             queue='manager'
         )
         serviceInfo = serviceTask.get()

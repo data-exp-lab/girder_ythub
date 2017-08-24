@@ -20,7 +20,8 @@ class Frontend(AccessControlledModel):
         self.exposeFields(level=AccessType.READ,
                           fields={'_id', 'imageName', 'command', 'memLimit',
                                   'user', 'cpuShares', 'port', 'created',
-                                  'updated', 'description', 'public'})
+                                  'updated', 'description', 'public',
+                                  'targetMount', 'urlPath'})
 
     def validate(self, frontend):
         if not _DOCKER_IMAGENAME.match(frontend['imageName']):
@@ -31,7 +32,8 @@ class Frontend(AccessControlledModel):
 
     def createFrontend(self, imageName, memLimit='1024m', command=None,
                        user=None, cpuShares=None, port=None, save=True,
-                       description=None, public=None):
+                       description=None, public=None, targetMount=None,
+                       urlPath=''):
         now = datetime.datetime.utcnow()
         frontend = {
             'imageName': imageName,
@@ -42,6 +44,8 @@ class Frontend(AccessControlledModel):
             'command': command,
             'description': description,
             'public': public,
+            'targetMount': targetMount,
+            'urlPath': urlPath,
             'created': now,
             'updated': now
         }
