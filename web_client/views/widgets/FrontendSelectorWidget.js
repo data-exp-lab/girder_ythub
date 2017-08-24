@@ -47,17 +47,15 @@ var FrontendSelectorWidget = View.extend({
     },
 
     _runFrontend: function (folderId, frontendId) {
-        restRequest({path: 'ythub'}).done(function (hub) {
-            restRequest({
-                path: 'notebook',
-                data: {
-                    folderId: folderId,
-                    frontendId: frontendId
-                },
-                type: 'POST'
-            }).done(function (notebook) {
-                window.location.assign(hub['url'] + '/' + notebook['containerPath']);
-            });
+        restRequest({
+            path: 'notebook',
+            data: {
+                folderId: folderId,
+                frontendId: frontendId
+            },
+            type: 'POST'
+        }).done(function (notebook) {
+            window.location.assign(notebook['url']);
         });
     },
 
