@@ -48,7 +48,7 @@ var FrontendSelectorWidget = View.extend({
 
     _runFrontend: function (folderId, frontendId) {
         restRequest({
-            path: 'notebook',
+            url: 'notebook',
             data: {
                 folderId: folderId,
                 frontendId: frontendId

@@ -129,7 +129,7 @@ var CreateRaftView = View.extend({
         var item = new ItemModel();
 
         var params = {
-            path: 'folder',
+            url: 'folder',
             data: {
                 text: 'Public',
                 parentType: 'user',

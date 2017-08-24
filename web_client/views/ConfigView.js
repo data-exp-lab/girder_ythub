@@ -41,7 +41,7 @@ var ConfigView = View.extend({
             event.preventDefault();
             restRequest({
                 type: 'POST',
-                path: 'ythub/genkey',
+                url: 'ythub/genkey',
                 data: {}
             }).done(_.bind(function (resp) {
                 this.$('#ythub-priv-key').val(resp['ythub.priv_key']);
@@ -53,7 +53,7 @@ var ConfigView = View.extend({
     initialize: function () {
         restRequest({
             type: 'GET',
-            path: 'system/setting',
+            url: 'system/setting',
             data: {
                 list: JSON.stringify(SETTING_KEYS)
             }
@@ -91,7 +91,7 @@ var ConfigView = View.extend({
     _saveSettings: function (settings) {
         restRequest({
             type: 'PUT',
-            path: 'system/setting',
+            url: 'system/setting',
             data: {
                 list: JSON.stringify(settings)
             },

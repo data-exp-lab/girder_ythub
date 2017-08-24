@@ -17,7 +17,7 @@ wrap(HierarchyWidget, 'render', function (render) {
 
     if (getCurrentUser() && isViewingFolder && hasFolderHeaderButtons) {
         var _restParams = {
-            path: 'notebook',
+            url: 'notebook',
             type: 'GET',
             data: {
                 userId: getCurrentUser().id,
@@ -59,7 +59,7 @@ wrap(HierarchyWidget, 'render', function (render) {
 
 function _visitNb(e) {
     restRequest({
-        path: 'notebook',
+        url: 'notebook',
         type: 'GET',
         data: {
             folderId: this.parentModel.id,
@@ -67,7 +67,7 @@ function _visitNb(e) {
         }
     }).done(_.bind(function (resp) {
         var nbUrl = resp[0]['containerPath'];
-        restRequest({path: 'ythub'}).done(function (resp) {
+        restRequest({url: 'ythub'}).done(function (resp) {
             window.location.assign(resp['url'] + nbUrl);
         });
     }, this));
@@ -75,7 +75,7 @@ function _visitNb(e) {
 
 function _stopNb(e) {
     restRequest({
-        path: 'notebook',
+        url: 'notebook',
         type: 'GET',
         data: {
             folderId: this.parentModel.id,
@@ -84,7 +84,7 @@ function _stopNb(e) {
     }).done(_.bind(function (resp) {
         var nbId = resp[0]['_id'];
         var _delParams = {
-            path: 'notebook/' + nbId,
+            url: 'notebook/' + nbId,
             type: 'DELETE',
             error: null
         };

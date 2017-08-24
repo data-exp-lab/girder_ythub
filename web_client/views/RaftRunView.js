@@ -15,21 +15,21 @@ const RaftRunView = View.extend({
         this._raftSpec = this.model.get('meta').raftSpec;
         const promises = [
             restRequest({
-                path: 'resource/' + this._raftSpec.data + '/path',
+                url: 'resource/' + this._raftSpec.data + '/path',
                 type: 'GET',
                 data: {
                     type: 'folder'
                 }
             }).then((resp) => resp),
             restRequest({
-                path: 'frontend/' + this._raftSpec.frontend,
+                url: 'frontend/' + this._raftSpec.frontend,
                 type: 'GET'
             }).then((resp) => resp)
         ];
         this._raftSpec.scripts.forEach(function (element) {
             promises.push(
                 restRequest({
-                    path: 'resource/' + element + '/path',
+                    url: 'resource/' + element + '/path',
                     type: 'GET',
                     data: {
                         type: 'item'

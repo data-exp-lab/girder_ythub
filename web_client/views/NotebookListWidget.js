@@ -24,7 +24,7 @@ var NotebookListWidget = View.extend({
             var url = $(e.currentTarget).attr('notebook-id');
             var widget = this;
             var _delParams = {
-                path: 'notebook/' + url,
+                url: 'notebook/' + url,
                 type: 'DELETE',
                 error: null
             };
@@ -70,7 +70,7 @@ var NotebookListWidget = View.extend({
     render: function () {
         var widget = this;
 
-        restRequest({path: 'ythub'}).done(function (resp) {
+        restRequest({url: 'ythub'}).done(function (resp) {
             widget.$el.html(NotebookListWidgetTemplate({
                 notebooks: widget.collection.toArray(),
                 showHeader: widget.showHeader,
