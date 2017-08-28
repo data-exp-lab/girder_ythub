@@ -4,6 +4,8 @@ import datetime
 
 from bson.objectid import ObjectId
 
+from ..constants import WORKSPACE_NAME
+from ..utils import getOrCreateRootFolder
 from girder.models.model_base import \
     AccessControlledModel
 from girder.constants import AccessType
@@ -103,11 +105,22 @@ class Tale(AccessControlledModel):
         }
         if public is not None and isinstance(public, bool):
             self.setPublic(tale, public, save=False)
+        else:
+            public = False
+
         if creator is not None:
             self.setUserAccess(tale, user=creator, level=AccessType.ADMIN,
                                save=False)
         if save:
             tale = self.save(tale)
+            workspaceFolder = getOrCreateRootFolder(WORKSPACE_NAME)
+            taleWorkspace = self.model('folder').createFolder(
+                workspaceFolder, str(tale['_id']), parentType='folder',
+                public=public, reuseExisting=True)
+            self.setUserAccess(taleWorkspace, user=creator, level=AccessType.ADMIN,
+                               save=True)
+            self.model('folder').setMetadata(
+                taleWorkspace, {'taleId': str(tale['_id'])})
         return tale
 
     def updateTale(self, tale):
