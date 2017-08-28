@@ -7,10 +7,10 @@ from girder.api.rest import Resource
 from girder.constants import AccessType, SortDir, TokenScope
 from girder.models.model_base import ValidationException
 from girder.utility import path as path_util
-from girder.utility.model_importer import ModelImporter
 from girder.utility.progress import ProgressContext
 from ..constants import CATALOG_NAME
 from ..schema.misc import dataMapListSchema
+from ..utils import getOrCreateRootFolder
 from .harvester import \
     register_http_resource, \
     register_DataONE_resource
@@ -85,14 +85,6 @@ def _itemOrFolderToDataset(obj):
     ds['identifier'] = obj['meta']['identifier']
     ds['modelType'] = obj['_modelType']
     return ds
-
-
-def getOrCreateRootFolder(name):
-    collection = ModelImporter.model('collection').createCollection(
-        name, public=False, reuseExisting=True)
-    folder = ModelImporter.model('folder').createFolder(
-        collection, name, parentType='collection', public=True, reuseExisting=True)
-    return folder
 
 
 class Dataset(Resource):
