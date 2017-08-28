@@ -113,15 +113,28 @@ class Tale(AccessControlledModel):
                                save=False)
         if save:
             tale = self.save(tale)
-            workspaceFolder = getOrCreateRootFolder(WORKSPACE_NAME)
-            taleWorkspace = self.model('folder').createFolder(
-                workspaceFolder, str(tale['_id']), parentType='folder',
-                public=public, reuseExisting=True)
-            self.setUserAccess(taleWorkspace, user=creator, level=AccessType.ADMIN,
-                               save=True)
-            self.model('folder').setMetadata(
-                taleWorkspace, {'taleId': str(tale['_id'])})
+            self.createWorkspace(tale, creator=creator)
         return tale
+
+    def createWorkspace(self, tale, creator=None):
+        if creator is None:
+            creator = self.model('user').load(tale['creatorId'], force=True)
+
+        if tale['public'] is not None and isinstance(tale['public'], bool):
+            public = tale['public']
+        else:
+            public = False
+
+        workspaceFolder = getOrCreateRootFolder(WORKSPACE_NAME)
+        taleWorkspace = self.model('folder').createFolder(
+            workspaceFolder, str(tale['_id']), parentType='folder',
+            public=public, reuseExisting=True)
+        self.setUserAccess(
+            taleWorkspace, user=creator, level=AccessType.ADMIN,
+            save=True)
+        taleWorkspace = self.model('folder').setMetadata(
+            taleWorkspace, {'taleId': str(tale['_id'])})
+        return taleWorkspace
 
     def updateTale(self, tale):
         '''

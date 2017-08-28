@@ -123,11 +123,14 @@ class Instance(AccessControlledModel):
         if not name:
             name = tale.get('title', '')
 
+        workspaceFolder = self.model('tale', 'wholetale').createWorkspace(tale)
+
         now = datetime.datetime.utcnow()
         payload = {
             'girder_token': str(token['_id']),
             'apiUrl': getWorkerApiUrl(),
             'taleId': str(tale['_id']),
+            'workspaceId': str(workspaceFolder['_id']),
             'api_version': API_VERSION
         }
 
