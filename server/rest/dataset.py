@@ -87,11 +87,11 @@ def _itemOrFolderToDataset(obj):
     return ds
 
 
-def getOrCreateCatalogFolder():
+def getOrCreateRootFolder(name):
     collection = ModelImporter.model('collection').createCollection(
-        CATALOG_NAME, public=False, reuseExisting=True)
+        name, public=False, reuseExisting=True)
     folder = ModelImporter.model('folder').createFolder(
-        collection, CATALOG_NAME, parentType='collection', public=True, reuseExisting=True)
+        collection, name, parentType='collection', public=True, reuseExisting=True)
     return folder
 
 
@@ -121,7 +121,7 @@ class Dataset(Resource):
         folderModel = self.model('folder')
         datasets = []
 
-        parent = getOrCreateCatalogFolder()
+        parent = getOrCreateRootFolder(CATALOG_NAME)
         for folder in folderModel.childFolders(
                 parentType='folder', parent=parent, user=user,
                 limit=limit, offset=offset, sort=sort):
@@ -211,7 +211,7 @@ class Dataset(Resource):
         user = self.getCurrentUser()
 
         if not parentId or parentType not in ('folder', 'item'):
-            parent = getOrCreateCatalogFolder()
+            parent = getOrCreateRootFolder(CATALOG_NAME)
             parentType = 'folder'
         else:
             parent = self.model(parentType).load(
