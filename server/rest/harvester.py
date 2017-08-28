@@ -108,22 +108,23 @@ def register_DataONE_resource(parent, parentType, progress, user, pid, name=None
                     'provider': 'DataONE'})
 
     fileModel = ModelImporter.model('file')
+    itemModel = ModelImporter.model('item')
     for fileObj in data:
         try:
             fileName = fileObj['fileName']
         except KeyError:
             fileName = fileObj['identifier']
-        fileDoc = fileModel.createLinkFile(
-            url=fileObj['url'], parent=gc_folder,
-            name=fileName, parentType='folder',
+
+        gc_item = itemModel.createItem(
+            fileName, user, gc_folder, reuseExisting=True)
+        gc_item = itemModel.setMetadata(
+            gc_item, {'identifier': fileObj['identifier']})
+
+        fileModel.createLinkFile(
+            url=fileObj['url'], parent=gc_item,
+            name=fileName, parentType='item',
             creator=user, size=int(fileObj['size']),
             mimeType=fileObj['formatId'], reuseExisting=True)
-        gc_file = fileModel.filter(fileDoc, user)
-
-        gc_item = ModelImporter.model('item').load(
-            gc_file['itemId'], force=True)
-        gc_item['meta'] = {'identifier': fileObj['identifier']}
-        gc_item = ModelImporter.model('item').updateItem(gc_item)
 
     # Recurse and add child packages if any exist
     if children is not None and len(children) > 0:
