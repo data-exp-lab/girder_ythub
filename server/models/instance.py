@@ -17,6 +17,8 @@ from six.moves import urllib
 from tornado.httpclient import HTTPRequest, HTTPError, HTTPClient
 # FIXME look into removing tornado
 
+TASK_TIMEOUT = 15.0
+
 
 def _wait_for_server(url, timeout=30, wait_time=0.5):
     '''Wait for a server to show up within a newly launched instance.'''
@@ -101,13 +103,13 @@ class Instance(AccessControlledModel):
             'gwvolman.tasks.shutdown_container', args=[payload],
             queue='manager',
         )
-        instanceTask.get()
+        instanceTask.get(timeout=TASK_TIMEOUT)
 
         volumeTask = getCeleryApp().send_task(
             'gwvolman.tasks.remove_volume', args=[payload],
             queue=instance['containerInfo']['nodeId']
         )
-        volumeTask.get()
+        volumeTask.get(timeout=TASK_TIMEOUT)
 
         # TODO: handle error
         self.remove(instance)
@@ -137,14 +139,14 @@ class Instance(AccessControlledModel):
         volumeTask = getCeleryApp().send_task(
             'gwvolman.tasks.create_volume', args=[payload]
         )
-        volume = volumeTask.get()
+        volume = volumeTask.get(timeout=TASK_TIMEOUT)
         payload.update(volume)
 
         serviceTask = getCeleryApp().send_task(
             'gwvolman.tasks.launch_container', args=[payload],
             queue='manager'
         )
-        service = serviceTask.get()
+        service = serviceTask.get(timeout=TASK_TIMEOUT)
         service.update(volume)
 
         netloc = urllib.parse.urlsplit(getApiUrl()).netloc

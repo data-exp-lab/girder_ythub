@@ -19,7 +19,7 @@ class FakeAsyncResult(object):
     def __init__(self):
         self.task_id = 'fake_id'
 
-    def get(self):
+    def get(self, timeout=None):
         return dict(
             nodeId='123456',
             mountPoint='/foo/bar',
