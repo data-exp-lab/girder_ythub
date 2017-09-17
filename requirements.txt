@@ -1,3 +1,4 @@
 rdflib
 cryptography
 tornado
+celery[redis]
