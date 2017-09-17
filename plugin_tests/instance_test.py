@@ -94,7 +94,7 @@ class TaleTestCase(base.TestCase):
 
                 self.assertStatusOk(resp)
                 self.assertEqual(
-                    resp.json['url'], 'https://tmp-blah.0.0.1/?token=foo')
+                    resp.json['url'], 'http://tmp-blah.0.0.1/?token=foo')
                 self.assertEqual(
                     resp.json['name'], 'Testing %s' % self.image['fullName'])
                 instanceId = resp.json['_id']
@@ -122,7 +122,7 @@ class TaleTestCase(base.TestCase):
                             'name': 'tale one'}
                 )
         self.assertStatusOk(resp)
-        self.assertEqual(resp.json['url'], 'https://tmp-blah.0.0.1/?token=foo')
+        self.assertEqual(resp.json['url'], 'http://tmp-blah.0.0.1/?token=foo')
         self.assertEqual(resp.json['name'], 'tale one')
         self.assertEqual(resp.json['containerInfo']['volumeName'], 'blah_volume')
         instance_one = resp.json

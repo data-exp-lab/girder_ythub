@@ -152,7 +152,7 @@ class Instance(AccessControlledModel):
         netloc = urllib.parse.urlsplit(getApiUrl()).netloc
         domain = '{}.{}'.format(
             service['name'], netloc.split(':')[0].split('.', 1)[1])
-        url = 'https://{}/{}'.format(domain, service.get('urlPath', ''))
+        url = 'http://{}/{}'.format(domain, service.get('urlPath', ''))
 
         _wait_for_server(url)
 
