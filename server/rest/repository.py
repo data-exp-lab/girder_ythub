@@ -58,9 +58,9 @@ def _http_lookup(pid):
         return
     headers = requests.head(pid).headers
 
-    valid_target = headers.get('Content-Type') in \
-        ('application/octet-stream', 'text/plain')
-    valid_target = valid_target and 'Content-Length' in headers
+    valid_target = headers.get('Content-Type') is not None
+    valid_target = valid_target and ('Content-Length' in headers or
+                                     'Content-Range' in headers)
     if not valid_target:
         return
 
@@ -72,8 +72,11 @@ def _http_lookup(pid):
     else:
         fname = os.path.basename(url.path.rstrip('/'))
 
+    size = headers.get('Content-Length') or \
+        headers.get('Content-Range').split('/')[-1]
+
     return dict(dataId=pid, doi='unknown', name=fname, repository='HTTP',
-                size=int(headers['Content-Length']))
+                size=int(size))
 
 
 class Repository(Resource):
