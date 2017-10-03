@@ -100,7 +100,7 @@ class Tale(Resource):
         #     taleModel.setPublished(taleObj, True)
         return taleModel.updateTale(taleObj)
 
-    @access.admin
+    @access.user
     @autoDescribeRoute(
         Description('Delete an existing tale.')
         .modelParam('id', model='tale', plugin='wholetale', level=AccessType.ADMIN)
