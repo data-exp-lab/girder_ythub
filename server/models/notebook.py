@@ -146,7 +146,8 @@ class Notebook(AccessControlledModel):
         netloc = urllib.parse.urlsplit(getApiUrl()).netloc
         domain = '{}.{}'.format(
             serviceInfo['serviceId'], netloc.split(':')[0].split('.', 1)[1])
-        url = 'https://{}/{}'.format(domain, serviceInfo.get('urlPath', ''))
+        # FIXME: bring back https
+        url = 'http://{}/{}'.format(domain, serviceInfo.get('urlPath', ''))
 
         # _wait_for_server(url)
 
