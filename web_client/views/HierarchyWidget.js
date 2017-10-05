@@ -66,10 +66,7 @@ function _visitNb(e) {
             userId: getCurrentUser().get('_id')
         }
     }).done(_.bind(function (resp) {
-        var nbUrl = resp[0]['containerPath'];
-        restRequest({url: 'ythub'}).done(function (resp) {
-            window.location.assign(resp['url'] + nbUrl);
-        });
+        window.location.assign(resp[0]['url']);
     }, this));
 }
 
