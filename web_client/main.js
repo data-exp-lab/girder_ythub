@@ -6,7 +6,6 @@ import './views/HierarchyWidget';
 import './views/HeaderUserView';
 import './views/HeaderView';
 import './views/FooterView';
-import './views/FrontPageView';
 
 // Add a new global nav item for creating and browsing rafts
 wrap(GlobalNavView, 'initialize', function (initialize) {
