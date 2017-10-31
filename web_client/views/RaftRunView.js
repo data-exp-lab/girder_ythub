@@ -74,16 +74,25 @@ const RaftRunView = View.extend({
     },
 
     execute: function (e) {
+        // TODO Validate raft
+
+        this.$('.g-validation-failed-message').empty();
+        $(e.currentTarget).girderEnable(false);
+
         restRequest({
             url: 'notebook',
+            method: 'POST',
             data: {
                 folderId: this._raftSpec.data,
                 frontendId: this._raftSpec.frontend,
                 scripts: JSON.stringify(this._raftSpec.scripts)
             },
-            type: 'POST'
-        }).done(function (notebook) {
-            window.location.assign(notebook['url']);
+            error: null
+        }).done((resp) => {
+            window.location.assign(resp['url']);
+        }).fail((resp) => {
+            $(e.currentTarget).girderEnable(true);
+            this.$('.g-validation-failed-message').text('Error: ' + resp.responseJSON.message);
         });
     }
 });
