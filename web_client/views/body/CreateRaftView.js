@@ -73,8 +73,8 @@ var CreateRaftView = View.extend({
             this.render();
         }, this).fetch();
 
-        this.item = settings.item || null;
-        this.parentModel = settings.parentModel;
+        this.item = settings.model || null;
+        this.initialValues = settings.initialValues || null;
         this.descriptionEditor = new MarkdownWidget({
             text: this.item ? this.item.get('description') : '',
             prefix: 'item-description',
@@ -87,15 +87,17 @@ var CreateRaftView = View.extend({
             showItems: false,
             selectItem: false,
             root: lastParent || getCurrentUser(),
-            titleText: 'Select a folder with data',
+            titleText: this.initialValues ? this.initialValues.data : 'Select a folder with data',
             helpText: 'Browse to a directory to select it, then click "Save"',
-            input: false,
             showPreview: true,
+            input: this.initialValues ? {default: this.initialValues.data} : false,
             validate: _.noop
         });
+
         this.listenTo(this.dataSelector, 'g:saved', function (val) {
             this.$('#g-folder-data-id').val(val.id);
         });
+
         this.render();
     },
 
@@ -109,6 +111,10 @@ var CreateRaftView = View.extend({
             item: this.item,
             parentView: this
         }).render();
+
+        if (_.isString(event)) {
+            newRow[0].children[0].children[0].value = event;  // Ugly isn't it?
+        }
     },
 
     render: function () {
@@ -117,6 +123,19 @@ var CreateRaftView = View.extend({
             frontends: this.frontends.toArray()
         }));
         this.descriptionEditor.setElement(this.$('.g-description-editor-container')).render();
+
+        if (this.item) {
+            this.$('#g-name').val(this.item.attributes.name);
+        }
+        if (this.initialValues) {
+            $('button.g-raft-frontend-select:first-child').text(this.initialValues.frontendName);
+            $('button.g-raft-frontend-select:first-child').val(this.initialValues.frontendId);
+            this.$('#g-folder-data-id').val(this.initialValues.data);
+            var parentClass = this;
+            this.initialValues.scripts.forEach(function (script) {
+                parentClass.addNewScript(script);
+            });
+        }
 
         return this;
     },
@@ -161,6 +180,7 @@ var CreateRaftView = View.extend({
         this.item.off().on('g:saved', function () {
             this.$el.modal('hide');
             this.trigger('g:saved', this.item);
+            router.navigate('/raft/' + this.item.attributes._id + '/run', {trigger: true});
         }, this).on('g:error', function (err) {
             this.$('.g-validation-failed-message').text(err.responseJSON.message);
             this.$('button.g-save-item').girderEnable(true);

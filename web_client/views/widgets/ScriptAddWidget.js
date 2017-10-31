@@ -25,7 +25,7 @@ var ScriptAddWidget = View.extend({
             root: lastParent || getCurrentUser(),
             titleText: 'Select an item',
             helpText: 'Browse to a directory to select it, then click "Save"',
-            input: false,
+            input: settings ? {default: settings.input} : false,
             showPreview: true,
             validate: _.noop
         });

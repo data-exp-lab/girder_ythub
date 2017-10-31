@@ -8,7 +8,13 @@ import '../stylesheets/raftRun.styl';
 
 const RaftRunView = View.extend({
     events: {
-        'click .g-run-raft': 'execute'
+        'click .g-run-raft': 'execute',
+        'click .g-edit-raft': function (event) {
+            router.navigate('raft/' + this.model.get('_id') + '/edit?frontendId=' + this._raftSpec.frontend, {
+                params: this._raftSpec,
+                trigger: true
+            });
+        }
     },
 
     initialize: function (settings) {
@@ -61,9 +67,10 @@ const RaftRunView = View.extend({
             item: this.model,
             data: this.data,
             frontend: this.frontend,
-            scripts: this.scripts,
+            scripts: this.scripts || [],
             renderMarkdown: renderMarkdown
         }));
+        return this;
     },
 
     execute: function (e) {

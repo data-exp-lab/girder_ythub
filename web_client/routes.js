@@ -8,6 +8,7 @@ import NotebookListWidget from './views/NotebookListWidget';
 import RaftListView from './views/RaftListView';
 import RaftRunView from './views/RaftRunView';
 import CreateRaftView from './views/body/CreateRaftView';
+import FrontendModel from './models/FrontendModel';
 
 exposePluginConfig('ythub', 'plugins/ythub/config');
 
@@ -41,5 +42,35 @@ router.route('raft/:id/run', (id, params) => {
         });
     }).fail(() => {
         router.navigate('rafts', {trigger: true});
+    });
+});
+
+router.route('raft/:id/edit', 'newRaft', (id, params) => {
+    const itemTask = new ItemModel({_id: id});
+    let frontend = null;
+    const promises = [itemTask.fetch()];
+
+    if (params.frontendId) {
+        frontend = new FrontendModel({_id: params.frontendId});
+        promises.push(frontend.fetch());
+    }
+
+    $.when(...promises).done(() => {
+        let raftSpec = itemTask.get('meta').raftSpec;
+        let initialValues = {
+            data: raftSpec.data,
+            frontendId: raftSpec.frontend,
+            frontendName: frontend.get('description'),
+            scripts: raftSpec.scripts
+        };
+
+        events.trigger('g:navigateTo', CreateRaftView, {
+            model: itemTask,
+            initialValues: initialValues
+        }, {
+            renderNow: true
+        });
+    }).fail(() => {
+        router.navigate('rafts', {trigger: true, replace: true});
     });
 });
