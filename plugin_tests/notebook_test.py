@@ -71,7 +71,7 @@ class NotebookTestCase(base.TestCase):
         global PluginSettings
         from girder.plugins.ythub.constants import PluginSettings
         self.model('setting').set(
-            PluginSettings.TMPNB_URL, "https://tmpnb.null")
+            PluginSettings.TMPNB_URL, "http://tmpnb.null")
 
         users = ({
             'email': 'root@dev.null',
@@ -144,7 +144,7 @@ class NotebookTestCase(base.TestCase):
         self.assertEqual(notebook['serviceInfo']['nodeId'], '123456')
         self.assertEqual(notebook['serviceInfo']['volumeId'], 'blah_volume')
         self.assertEqual(notebook['serviceInfo']['serviceId'], 'tmp-blah')
-        self.assertEqual(notebook['url'], 'https://tmp-blah.0.0.1/?token=foo')
+        self.assertEqual(notebook['url'], 'http://tmp-blah.0.0.1/?token=foo')
         self.assertEqual(notebook['frontendId'], str(frontend['_id']))
         self.assertEqual(notebook['folderId'], str(privateFolder['_id']))
         self.assertEqual(notebook['creatorId'], str(self.user['_id']))
