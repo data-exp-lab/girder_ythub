@@ -99,17 +99,22 @@ class Instance(AccessControlledModel):
             'apiUrl': getWorkerApiUrl()
         }
 
-        instanceTask = getCeleryApp().send_task(
+        app = getCeleryApp()
+        active_queues = list(app.control.inspect().active_queues().keys())
+
+        instanceTask = app.send_task(
             'gwvolman.tasks.shutdown_container', args=[payload],
             queue='manager',
         )
         instanceTask.get(timeout=TASK_TIMEOUT)
 
-        volumeTask = getCeleryApp().send_task(
-            'gwvolman.tasks.remove_volume', args=[payload],
-            queue=instance['containerInfo']['nodeId']
-        )
-        volumeTask.get(timeout=TASK_TIMEOUT)
+        queue = 'celery@{}'.format(instance['containerInfo']['nodeId'])
+        if queue in active_queues:
+            volumeTask = app.send_task(
+                'gwvolman.tasks.remove_volume', args=[payload],
+                queue=instance['containerInfo']['nodeId']
+            )
+            volumeTask.get(timeout=TASK_TIMEOUT)
 
         # TODO: handle error
         self.remove(instance)
