@@ -2,19 +2,33 @@ version: 2.0
 jobs:
   build:
     docker:
-      - image: xarthisius/girder:test
+      - image: wholetale/girder:latest
       - image: mongo:3.2
     steps:
       - checkout
       - run:
           name: Installing Plugin Dependencies
           command: |
+            rm -rf /girder/plugins/wholetale
             ln -s /root/project /girder/plugins/wholetale
             set -o pipefail; pip install -r requirements.txt | cat
       - run:
+          name: Install Test Dependencies
+          environment:
+            - CMAKE_SHORT_VERSION: "3.4"
+            - CMAKE_VERSION: "3.4.3"
+            - LC_ALL: "C.UTF-8"
+          command: |
+            curl -OL "http://cmake.org/files/v${CMAKE_SHORT_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz"
+            tar -x -C /usr --strip-components 1 -f "cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz"
+            set -o pipefail; python3 -m pip install -r requirements-dev.txt | cat
+            git clone https://github.com/whole-tale/girder /tmp/girder
+            cp /tmp/girder/CMakeLists.txt /girder/
+            cp /tmp/girder/CTestConfig.cmake /girder/
+            cp -r /tmp/girder/tests /girder/
+      - run:
           name: Running Tests
           environment:
-            - FOO: "bar"
             - PYTHON_VERSION: "3.4"
             - COVERAGE_EXECUTABLE: "/usr/local/bin/coverage"
             - FLAKE8_EXECUTABLE: "/usr/local/bin/flake8"
