@@ -262,7 +262,7 @@ def load(info):
     info['apiRoot'].dataset = Dataset()
     image = Image()
     info['apiRoot'].image = image
-    events.bind('jobs.job.update', 'wholetale', image.updateImageStatus)
+    events.bind('jobs.job.update.after', 'wholetale', image.updateImageStatus)
     events.unbind('model.user.save.created', CoreEventHandler.USER_DEFAULT_FOLDERS)
     events.bind('model.user.save.created', 'wholetale', addDefaultFolders)
     info['apiRoot'].repository = Repository()

@@ -6,6 +6,8 @@ from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, filtermodel, RestException
 from girder.constants import AccessType, SortDir, TokenScope
 from girder.plugins.jobs.constants import JobStatus
+from girder.plugins.jobs.models.job import Job
+from girder.plugins.worker import getCeleryApp
 from ..constants import ImageStatus
 from ..schema.misc import containerConfigSchema, tagsSchema
 
@@ -274,30 +276,31 @@ class Image(Resource):
     def buildImage(self, image, params):
         # TODO: create and schedule a job that will b
         user = self.getCurrentUser()
+        recipe = self.model('recipe', 'wholetale').load(
+            image['recipeId'], user=user, level=AccessType.READ, exc=True)
+        url = '{}/archive/{}.tar.gz'.format(recipe['url'], recipe['commitId'])
         jobTitle = 'Building image %s' % image['fullName']
-        jobModel = self.model('job', 'jobs')
-
+        jobModel = Job()
+        # Create a job to be handled by the worker plugin
         job = jobModel.createJob(
             title=jobTitle, type='build_image', handler='worker_handler',
-            user=user)
-
-        job.update({
-            'celeryTaskName': 'gwvolman.tasks.build_image',
-            'args': [str(image['_id'])]
-        })
-        job = jobModel.save(job)
+            user=user, public=False, args=(str(image['_id']), image['fullName'], url), kwargs={},
+            otherFields={
+                'celeryTaskName': 'gwvolman.tasks.build_image'
+            })
         jobModel.scheduleJob(job)
         return image
 
     def updateImageStatus(self, event):
-        params = event.info['params']
         job = event.info['job']
         if job['type'] == 'build_image':
-            status = int(params['status'])
+            status = int(job['status'])
             # FIXME: Who should be able to build images?
             image = self.model('image', 'wholetale').load(
                 job['args'][0], force=True)
             if status == JobStatus.SUCCESS:
+                result = getCeleryApp().AsyncResult(job['celeryTaskId']).get()
+                image['digest'] = result['Id']
                 image['status'] = ImageStatus.AVAILABLE
             elif status == JobStatus.ERROR:
                 image['status'] = ImageStatus.INVALID
