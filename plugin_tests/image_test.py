@@ -1,5 +1,5 @@
-
 import httmock
+import mock
 import json
 from tests import base
 from .tests_helpers import \
@@ -7,13 +7,31 @@ from .tests_helpers import \
     mockOtherRequest, mockCommitRequest, mockReposRequest
 
 
+JobStatus = None
+worker = None
+CustomJobStatus = None
+
+
 def setUpModule():
     base.enabledPlugins.append('wholetale')
     base.startServer()
 
+    global JobStatus, worker, CustomJobStatus
+    from girder.plugins.jobs.constants import JobStatus
+    from girder.plugins import worker
+    from girder.plugins.worker import CustomJobStatus
+
 
 def tearDownModule():
     base.stopServer()
+
+
+class FakeAsyncResult(object):
+    def __init__(self):
+        self.task_id = 'fake_id'
+
+    def get(self):
+        return {'Id': 'image_hash'}
 
 
 class ImageTestCase(base.TestCase):
@@ -57,21 +75,78 @@ class ImageTestCase(base.TestCase):
         image = resp.json
         self.assertEqual(image['status'], ImageStatus.UNAVAILABLE)
 
-        return  # This needs to be migrated to Job interface
-        resp = self.request(
-            path='/image/{_id}/build'.format(**image), method='PUT',
-            user=self.admin)
-        self.assertStatusOk(resp)
-        self.assertEqual(image['_id'], resp.json['_id'])
-        self.assertEqual(resp.json['status'], ImageStatus.BUILDING)
+        with mock.patch('celery.Celery') as celeryMock:
+            instance = celeryMock.return_value
+            instance.send_task.return_value = FakeAsyncResult()
+            instance.AsyncResult.return_value = FakeAsyncResult()
 
-        resp = self.request(
-            path='/image/{_id}/check'.format(**image), method='PUT',
-            user=self.admin)
-        self.assertStatusOk(resp)
-        self.assertEqual(image['_id'], resp.json['_id'])
-        self.assertEqual(resp.json['status'], ImageStatus.AVAILABLE)
-        self.assertEqual(resp.json['digest'], 'set me')
+            resp = self.request(
+                path='/image/{_id}/build'.format(**image), method='PUT',
+                user=self.admin)
+            self.assertStatusOk(resp)
+            self.assertEqual(len(celeryMock.mock_calls), 2)
+            self.assertEqual(celeryMock.mock_calls[0][1], ('girder_worker',))
+
+            sendTaskCalls = celeryMock.return_value.send_task.mock_calls
+            mock_repo_url = 'https://github.com/{}/archive/{}.tar.gz'.format(GOOD_REPO, GOOD_COMMIT)
+            self.assertEqual(len(sendTaskCalls), 1)
+            self.assertEqual(sendTaskCalls[0][1], (
+                'gwvolman.tasks.build_image',
+                (image['_id'], image['fullName'], mock_repo_url), {})
+            )
+
+            job = resp.json
+            imageId = job['args'][0]
+
+            # Failed build
+            resp = self.request(
+                path='/image/{}'.format(imageId), method='GET',
+                user=self.admin)
+            self.assertStatusOk(resp)
+            self.assertEqual(resp.json['_id'], imageId)
+            self.assertEqual(resp.json['status'], ImageStatus.BUILDING)
+
+            resp = self.request(
+                path='/job/{_id}'.format(**job), method='PUT',
+                params={'status': JobStatus.RUNNING}, user=self.admin)
+            self.assertStatusOk(resp)
+            resp = self.request(
+                path='/job/{_id}'.format(**job), method='PUT',
+                params={'status': JobStatus.ERROR}, user=self.admin)
+            self.assertStatusOk(resp)
+
+            resp = self.request(
+                path='/image/{}'.format(imageId), method='GET',
+                user=self.admin)
+            self.assertStatusOk(resp)
+            self.assertEqual(resp.json['status'], ImageStatus.INVALID)
+
+            # Successful build
+            resp = self.request(
+                path='/image/{_id}/build'.format(**image), method='PUT',
+                user=self.admin)
+            self.assertStatusOk(resp)
+            job = resp.json
+            imageId = job['args'][0]
+            resp = self.request(
+                path='/job/{_id}'.format(**job), method='PUT',
+                params={'status': JobStatus.QUEUED}, user=self.admin)
+            self.assertStatusOk(resp)
+            resp = self.request(
+                path='/job/{_id}'.format(**job), method='PUT',
+                params={'status': JobStatus.RUNNING}, user=self.admin)
+            self.assertStatusOk(resp)
+            resp = self.request(
+                path='/job/{_id}'.format(**job), method='PUT',
+                params={'status': JobStatus.SUCCESS}, user=self.admin)
+            self.assertStatusOk(resp)
+
+            resp = self.request(
+                path='/image/{}'.format(imageId), method='GET',
+                user=self.admin)
+            self.assertStatusOk(resp)
+            self.assertEqual(resp.json['status'], ImageStatus.AVAILABLE)
+            self.assertEqual(resp.json['digest'], 'image_hash')
 
         resp = self.request(
             path='/image/{_id}'.format(**image), method='PUT',
@@ -86,12 +161,17 @@ class ImageTestCase(base.TestCase):
         self.assertEqual(resp.json['name'], 'new name')
         image = resp.json
 
-        resp = self.request(
-            path='/image/{_id}/copy'.format(**image), method='POST',
-            user=self.user, params={'recipeId': str(self.new_recipe['_id'])})
-        self.assertStatusOk(resp)
-        new_image = resp.json
-        self.assertEqual(new_image['parentId'], image['_id'])
+        with mock.patch('celery.Celery') as celeryMock:
+            instance = celeryMock.return_value
+            instance.send_task.return_value = FakeAsyncResult()
+            instance.AsyncResult.return_value = FakeAsyncResult()
+
+            resp = self.request(
+                path='/image/{_id}/copy'.format(**image), method='POST',
+                user=self.user, params={'recipeId': str(self.new_recipe['_id'])})
+            self.assertStatusOk(resp)
+            new_image = resp.json
+            self.assertEqual(new_image['parentId'], image['_id'])
 
         resp = self.request(
             path='/image',  method='GET', user=self.user)
