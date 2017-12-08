@@ -102,15 +102,6 @@ class Image(AccessControlledModel):
         image['updated'] = datetime.datetime.utcnow()
         return self.save(image)
 
-    def buildImage(self, image):
-        image['status'] = ImageStatus.BUILDING
-        return self.save(image)
-
-    def checkImage(self, image):
-        image['status'] = ImageStatus.AVAILABLE
-        image['digest'] = 'set me'
-        return self.save(image)
-
     def copyImage(self, image, recipe, creator=None):
         try:
             image['tags'].remove('latest')
