@@ -289,7 +289,7 @@ class Image(Resource):
                 'celeryTaskName': 'gwvolman.tasks.build_image'
             })
         jobModel.scheduleJob(job)
-        return image
+        return job
 
     def updateImageStatus(self, event):
         job = event.info['job']
@@ -306,7 +306,7 @@ class Image(Resource):
                 image['status'] = ImageStatus.INVALID
             elif status in (JobStatus.QUEUED, JobStatus.RUNNING):
                 image['status'] = ImageStatus.BUILDING
-            self.model('image', 'wholetale').save(image)
+            self.model('image', 'wholetale').updateImage(image)
 
     @access.admin
     @autoDescribeRoute(
