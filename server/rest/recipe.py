@@ -88,6 +88,7 @@ class Recipe(Resource):
         # self.route('POST', (':id',), self.copyRecipe)
         self.route('PUT', (':id',), self.updateRecipe)
         self.route('DELETE', (':id',), self.deleteRecipe)
+        self.route('GET', (':id', 'access'), self.getRecipeAccess)
 
     @access.public
     @filtermodel(model='recipe', plugin='wholetale')
@@ -206,3 +207,14 @@ class Recipe(Resource):
         return self.model('recipe', 'wholetale').createRecipe(
             commitId, url, name=name, tags=tags, creator=user,
             save=True, parent=None, description=description, public=public)
+
+    @access.user(scope=TokenScope.DATA_OWN)
+    @filtermodel(model='recipe', plugin='wholetale')
+    @autoDescribeRoute(
+        Description('Get the access control list for a recipe.')
+            .modelParam('id', model='recipe', plugin='wholetale', level=AccessType.ADMIN)
+            .errorResponse('ID was invalid.')
+            .errorResponse('Admin access was denied for the recipe.', 403)
+    )
+    def getRecipeAccess(self, recipe):
+        return self.model('recipe', 'wholetale').getFullAccessList(recipe)
