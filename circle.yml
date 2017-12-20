@@ -38,7 +38,9 @@ jobs:
             mkdir /girder/build
             ctest -VV -S /girder/plugins/wholetale/cmake/circle_continuous.cmake
       - run:
+          name: Install Codecov client
+          command: pip install codecov
+      - run:
           name: Uploading Coverage Results
-          working_directory: /girder/build
-          command: |
-            bash <(curl -s https://codecov.io/bash)
+          command: codecov --disable search pycov gcov --file /girder/.coverage
+
