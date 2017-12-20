@@ -21,7 +21,7 @@ TASK_TIMEOUT = 15.0
 
 
 def _wait_for_server(url, timeout=30, wait_time=0.5):
-    '''Wait for a server to show up within a newly launched instance.'''
+    """Wait for a server to show up within a newly launched instance."""
     tic = time.time()
     # Fudge factor of IPython notebook bootup.
     time.sleep(0.5)

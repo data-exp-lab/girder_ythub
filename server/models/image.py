@@ -92,13 +92,13 @@ class Image(AccessControlledModel):
         return image
 
     def updateImage(self, image):
-        '''
+        """
         Updates a image.
 
         :param image: The image document to update.
         :type image: dict
         :returns: The image document that was edited.
-        '''
+        """
         image['updated'] = datetime.datetime.utcnow()
         return self.save(image)
 

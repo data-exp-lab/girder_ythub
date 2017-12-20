@@ -123,12 +123,12 @@ class Recipe(AccessControlledModel):
         return recipe
 
     def updateRecipe(self, recipe):
-        '''
+        """
         Updates a recipe.
 
         :param recipe: The recipe document to update.
         :type recipe: dict
         :returns: The recipe document that was edited.
-        '''
+        """
         recipe['updated'] = datetime.datetime.utcnow()
         return self.save(recipe)

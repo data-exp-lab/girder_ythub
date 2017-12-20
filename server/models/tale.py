@@ -137,12 +137,12 @@ class Tale(AccessControlledModel):
         return taleWorkspace
 
     def updateTale(self, tale):
-        '''
+        """
         Updates a tale.
 
         :param tale: The tale document to update.
         :type tale: dict
         :returns: The tale document that was edited.
-        '''
+        """
         tale['updated'] = datetime.datetime.utcnow()
         return self.save(tale)

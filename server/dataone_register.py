@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-
-''' wt-regiser-dataone.py
-
+"""
 A command-line utility intended to be a working demonstration of how a DataONE
 dataset can be mapped to a file system.
 
@@ -14,7 +11,7 @@ This would be run like:
 
 which, after being run, would write a file in the working directory named like
 'wt-package....json'.
-'''
+"""
 
 import re
 import json
@@ -68,8 +65,9 @@ def query(q, fields=["identifier"], rows=1000, start=0):
 
 
 def find_package_pid(pid):
-    """Find the PID of the resource map for a given PID, which may be a resource
-    map"""
+    """
+    Find the PID of the resource map for a given PID, which may be a resource map
+    """
 
     result = query(
         "identifier:\"{}\"".format(esc(pid)),
@@ -147,8 +145,10 @@ def get_aggregated_identifiers(pid):
 
 
 def get_documenting_identifiers(pid):
-    """Find the set of identifiers in an OAI-ORE resource map documenting
-    other members of that resource map."""
+    """
+    Find the set of identifiers in an OAI-ORE resource map documenting
+    other members of that resource map.
+    """
 
     g = rdflib.Graph()
 
