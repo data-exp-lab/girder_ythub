@@ -41,6 +41,9 @@ jobs:
           name: Install Codecov client
           command: pip install codecov
       - run:
+          name: Collect coverage reports
+          command: cp /girder/.coverage .
+      - run:
           name: Uploading Coverage Results
-          command: codecov --disable search pycov gcov --file /girder/.coverage
+          command: codecov
 
