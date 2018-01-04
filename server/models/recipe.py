@@ -132,3 +132,37 @@ class Recipe(AccessControlledModel):
         """
         recipe['updated'] = datetime.datetime.utcnow()
         return self.save(recipe)
+
+    def setAccessList(self, doc, access, save=False, user=None, force=False,
+                      setPublic=None, publicFlags=None):
+        """
+        Overrides AccessControlledModel.setAccessList to encapsulate ACL
+        functionality for a recipe.
+
+        :param doc: the recipe to set access settings on
+        :type doc: girder.models.recipe
+        :param access: The access control list
+        :type access: dict
+        :param save: Whether the changes should be saved to the database
+        :type save: bool
+        :param user: The current user
+        :param force: Set this to True to set the flags regardless of the passed in
+            user's permissions.
+        :type force: bool
+        :param setPublic: Pass this if you wish to set the public flag on the
+            resources being updated.
+        :type setPublic: bool or None
+        :param publicFlags: Pass this if you wish to set the public flag list on
+            resources being updated.
+        :type publicFlags: flag identifier str, or list/set/tuple of them,
+            or None
+        """
+        if setPublic is not None:
+            self.setPublic(doc, setPublic, save=False)
+
+        if publicFlags is not None:
+            doc = self.setPublicFlags(doc, publicFlags, user=user, save=False,
+                                      force=force)
+
+        return AccessControlledModel.setAccessList(self, doc, access, user=user,
+                                                   save=save, force=force)
