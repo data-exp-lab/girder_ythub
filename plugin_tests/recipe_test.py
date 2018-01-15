@@ -223,8 +223,25 @@ class RecipeTestCase(base.TestCase):
         resp = self.request(
             path='/recipe/%s/access' % recipe['_id'], method='PUT',
             user=self.user, params={'access': json.dumps(updated_access)})
-        print(json.dumps(updated_access))
         self.assertStatusOk(resp)
+        # Check that the returned access control list is as expected
+        result_access = resp.json['access']
+        expected_access = {
+            "groups": [],
+            "users": [
+                {
+                    "flags": [],
+                    "id": str(self.user['_id']),
+                    "level": AccessType.ADMIN
+                },
+                {
+                    "flags": [],
+                    "id": str(self.admin['_id']),
+                    "level": AccessType.ADMIN
+                },
+            ]
+        }
+        self.assertEqual(result_access, expected_access)
 
         # Setting the access list with bad json should throw an error
         resp = self.request(
