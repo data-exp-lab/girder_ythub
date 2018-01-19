@@ -212,9 +212,9 @@ class Recipe(Resource):
     @access.user(scope=TokenScope.DATA_OWN)
     @autoDescribeRoute(
         Description('Get the access control list for a recipe.')
-            .modelParam('id', model='recipe', plugin='wholetale', level=AccessType.ADMIN)
-            .errorResponse('ID was invalid.')
-            .errorResponse('Admin access was denied for the recipe.', 403)
+        .modelParam('id', model='recipe', plugin='wholetale', level=AccessType.ADMIN)
+        .errorResponse('ID was invalid.')
+        .errorResponse('Admin access was denied for the recipe.', 403)
     )
     def getRecipeAccess(self, recipe):
         return self.model('recipe', 'wholetale').getFullAccessList(recipe)
@@ -222,14 +222,14 @@ class Recipe(Resource):
     @access.user(scope=TokenScope.DATA_OWN)
     @autoDescribeRoute(
         Description('Update the access control list for a recipe.')
-            .modelParam('id', model='recipe', plugin='wholetale', level=AccessType.ADMIN)
-            .jsonParam('access', 'The JSON-encoded access control list.', requireObject=True)
-            .jsonParam('publicFlags', 'JSON list of public access flags.', requireArray=True,
-                       required=False)
-            .param('public', 'Whether the recipe should be publicly visible.',
-                   dataType='boolean', required=False)
-            .errorResponse('ID was invalid.')
-            .errorResponse('Admin access was denied for the folder.', 403)
+        .modelParam('id', model='recipe', plugin='wholetale', level=AccessType.ADMIN)
+        .jsonParam('access', 'The JSON-encoded access control list.', requireObject=True)
+        .jsonParam('publicFlags', 'JSON list of public access flags.', requireArray=True,
+                   required=False)
+        .param('public', 'Whether the recipe should be publicly visible.', dataType='boolean',
+               required=False)
+        .errorResponse('ID was invalid.')
+        .errorResponse('Admin access was denied for the folder.', 403)
     )
     def updateRecipeAccess(self, recipe, access, publicFlags, public):
         user = self.getCurrentUser()
