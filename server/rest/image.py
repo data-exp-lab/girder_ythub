@@ -135,6 +135,7 @@ class Image(Resource):
         self.route('PUT', (':id', 'build'), self.buildImage)
         self.route('PUT', (':id', 'check'), self.checkImage)
         self.route('POST', (':id', 'copy'), self.copyImage)
+        self.route('GET', (':id', 'access'), self.getImageAccess)
 
     @access.public
     @filtermodel(model='image', plugin='wholetale')
@@ -334,3 +335,13 @@ class Image(Resource):
         recipe = self.model('recipe', 'wholetale').load(
             recipeId, user=user, level=AccessType.READ, exc=True)
         return self.model('image', 'wholetale').copyImage(image, recipe, creator=user)
+
+    @access.user(scope=TokenScope.DATA_OWN)
+    @autoDescribeRoute(
+        Description('Get the access control list for an image')
+        .modelParam('id', model='image', plugin='wholetale', level=AccessType.ADMIN)
+        .errorResponse('ID was invalid.')
+        .errorResponse('Admin access was denied for the recipe.', 403)
+    )
+    def getImageAccess(self, image):
+        return self.model('recipe', 'wholetale').getFullAccessList(image)
