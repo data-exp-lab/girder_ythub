@@ -136,6 +136,7 @@ class Image(Resource):
         self.route('PUT', (':id', 'check'), self.checkImage)
         self.route('POST', (':id', 'copy'), self.copyImage)
         self.route('GET', (':id', 'access'), self.getImageAccess)
+        self.route('PUT', (':id', 'access'), self.updateImageAccess)
 
     @access.public
     @filtermodel(model='image', plugin='wholetale')
@@ -344,4 +345,21 @@ class Image(Resource):
         .errorResponse('Admin access was denied for the recipe.', 403)
     )
     def getImageAccess(self, image):
-        return self.model('recipe', 'wholetale').getFullAccessList(image)
+        return self.model('image', 'wholetale').getFullAccessList(image)
+
+    @access.user(scope=TokenScope.DATA_OWN)
+    @autoDescribeRoute(
+        Description('Update the access control list for an image.')
+        .modelParam('id', model='image', plugin='wholetale', level=AccessType.ADMIN)
+        .jsonParam('access', 'The JSON-encoded access control list.', requireObject=True)
+        .jsonParam('publicFlags', 'JSON list of public access flags.', requireArray=True,
+                   required=False)
+        .param('public', 'Whether the image should be publicly visible.', dataType='boolean',
+               required=False)
+        .errorResponse('ID was invalid.')
+        .errorResponse('Admin access was denied for the image.', 403)
+    )
+    def updateImageAccess(self, image, access, publicFlags, public):
+        user = self.getCurrentUser()
+        return self.model('image', 'wholetale').setAccessList(
+            image, access, save=True, user=user, setPublic=public, publicFlags=publicFlags)
