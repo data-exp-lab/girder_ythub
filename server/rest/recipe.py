@@ -229,7 +229,7 @@ class Recipe(Resource):
         .param('public', 'Whether the recipe should be publicly visible.', dataType='boolean',
                required=False)
         .errorResponse('ID was invalid.')
-        .errorResponse('Admin access was denied for the folder.', 403)
+        .errorResponse('Admin access was denied for the recipe.', 403)
     )
     def updateRecipeAccess(self, recipe, access, publicFlags, public):
         user = self.getCurrentUser()
