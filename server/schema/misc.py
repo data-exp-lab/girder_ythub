@@ -59,6 +59,7 @@ containerConfigSchema = {
     'properties': {
         'command': {
             'type': 'string',
+            'description': 'Command to run when the container starts'
         },
         'cpuShares': {
             'type': 'string',
@@ -68,15 +69,22 @@ containerConfigSchema = {
         },
         'port': {
             'type': 'integer',
+            'description': ('The exposed internal port that is going to be '
+                            'accessbile through HTTP(S)')
         },
         'user': {
             'type': 'string',
+            'description': 'Username used inside the running container'
         },
         'targetMount': {
             'type': 'string',
+            'description': ('Path where the Whole Tale filesystem '
+                            'will be mounted')
         },
         'urlPath': {
             'type': 'string',
+            'description': ('Subpath appended to the randomly generated '
+                            'container URL')
         }
     }
 }
