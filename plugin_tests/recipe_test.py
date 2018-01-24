@@ -2,6 +2,7 @@
 import httmock
 import json
 import os
+from girder.constants import AccessType
 from tests import base
 from .tests_helpers import \
     GOOD_REPO, GOOD_COMMIT, \
@@ -168,6 +169,98 @@ class RecipeTestCase(base.TestCase):
             'type': 'rest'
         })
 
+    def testRecipeAccess(self):
+        with httmock.HTTMock(mockReposRequest, mockCommitRequest,
+                             mockOtherRequest):
+            # Create a new recipe
+            resp = self.request(
+                path='/recipe', method='POST', user=self.user,
+                params={'url': 'https://github.com/' + GOOD_REPO,
+                        'commitId': GOOD_COMMIT,
+                        'description': 'Text     '})
+            self.assertStatusOk(resp)
+            recipe = resp.json
+            self.assertEqual(recipe['description'], 'Text')
+
+        # Retrieve access control list for newly created recipe
+        resp = self.request(
+            path='/recipe/%s/access' % recipe['_id'], method='GET',
+            user=self.user)
+        self.assertStatusOk(resp)
+        access = resp.json
+        self.assertEqual(access, {
+            'users': [{
+                'login': self.user['login'],
+                'level': AccessType.ADMIN,
+                'id': str(self.user['_id']),
+                'flags': [],
+                'name': '%s %s' % (
+                    self.user['firstName'], self.user['lastName'])}],
+            'groups': []
+        })
+        self.assertTrue(not recipe.get('public'))
+
+        # Update the access control list for the recipe by adding the admin
+        # as a second user
+        updated_access = {
+            "users": [
+                {
+                    "login": self.user['login'],
+                    "level": AccessType.ADMIN,
+                    "id": str(self.user['_id']),
+                    "flags": [],
+                    "name": "%s %s" % (self.user['firstName'], self.user['lastName'])
+                },
+                {
+                    'login': self.admin['login'],
+                    'level': AccessType.ADMIN,
+                    'id': str(self.admin['_id']),
+                    'flags': [],
+                    'name': '%s %s' % (self.admin['firstName'], self.admin['lastName'])
+                }],
+            "groups": []}
+
+        resp = self.request(
+            path='/recipe/%s/access' % recipe['_id'], method='PUT',
+            user=self.user, params={'access': json.dumps(updated_access)})
+        self.assertStatusOk(resp)
+        # Check that the returned access control list is as expected
+        result_access = resp.json['access']
+        expected_access = {
+            "groups": [],
+            "users": [
+                {
+                    "flags": [],
+                    "id": str(self.user['_id']),
+                    "level": AccessType.ADMIN
+                },
+                {
+                    "flags": [],
+                    "id": str(self.admin['_id']),
+                    "level": AccessType.ADMIN
+                },
+            ]
+        }
+        self.assertEqual(result_access, expected_access)
+
+        # Setting the access list with bad json should throw an error
+        resp = self.request(
+            path='/recipe/%s/access' % recipe['_id'], method='PUT',
+            user=self.user, params={'access': 'badJSON'})
+        self.assertStatus(resp, 400)
+
+        # Change the access to public
+        resp = self.request(
+            path='/recipe/%s/access' % recipe['_id'], method='PUT',
+            user=self.user,
+            params={'access': json.dumps(access), 'public': True})
+        self.assertStatusOk(resp)
+        resp = self.request(
+            path='/recipe/%s' % recipe['_id'], method='GET',
+            user=self.user)
+        self.assertStatusOk(resp)
+        self.assertEqual(resp.json['public'], True)
+    
     def tearDown(self):
         self.model('user').remove(self.user)
         self.model('user').remove(self.admin)
