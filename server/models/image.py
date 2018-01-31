@@ -146,8 +146,8 @@ class Image(AccessControlledModel):
             doc = self.setPublicFlags(doc, publicFlags, user=user, save=False,
                                       force=force)
 
-        doc = AccessControlledModel.setAccessList(self, doc, access, user=user,
-                                                   save=save, force=force)
+        doc = AccessControlledModel.setAccessList(self, doc, access,
+                                                  user=user, save=save, force=force)
 
         recipeModels = AccessControlledModel.model('recipe', 'wholetale')
 
