@@ -146,5 +146,20 @@ class Image(AccessControlledModel):
             doc = self.setPublicFlags(doc, publicFlags, user=user, save=False,
                                       force=force)
 
-        return AccessControlledModel.setAccessList(self, doc, access, user=user,
+        doc = AccessControlledModel.setAccessList(self, doc, access, user=user,
                                                    save=save, force=force)
+
+        recipeModels = AccessControlledModel.model('recipe', 'wholetale')
+
+        cursor = recipeModels.find({'_id': doc['recipeId']})
+
+        recipes = recipeModels.filterResultsByPermission(
+            cursor=cursor, user=user, level=AccessType.ADMIN)
+
+        if recipes:
+            for recipe in recipes:
+                recipeModels.setAccessList(
+                    recipe, access, user=user, save=save, force=force,
+                    setPublic=setPublic, publicFlags=publicFlags)
+
+        return doc
