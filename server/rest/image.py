@@ -293,7 +293,7 @@ class Image(Resource):
 
     def updateImageStatus(self, event):
         job = event.info['job']
-        if job['type'] == 'build_image':
+        if job['type'] == 'build_image' and job.get('status') is not None:
             status = int(job['status'])
             # FIXME: Who should be able to build images?
             image = self.model('image', 'wholetale').load(
