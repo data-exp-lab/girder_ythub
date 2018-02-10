@@ -317,12 +317,20 @@ class ImageTestCase(base.TestCase):
         resp = self.request(
             path='/image/%s/access' % image_admin_recipe['_id'], method='PUT',
             user=self.user, params={'access': json.dumps(input_access)})
+        self.assertStatus(resp, 403)
+
+        # Check that the access control list was correctly set for the image
+        resp = self.request(
+            path='/image/%s/access' % image_admin_recipe['_id'], method='GET',
+            user=self.user)
         self.assertStatusOk(resp)
-        result_recipe_id = resp.json['recipeId']
+        result_image_access = resp.json
+        expected_image_access = input_access
+        self.assertEqual(result_image_access, expected_image_access)
 
         # Check that the access control list did not propagate to the recipe
         resp = self.request(
-            path='/recipe/%s/access' % result_recipe_id, method='GET',
+            path='/recipe/%s/access' % image_admin_recipe['recipeId'], method='GET',
             user=self.user)
         self.assertStatus(resp, 403)
 

@@ -342,7 +342,7 @@ class Image(Resource):
         Description('Get the access control list for an image')
         .modelParam('id', model='image', plugin='wholetale', level=AccessType.ADMIN)
         .errorResponse('ID was invalid.')
-        .errorResponse('Admin access was denied for the recipe.', 403)
+        .errorResponse('Admin access was denied for the image.', 403)
     )
     def getImageAccess(self, image):
         return self.model('image', 'wholetale').getFullAccessList(image)
