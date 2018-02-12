@@ -5,7 +5,8 @@ import os
 GOOD_REPO = 'whole-tale/jupyter-base'
 GOOD_COMMIT = 'b45f9a57'
 GOOD_CHILD = '4b35fe6'
-
+XPRA_REPO = 'whole-tale/xpra-base'
+XPRA_COMMIT = 'fad88f5'
 
 @httmock.urlmatch(scheme='https', netloc='^api\.github\.com$',
                   path='^/repos/([\w\-]+)/([\w\-]+)$', method='GET')
@@ -15,6 +16,9 @@ def mockReposRequest(url, request):
     repo_slug = os.path.join(owner, repo)
     headers = {'content-type': 'application/json'}
     if repo_slug == GOOD_REPO:
+        return httmock.response(
+            200, {'full_url': repo_slug}, headers, None, 5, request)
+    elif repo_slug == XPRA_REPO:
         return httmock.response(
             200, {'full_url': repo_slug}, headers, None, 5, request)
 
@@ -37,6 +41,9 @@ def mockCommitRequest(url, request):
     elif commit == GOOD_CHILD:
         return httmock.response(
             200, {'sha': GOOD_CHILD}, headers, None, 5, request)
+    elif commit == XPRA_COMMIT:
+        return httmock.response(
+            200, {'sha': XPRA_COMMIT}, headers, None, 5, request)
 
     content = {u'documentation_url': u'https://developer.github.com/v3',
                u'message': u'Not Found'}

@@ -3,7 +3,7 @@ import mock
 import json
 from tests import base
 from .tests_helpers import \
-    GOOD_REPO, GOOD_COMMIT, GOOD_CHILD, \
+    GOOD_REPO, GOOD_COMMIT, GOOD_CHILD, XPRA_REPO, XPRA_COMMIT, \
     mockOtherRequest, mockCommitRequest, mockReposRequest
 
 
@@ -61,6 +61,9 @@ class ImageTestCase(base.TestCase):
             self.new_recipe = self.model('recipe', 'wholetale').createRecipe(
                 GOOD_CHILD, 'https://github.com/' + GOOD_REPO,
                 parent=self.recipe, creator=self.user, public=True)
+            self.admin_recipe = self.model('recipe', 'wholetale').createRecipe(
+                XPRA_COMMIT, 'https://github.com/' + XPRA_REPO,
+                creator=self.admin, public=True)
 
     def testImageFlow(self):
         from girder.plugins.wholetale.constants import ImageStatus
@@ -197,6 +200,157 @@ class ImageTestCase(base.TestCase):
             path='/image/{_id}'.format(**new_image), method='GET',
             user=self.user)
         self.assertStatus(resp, 400)
+
+    def testImageAccess(self):
+        with httmock.HTTMock(mockReposRequest, mockCommitRequest,
+                             mockOtherRequest):
+            from girder.plugins.wholetale.constants import ImageStatus
+            # Create a new image from a user recipe
+            resp = self.request(
+                path='/image', method='POST', user=self.user,
+                params={
+                    'fullName': GOOD_REPO, 'recipeId': str(self.recipe['_id']),
+                    'public': True}
+            )
+            self.assertStatusOk(resp)
+            image_user_recipe = resp.json
+            self.assertEqual(image_user_recipe['status'], ImageStatus.UNAVAILABLE)
+
+            # Create a new image from an admin recipe
+            resp = self.request(
+                path='/image', method='POST', user=self.user,
+                params={
+                    'fullName': GOOD_REPO, 'recipeId': str(self.admin_recipe['_id']),
+                    'public': True}
+            )
+            self.assertStatusOk(resp)
+            image_admin_recipe = resp.json
+            self.assertEqual(image_admin_recipe['status'], ImageStatus.UNAVAILABLE)
+
+        from girder.constants import AccessType
+
+        # Retrieve access control list for the newly created image
+        resp = self.request(
+            path='/image/%s/access' % image_user_recipe['_id'], method='GET',
+            user=self.user)
+        self.assertStatusOk(resp)
+        access = resp.json
+        self.assertEqual(access, {
+            'users': [{
+                'login': self.user['login'],
+                'level': AccessType.ADMIN,
+                'id': str(self.user['_id']),
+                'flags': [],
+                'name': '%s %s' % (
+                    self.user['firstName'], self.user['lastName'])}],
+            'groups': []
+        })
+        self.assertTrue(image_user_recipe.get('public'))
+
+        # Update the access control list for the image by adding the admin
+        # as a second user
+        input_access = {
+            "users": [
+                {
+                    "login": self.user['login'],
+                    "level": AccessType.ADMIN,
+                    "id": str(self.user['_id']),
+                    "flags": [],
+                    "name": "%s %s" % (self.user['firstName'], self.user['lastName'])
+                },
+                {
+                    'login': self.admin['login'],
+                    'level': AccessType.ADMIN,
+                    'id': str(self.admin['_id']),
+                    'flags': [],
+                    'name': '%s %s' % (self.admin['firstName'], self.admin['lastName'])
+                }],
+            "groups": []}
+
+        resp = self.request(
+            path='/image/%s/access' % image_user_recipe['_id'], method='PUT',
+            user=self.user, params={'access': json.dumps(input_access)})
+        self.assertStatusOk(resp)
+        # Check that the returned access control list for the image is as expected
+        result_image_access = resp.json['access']
+        result_recipe_id = resp.json['recipeId']
+        expected_image_access = {
+            "groups": [],
+            "users": [
+                {
+                    "flags": [],
+                    "id": str(self.user['_id']),
+                    "level": AccessType.ADMIN
+                },
+                {
+                    "flags": [],
+                    "id": str(self.admin['_id']),
+                    "level": AccessType.ADMIN
+                },
+            ]
+        }
+        self.assertEqual(result_image_access, expected_image_access)
+
+        # Check that the access control list propagated to the recipe that the image
+        # was created from
+        resp = self.request(
+            path='/recipe/%s/access' % result_recipe_id, method='GET',
+            user=self.user)
+        self.assertStatusOk(resp)
+        result_recipe_access = resp.json
+        expected_recipe_access = input_access
+        self.assertEqual(result_recipe_access, expected_recipe_access)
+
+        # Update the access control list of an image that was generated from a recipe that the user
+        # does not have admin access to
+        input_access = {
+            "users": [
+                {
+                    "login": self.user['login'],
+                    "level": AccessType.ADMIN,
+                    "id": str(self.user['_id']),
+                    "flags": [],
+                    "name": "%s %s" % (self.user['firstName'], self.user['lastName'])
+                }],
+            "groups": []
+        }
+        resp = self.request(
+            path='/image/%s/access' % image_admin_recipe['_id'], method='PUT',
+            user=self.user, params={'access': json.dumps(input_access)})
+        self.assertStatus(resp, 403)
+
+        # Check that the access control list was correctly set for the image
+        resp = self.request(
+            path='/image/%s/access' % image_admin_recipe['_id'], method='GET',
+            user=self.user)
+        self.assertStatusOk(resp)
+        result_image_access = resp.json
+        expected_image_access = input_access
+        self.assertEqual(result_image_access, expected_image_access)
+
+        # Check that the access control list did not propagate to the recipe
+        resp = self.request(
+            path='/recipe/%s/access' % image_admin_recipe['recipeId'], method='GET',
+            user=self.user)
+        self.assertStatus(resp, 403)
+
+        # Setting the access list with bad json should throw an error
+        resp = self.request(
+            path='/image/%s/access' % image_user_recipe['_id'], method='PUT',
+            user=self.user, params={'access': 'badJSON'})
+        self.assertStatus(resp, 400)
+
+        # Change the access to private
+        resp = self.request(
+            path='/image/%s/access' % image_user_recipe['_id'], method='PUT',
+            user=self.user,
+            params={'access': json.dumps(input_access), 'public': False})
+        self.assertStatusOk(resp)
+        resp = self.request(
+            path='/image/%s' % image_user_recipe['_id'], method='GET',
+            user=self.user)
+        self.assertStatusOk(resp)
+        self.assertEqual(resp.json['public'], False)
 
     def tearDown(self):
         self.model('user').remove(self.user)
