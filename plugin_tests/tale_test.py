@@ -187,6 +187,52 @@ class TaleTestCase(base.TestCase):
                 continue
             self.assertEqual(resp.json[key], tale[key])
 
+    def testTaleAccess(self):
+        with httmock.HTTMock(mockReposRequest, mockCommitRequest,
+                             mockOtherRequest):
+            # Grab the default user folders
+            resp = self.request(
+                path='/folder', method='GET', user=self.user, params={
+                    'parentType': 'user',
+                    'parentId': self.user['_id'],
+                    'sort': 'title',
+                    'sortdir': 1
+                })
+            folder = resp.json[1]
+            # Create a new tale from a user image
+            resp = self.request(
+                path='/tale', method='POST', user=self.user,
+                type='application/json',
+                body=json.dumps(
+                    {
+                        'imageId': str(self.image['_id']),
+                        'folderId': folder['_id']
+                    })
+            )
+            self.assertStatusOk(resp)
+            tale_user_image = resp.json
+
+        from girder.constants import AccessType
+
+        # Retrieve access control list for the newly created image
+        resp = self.request(
+            path='/tale/%s/access' % tale_user_image['_id'], method='GET',
+            user=self.user)
+        self.assertStatusOk(resp)
+        result_tale_access = resp.json
+        expected_tale_access = {
+            'users': [{
+                'login': self.user['login'],
+                'level': AccessType.ADMIN,
+                'id': str(self.user['_id']),
+                'flags': [],
+                'name': '%s %s' % (
+                    self.user['firstName'], self.user['lastName'])}],
+            'groups': []
+        }
+        self.assertEqual(result_tale_access, expected_tale_access)
+
+
     def tearDown(self):
         self.model('user').remove(self.user)
         self.model('user').remove(self.admin)

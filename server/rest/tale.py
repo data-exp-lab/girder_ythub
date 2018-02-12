@@ -4,7 +4,7 @@ from girder.api import access
 from girder.api.docs import addModel
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, filtermodel, RestException
-from girder.constants import AccessType, SortDir
+from girder.constants import AccessType, SortDir, TokenScope
 from ..schema.tale import taleModel
 
 
@@ -22,6 +22,7 @@ class Tale(Resource):
         self.route('PUT', (':id',), self.updateTale)
         self.route('POST', (), self.createTale)
         self.route('DELETE', (':id',), self.deleteTale)
+        self.route('GET', (':id', 'access'), self.getTaleAccess)
 
     @access.public
     @filtermodel(model='tale', plugin='wholetale')
@@ -148,3 +149,13 @@ class Tale(Resource):
                 category=tale.get('category', 'science'),
                 published=False
             )
+
+    @access.user(scope=TokenScope.DATA_OWN)
+    @autoDescribeRoute(
+        Description('Get the access control list for a tale')
+        .modelParam('id', model='tale', plugin='wholetale', level=AccessType.ADMIN)
+        .errorResponse('ID was invalid.')
+        .errorResponse('Admin access was denied for the tale.', 403)
+    )
+    def getTaleAccess(self, tale):
+        return self.model('tale', 'wholetale').getFullAccessList(tale)
