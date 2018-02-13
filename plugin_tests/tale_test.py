@@ -3,7 +3,7 @@ import httmock
 import json
 from tests import base
 from .tests_helpers import \
-    GOOD_REPO, GOOD_COMMIT, \
+    GOOD_REPO, GOOD_COMMIT, XPRA_REPO, XPRA_COMMIT, \
     mockOtherRequest, mockCommitRequest, mockReposRequest
 
 
@@ -40,6 +40,12 @@ class TaleTestCase(base.TestCase):
             self.recipe = self.model('recipe', 'wholetale').createRecipe(
                 GOOD_COMMIT, 'https://github.com/' + GOOD_REPO,
                 creator=self.user, public=True)
+            recipe_admin = self.model('recipe', 'wholetale').createRecipe(
+                XPRA_COMMIT, 'https://github.com/' + XPRA_REPO,
+                creator=self.admin, public=True)
+            self.image_admin = self.model('image', 'wholetale').createImage(
+                recipe_admin, XPRA_REPO, name="xpra name", creator=self.admin,
+                public=True)
         self.image = self.model('image', 'wholetale').createImage(
             self.recipe, GOOD_REPO, name="my name", creator=self.user,
             public=True)
@@ -206,11 +212,24 @@ class TaleTestCase(base.TestCase):
                 body=json.dumps(
                     {
                         'imageId': str(self.image['_id']),
-                        'folderId': folder['_id']
+                        'folderId': folder['_id'],
+                        'public': True
                     })
             )
             self.assertStatusOk(resp)
             tale_user_image = resp.json
+            # Create a new tale from an admin image
+            resp = self.request(
+                path='/tale', method='POST', user=self.user,
+                type='application/json',
+                body=json.dumps(
+                    {
+                        'imageId': str(self.image_admin['_id']),
+                        'folderId': folder['_id']
+                    })
+            )
+            self.assertStatusOk(resp)
+            tale_admin_image = resp.json
 
         from girder.constants import AccessType
 
@@ -232,6 +251,108 @@ class TaleTestCase(base.TestCase):
         }
         self.assertEqual(result_tale_access, expected_tale_access)
 
+        # Update the access control list for the tale by adding the admin
+        # as a second user
+        input_tale_access = {
+            "users": [
+                {
+                    "login": self.user['login'],
+                    "level": AccessType.ADMIN,
+                    "id": str(self.user['_id']),
+                    "flags": [],
+                    "name": "%s %s" % (self.user['firstName'], self.user['lastName'])
+                },
+                {
+                    'login': self.admin['login'],
+                    'level': AccessType.ADMIN,
+                    'id': str(self.admin['_id']),
+                    'flags': [],
+                    'name': '%s %s' % (self.admin['firstName'], self.admin['lastName'])
+                }],
+            "groups": []}
+        resp = self.request(
+            path='/tale/%s/access' % tale_user_image['_id'], method='PUT',
+            user=self.user, params={'access': json.dumps(input_tale_access)})
+        self.assertStatusOk(resp)
+        # Check that the returned access control list for the tale is as expected
+        result_tale_access = resp.json['access']
+        result_image_id = resp.json['imageId']
+        expected_tale_access = {
+            "groups": [],
+            "users": [
+                {
+                    "flags": [],
+                    "id": str(self.user['_id']),
+                    "level": AccessType.ADMIN
+                },
+                {
+                    "flags": [],
+                    "id": str(self.admin['_id']),
+                    "level": AccessType.ADMIN
+                },
+            ]
+        }
+        self.assertEqual(result_tale_access, expected_tale_access)
+        # Check that the access control list propagated to the image that the tale
+        # was built from
+        resp = self.request(
+            path='/image/%s/access' % result_image_id, method='GET',
+            user=self.user)
+        self.assertStatusOk(resp)
+        result_image_access = resp.json
+        expected_image_access = input_tale_access
+        self.assertEqual(result_image_access, expected_image_access)
+
+        # Update the access control list of a tale that was generated from an image that the user
+        # does not have admin access to
+        input_tale_access = {
+            "users": [
+                {
+                    "login": self.user['login'],
+                    "level": AccessType.ADMIN,
+                    "id": str(self.user['_id']),
+                    "flags": [],
+                    "name": "%s %s" % (self.user['firstName'], self.user['lastName'])
+                }],
+            "groups": []
+        }
+        resp = self.request(
+            path='/tale/%s/access' % tale_admin_image['_id'], method='PUT',
+            user=self.user, params={'access': json.dumps(input_tale_access)})
+        self.assertStatus(resp, 403)
+
+        # Check that the access control list was correctly set for the tale
+        resp = self.request(
+            path='/tale/%s/access' % tale_admin_image['_id'], method='GET',
+            user=self.user)
+        self.assertStatusOk(resp)
+        result_tale_access = resp.json
+        expected_tale_access = input_tale_access
+        self.assertEqual(result_tale_access, expected_tale_access)
+
+        # Check that the access control list did not propagate to the image
+        resp = self.request(
+            path='/image/%s/access' % tale_admin_image['imageId'], method='GET',
+            user=self.user)
+        self.assertStatus(resp, 403)
+
+        # Setting the access list with bad json should throw an error
+        resp = self.request(
+            path='/tale/%s/access' % tale_user_image['_id'], method='PUT',
+            user=self.user, params={'access': 'badJSON'})
+        self.assertStatus(resp, 400)
+
+        # Change the access to private
+        resp = self.request(
+            path='/tale/%s/access' % tale_user_image['_id'], method='PUT',
+            user=self.user,
+            params={'access': json.dumps(input_tale_access), 'public': False})
+        self.assertStatusOk(resp)
+        resp = self.request(
+            path='/tale/%s' % tale_user_image['_id'], method='GET',
+            user=self.user)
+        self.assertStatusOk(resp)
+        self.assertEqual(resp.json['public'], False)
 
     def tearDown(self):
         self.model('user').remove(self.user)

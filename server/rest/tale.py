@@ -23,6 +23,7 @@ class Tale(Resource):
         self.route('POST', (), self.createTale)
         self.route('DELETE', (':id',), self.deleteTale)
         self.route('GET', (':id', 'access'), self.getTaleAccess)
+        self.route('PUT', (':id', 'access'), self.updateTaleAccess)
 
     @access.public
     @filtermodel(model='tale', plugin='wholetale')
@@ -159,3 +160,20 @@ class Tale(Resource):
     )
     def getTaleAccess(self, tale):
         return self.model('tale', 'wholetale').getFullAccessList(tale)
+
+    @access.user(scope=TokenScope.DATA_OWN)
+    @autoDescribeRoute(
+        Description('Update the access control list for a tale.')
+        .modelParam('id', model='tale', plugin='wholetale', level=AccessType.ADMIN)
+        .jsonParam('access', 'The JSON-encoded access control list.', requireObject=True)
+        .jsonParam('publicFlags', 'JSON list of public access flags.', requireArray=True,
+                   required=False)
+        .param('public', 'Whether the tale should be publicly visible.', dataType='boolean',
+               required=False)
+        .errorResponse('ID was invalid.')
+        .errorResponse('Admin access was denied for the tale.', 403)
+    )
+    def updateTaleAccess(self, tale, access, publicFlags, public):
+        user = self.getCurrentUser()
+        return self.model('tale', 'wholetale').setAccessList(
+            tale, access, save=True, user=user, setPublic=public, publicFlags=publicFlags)
