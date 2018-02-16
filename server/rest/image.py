@@ -267,7 +267,7 @@ class Image(Resource):
             save=True, parent=None, description=description, public=public,
             config=config, icon=icon)
 
-    @access.admin
+    @access.user
     @autoDescribeRoute(
         Description('Build an existing image')
         .modelParam('id', model='image', plugin='wholetale', level=AccessType.WRITE,
@@ -276,7 +276,6 @@ class Image(Resource):
         .errorResponse('Admin access was denied for the image.', 403)
     )
     def buildImage(self, image, params):
-        # TODO: create and schedule a job that will b
         user = self.getCurrentUser()
         recipe = self.model('recipe', 'wholetale').load(
             image['recipeId'], user=user, level=AccessType.READ, exc=True)
