@@ -233,7 +233,7 @@ class TaleTestCase(base.TestCase):
 
         from girder.constants import AccessType
 
-        # Retrieve access control list for the newly created image
+        # Retrieve access control list for the newly created tale
         resp = self.request(
             path='/tale/%s/access' % tale_user_image['_id'], method='GET',
             user=self.user)
@@ -277,6 +277,7 @@ class TaleTestCase(base.TestCase):
         # Check that the returned access control list for the tale is as expected
         result_tale_access = resp.json['access']
         result_image_id = resp.json['imageId']
+        result_folder_id = resp.json['folderId']
         expected_tale_access = {
             "groups": [],
             "users": [
@@ -302,6 +303,16 @@ class TaleTestCase(base.TestCase):
         result_image_access = resp.json
         expected_image_access = input_tale_access
         self.assertEqual(result_image_access, expected_image_access)
+
+        # Check that the access control list propagated to the folder that the tale
+        # is associated with
+        resp = self.request(
+            path='/folder/%s/access' % result_folder_id, method='GET',
+            user=self.user)
+        self.assertStatusOk(resp)
+        result_folder_access = resp.json
+        expected_folder_access = input_tale_access
+        self.assertEqual(result_folder_access, expected_folder_access)
 
         # Update the access control list of a tale that was generated from an image that the user
         # does not have admin access to

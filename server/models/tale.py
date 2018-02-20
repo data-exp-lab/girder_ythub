@@ -181,6 +181,13 @@ class Tale(AccessControlledModel):
         doc = AccessControlledModel.setAccessList(self, doc, access,
                                                   user=user, save=save, force=force)
 
+        folder = AccessControlledModel.model('folder').load(
+            doc['folderId'], user=user, level=AccessType.ADMIN)
+
+        AccessControlledModel.model('folder').setAccessList(
+            folder, access, user=user, save=save, force=force,
+            setPublic=setPublic, publicFlags=publicFlags)
+
         image = AccessControlledModel.model('image', 'wholetale').load(
             doc['imageId'], user=user, level=AccessType.ADMIN)
 
