@@ -87,6 +87,23 @@ def find_package_pid(pid):
 
     if len(result['response']['docs'][0]['resourceMap']) == 1:
         return result['response']['docs'][0]['resourceMap'][0]
+    
+    if len(result['response']['docs'][0]['resourceMap']) > 1:
+        # Extract all of the candidate resource map PIDs (list of lists)
+        resmaps = [doc['resourceMap'] for doc in result['response']['docs']]
+
+        # Flatten the above result out and query
+        # Flattening is required because the above 'resourceMap' field is a
+        # Solr array type so the result is a list of lists
+        nonobs = find_nonobsolete_resmaps(
+            [item for items in resmaps for item in items]
+        )
+
+        # Only return of one non-obsolete Resource Map was found
+        # If we find multiple, that implies the original PID we queried for
+        # is a member of multiple packages and what to do isn't implemented
+        if len(nonobs) == 1:
+            return nonobs[0]
 
     # Error out if the document passed in has multiple resource maps. What I can
     # still do here is determine the most likely resource map given the set.
@@ -94,6 +111,25 @@ def find_package_pid(pid):
     # usually leaves us with one.
     raise RestException(
         "Multiple resource maps were found and this is not implemented.")
+
+
+def find_nonobsolete_resmaps(pids):
+    """
+    Given one or more resource map pids, returns the ones that are not obsoleted
+    by any other Object.
+    This is done by querying the Solr index with the -obsoletedBy:* query param
+    """
+
+    result = query(
+        "identifier:(\"{}\")+AND+-obsoletedBy:*".format("\" OR \"".join(pids),
+        fields = "identifier")
+    )
+    result_len = int(result['response']['numFound'])
+
+    if result_len == 0:
+        raise RestException('No results were found for identifier(s): {}.'.format(", ".join(pids)))
+
+    return [doc['identifier'] for doc in result['response']['docs']]
 
 
 def find_initial_pid(path):
