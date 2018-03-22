@@ -46,13 +46,18 @@ var NotebookStatus = {
 };
 
 NotebookStatus.registerStatus({
-    RUNNING: {
+    STARTING: {
         value: 0,
+        text: 'Starting',
+        icon: 'icon-spin3 animate-spin'
+    },
+    RUNNING: {
+        value: 1,
         text: 'Running',
         icon: 'icon-spin3 animate-spin'
     },
     ERROR: {
-        value: 1,
+        value: 2,
         text: 'Error',
         icon: 'icon-cancel'
     }

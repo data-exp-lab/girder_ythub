@@ -12,6 +12,8 @@ from girder.api.rest import getApiUrl
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
+from girder.models.notification import \
+    ProgressState, Notification
 from girder.plugins.worker import getCeleryApp, getWorkerApiUrl
 from tornado.httpclient import HTTPRequest, HTTPError, HTTPClient
 # FIXME look into removing tornado
@@ -121,6 +123,23 @@ class Notebook(AccessControlledModel):
             return existing
 
         now = datetime.datetime.utcnow()
+        notebook = {
+            'folderId': folder['_id'],
+            'creatorId': user['_id'],
+            'frontendId': frontend['_id'],
+            'status': NotebookStatus.STARTING,
+            'created': now
+        }
+        if save:
+            notebook = self.save(notebook)
+
+        total = 3.0
+        notification = Notification().initProgress(
+            user, 'Starting Notebook', total, state=ProgressState.QUEUED,
+            current=0.0, message='Initialization',
+            estimateTime=False, resourceName=self.name,
+            resource=notebook)
+
         payload = {
             'girder_token': token['_id'],
             'folder': {k: str(v) for k, v in folder.items()},
@@ -130,12 +149,22 @@ class Notebook(AccessControlledModel):
         }
 
         # do the job
+        Notification().updateProgress(
+            notification, total=total, current=1.0,
+            state=ProgressState.ACTIVE, message='Creating and mounting Filesystem',
+            expires=datetime.datetime.utcnow() + datetime.timedelta(seconds=30)
+        )
         volumeTask = getCeleryApp().send_task(
             'gwvolman.tasks.create_volume', args=[payload], kwargs={},
         )
         volumeInfo = volumeTask.get()
         payload.update(volumeInfo)
 
+        Notification().updateProgress(
+            notification, total=total, current=2.0,
+            state=ProgressState.ACTIVE, message='Launching Container',
+            expires=datetime.datetime.utcnow() + datetime.timedelta(seconds=30)
+        )
         serviceTask = getCeleryApp().send_task(
             'gwvolman.tasks.launch_container', args=[payload], kwargs={},
             queue='manager'
@@ -149,17 +178,24 @@ class Notebook(AccessControlledModel):
         # FIXME: bring back https
         url = 'http://{}/{}'.format(domain, serviceInfo.get('urlPath', ''))
 
-        # _wait_for_server(url)
+        Notification().updateProgress(
+            notification, total=total, current=2.5,
+            state=ProgressState.ACTIVE, message='Waiting for Notebook to start',
+            expires=datetime.datetime.utcnow() + datetime.timedelta(seconds=30)
+        )
+        _wait_for_server(url)
 
-        notebook = {
-            'folderId': folder['_id'],
-            'creatorId': user['_id'],
-            'frontendId': frontend['_id'],
+        notebook.update({
             'status': NotebookStatus.RUNNING,   # be optimistic for now
-            'created': now,
             'serviceInfo': serviceInfo,
             'url': url
-        }
+        })
+
+        Notification().updateProgress(
+            notification, total=total, current=3.0,
+            state=ProgressState.SUCCESS, message='Redirecting to notebook',
+            expires=datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
+        )
 
         self.setPublic(notebook, public=False)
         self.setUserAccess(notebook, user=user, level=AccessType.ADMIN)
