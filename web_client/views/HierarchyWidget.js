@@ -97,11 +97,31 @@ function _stopNb(e) {
 }
 
 function _startNb() {
-    // var folderId = this.parentModel.id;
-    new FrontendSelectorWidget({
-        el: $('#g-dialog-container'),
-        parentView: this
-    }).render();
+    var folderId = this.parentModel.id;
+    restRequest({
+        url: 'frontend',
+        type: 'GET'
+    }).done(_.bind(function (frontends) {
+        if (frontends.length === 1) {
+            restRequest({url: 'ythub'}).done(function (hub) {
+                restRequest({
+                    url: 'notebook',
+                    type: 'POST',
+                    data: {
+                        folderId: folderId,
+                        frontendId: frontends[0]['_id']
+                    }
+                }).done(function (notebook) {
+                    window.location.assign(hub['url'] + '/' + notebook['containerPath']);
+                });
+            });
+        } else {
+            new FrontendSelectorWidget({
+                el: $('#g-dialog-container'),
+                parentView: this
+            }).render();
+        }
+    }));
 }
 
 HierarchyWidget.prototype.events['click a.g-visit-notebook'] = _visitNb;
