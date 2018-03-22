@@ -112,7 +112,7 @@ function _startNb() {
                         frontendId: frontends[0]['_id']
                     }
                 }).done(function (notebook) {
-                    window.location.assign(hub['url'] + '/' + notebook['containerPath']);
+                    window.location.assign(notebook['url']);
                 });
             });
         } else {
