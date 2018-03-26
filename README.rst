@@ -38,7 +38,7 @@ To install the web service, run
 Enabling Plugins
 ^^^^^^^^^^^^^^^^
 
-To get to the plugins section, navigate to ``Admin Console``->``Plugins``. Make sure that the following plugins are enabled.
+To get to the plugins section, navigate to ``Admin Console``-> ``Plugins``. Make sure that the following plugins are enabled.
 
 1. ``Celery Jobs``
 2. ``Gravatar portraits``
@@ -53,7 +53,7 @@ Instead of using the login screen in the dashboard, you'll use OAuth with GitHub
 
 CORS Headers
 ^^^^^^^^^^^^
-You'll want to allow CORS headers in the dashboard. To do this, navigate to  ``Admin Console``->``Server Configuration``. Scroll to the bottom of the page and click ``Advanced Settings``. Put ``*`` in the ``CORS Allowed Origins`` and ``CORS Allowed Headers`` fields. More information can be found 
+You'll want to allow CORS headers in the dashboard. To do this, navigate to  ``Admin Console``-> ``Server Configuration``. Scroll to the bottom of the page and click ``Advanced Settings``. Put ``*`` in the ``CORS Allowed Origins`` and ``CORS Allowed Headers`` fields. More information can be found 
 `here <http://girder.readthedocs.io/en/latest/security.html#cors-cross-origin-resource-sharing>`_.
 
 Create an Assetstore
