@@ -1,7 +1,7 @@
 """
-Code for querying DataONE and verifying query results. Specifically used for finding datasets based on the url
-and for listing package contents. Some of these methods are used elsewhere in the WholeTale plugin, specifically in
-the harvester.
+Code for querying DataONE and verifying query results. Specifically used for
+ finding datasets based on the url and for listing package contents. Some of
+  these methods are used elsewhere in the WholeTale plugin, specifically in  the harvester.
 """
 
 import re
@@ -260,7 +260,7 @@ def D1_lookup(path):
 
     dataMap = {
         'dataId': package_pid,
-        'size': metadata[0].get('size', -1),
+        'size': int(metadata[0].get('size', 0)),
         'name': metadata[0].get('title', 'no title'),
         'doi': metadata[0].get('identifier', 'no DOI').split('doi:')[-1],
         'repository': 'DataONE',
@@ -353,25 +353,17 @@ def get_package_list(path, package=None, isChild=False):
 def get_package_files(data, metadata, primary_metadata):
     fileList = {}
     for fileObj in data:
-        try:
-            fileName = fileObj['fileName']
-        except KeyError:
-            fileName = fileObj['identifier']
-        try:
-            fileSize = fileObj['size']
-        except KeyError:
-            fileSize = 0
+        fileName = fileObj.get('fileName', fileObj.get('identifier', ''))
+
+        fileSize = int(fileObj.get('size', 0))
 
         fileList[fileName] = {
             'size': fileSize
         }
 
-    try:
-        # Also add the metadata to the file list
-        fileList[primary_metadata[0]['fileName']] = {
-            'size': primary_metadata[0]['size']
-        }
-    except KeyError:
-        return fileList
+    # Also add the metadata to the file list
+    fileList[primary_metadata[0]['fileName']] = {
+        'size': primary_metadata[0].get('size', 0)
+    }
 
     return fileList
