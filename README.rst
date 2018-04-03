@@ -106,3 +106,14 @@ Optional pre-requisites:
 ..
 
 .. _`WholeTale Fork of Girder`: https://github.com/whole-tale/girder
+
+Adding a New Test
+^^^^^^^^^^^^^^^^^
+
+To add a new test, create a new file in the ``plugin_tests`` directory as
+``<testname>_test.py``. Then open ``plugin.cmake`` and add the line to the
+file.
+
+``add_python_test(<testname> PLUGIN wholetale)``.
+
+Note that you do not need to add ``_test`` at the end of the filename.
