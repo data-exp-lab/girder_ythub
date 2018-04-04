@@ -66,9 +66,6 @@ class TestDataONERegister(base.TestCase):
 
         # In this case, the primary metadata object is the same as the metadata object
         fileList = get_package_files(data, full_meta_data, full_meta_data)
-        print("FileList: ")
-        print(fileList)
-        print('')
         self.assertDictEqual(fileList, expected_result)
 
     def test_get_package_files(self):
