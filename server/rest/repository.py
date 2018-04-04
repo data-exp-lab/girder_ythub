@@ -62,24 +62,34 @@ fileMap = {
         'size': {
             'type': 'integer',
             'description': 'Size of the file in bytes.'
-        },
-        'id': {
-            'type': 'string',
-            'description': 'The document identifier.'
-        },
-        'parentPackage': {
-            'type': 'string',
-            'description': 'The package that the file belongs in.'
         }
     },
-    'required': ['name', 'size'],
+    'required': ['name', 'fileList'],
     'example': {
-        'name': 'Data from a dynamically downscaled projection of past and'
-        'future microclimates covering North America from 1980-1999 and 2080-2099',
-        'size': '178679',
-        'id': 'urn:uuid:42969280-e11c-41a9-92dc-33964bf785c8',
-        'parentPackage': 'urn:uuid:072f9a3f-9778-47dd-b5a4-d6d8981f2e44',
-    },
+        "Doctoral Dissertation Research: Mapping Community Exposure to Coastal Climate Hazards"
+        "in the Arctic: A Case Study in Alaska's North Slope":
+            {'fileList':
+                [{'science_metadata.xml':
+                    {'size': 8961}}],
+             'Arctic Slope Shoreline Change Risk Spatial Data Model, 2015-16':
+                 {'fileList':
+                    [{'science_metadata.xml':
+                        {'size': 7577}}]},
+             'North Slope Borough shoreline change risk WebGIS usability workshop.':
+                 {'fileList':
+                    [{'science_metadata.xml':
+                        {'size': 7940}}]},
+             'Local community verification of shoreline change risks along the Alaskan Arctic Ocean'
+                 'coast'
+             ' (North Slope).':
+                 {'fileList':
+                    [{'science_metadata.xml':
+                        {'size': 14250}}]},
+             'Arctic Slope Shoreline Change Susceptibility Spatial Data Model, 2015-16':
+                 {'fileList':
+                    [{'science_metadata.xml':
+                        {'size': 10491}}]}}
+    }
 }
 
 addModel('dataMap', dataMap)
@@ -114,7 +124,6 @@ def _http_lookup(pid):
 
 
 class Repository(Resource):
-
     def __init__(self):
         super(Repository, self).__init__()
         self.resourceName = 'repository'
@@ -131,7 +140,7 @@ class Repository(Resource):
         .jsonParam('dataId', paramType='query', required=True,
                    description='List of external datasets identificators.')
         .responseClass('dataMap', array=True))
-    def lookupData(self, dataId, params):
+    def lookupData(self, dataId):
         from concurrent.futures import ThreadPoolExecutor, as_completed
         results = []
         futures = {}
@@ -151,14 +160,14 @@ class Repository(Resource):
 
     @access.public
     @autoDescribeRoute(
-        Description('Retrieve a list of files in a DataONE repository')
+        Description('Retrieve a list of files and nested packages in a DataONE repository')
         .notes('Given a list of external data identifiers, '
                'returns a list of files inside along with '
                'their sizes')
         .jsonParam('dataId', paramType='query', required=True,
                    description='List of external datasets identificators.')
         .responseClass('fileMap', array=True))
-    def listFiles(self, dataId, params):
+    def listFiles(self, dataId):
         from concurrent.futures import ThreadPoolExecutor, as_completed
         results = []
         futures = {}

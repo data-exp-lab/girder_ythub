@@ -1,16 +1,7 @@
 """
-A command-line utility intended to be a working demonstration of how a DataONE
-dataset can be mapped to a file system.
-
-The input to this tool is a string which is either a DataONE landing page URL or
-A DataONE resolve/object URL.
-
-This would be run like:
-
-  python wt-register-dataone.py "urn:uuid:42969280-e11c-41a9-92dc-33964bf785c8"
-
-which, after being run, would write a file in the working directory named like
-'wt-package....json'.
+Code for querying DataONE and verifying query results. Specifically used for
+ finding datasets based on the url and for listing package contents. Some of
+  these methods are used elsewhere in the WholeTale plugin, specifically in  the harvester.
 """
 
 import re
@@ -64,7 +55,7 @@ def query(q, fields=["identifier"], rows=1000, start=0):
     return content
 
 
-def find_package_pid(pid):
+def find_resource_pid(pid):
     """
     Find the PID of the resource map for a given PID, which may be a resource map
     """
@@ -82,11 +73,17 @@ def find_package_pid(pid):
             '{} which is an unexpected state.'.format(pid))
 
     # Find out if the PID is an OAI-ORE PID and return early if so
-    if result['response']['docs'][0]['formatType'] == 'RESOURCE':
-        return(result['response']['docs'][0]['identifier'])
+    try:
+        if result['response']['docs'][0]['formatType'] == 'RESOURCE':
+            return(result['response']['docs'][0]['identifier'])
+    except KeyError:
+        raise RestException('Unable to find a resource file in the data package')
 
-    if len(result['response']['docs'][0]['resourceMap']) == 1:
-        return result['response']['docs'][0]['resourceMap'][0]
+    try:
+        if len(result['response']['docs'][0]['resourceMap']) == 1:
+            return result['response']['docs'][0]['resourceMap'][0]
+    except KeyError:
+        raise RestException('Unable to find a resource map for the data package')
 
     if len(result['response']['docs'][0]['resourceMap']) > 1:
         # Extract all of the candidate resource map PIDs (list of lists)
@@ -110,7 +107,7 @@ def find_package_pid(pid):
     # Usually we do this by rejecting any obsoleted resource maps and that
     # usually leaves us with one.
     raise RestException(
-        "Multiple resource maps were found and this is not implemented.")
+        "Multiple resource maps were for the data package, which isn't supported.")
 
 
 def find_nonobsolete_resmaps(pids):
@@ -181,6 +178,16 @@ def get_aggregated_identifiers(pid):
     return pids
 
 
+def verify_results(pid, docs):
+    aggregation = get_aggregated_identifiers(pid)
+    pids = set([unesc(doc['identifier']) for doc in docs])
+
+    if aggregation != pids:
+        raise RestException(
+            "The contents of the Resource Map don't match what's in the Solr "
+            "index. This is unexpected and unhandled.")
+
+
 def get_documenting_identifiers(pid):
     """
     Find the set of identifiers in an OAI-ORE resource map documenting
@@ -213,12 +220,27 @@ def get_package_pid(path):
     """Get the pid of a package from its path."""
 
     initial_pid = find_initial_pid(path)
-    if initial_pid is None:
-        logger.warning('Failed to find the initial pid of the package with path {}.'.format(path))
-        return
-
     logger.debug('Parsed initial PID of {}.'.format(initial_pid))
-    return find_package_pid(initial_pid)
+    return find_resource_pid(initial_pid)
+
+
+def extract_metadata_docs(docs):
+    metadata = [doc for doc in docs if doc['formatType'] == 'METADATA']
+    if not metadata:
+        raise RestException('No metadata file was found in the package.')
+    return metadata
+
+
+def extract_data_docs(docs):
+    data = [doc for doc in docs if doc['formatType'] == 'DATA']
+#    if not data:
+#        raise RestException('No data found.')
+    return data
+
+
+def extract_resource_docs(docs):
+    resource = [doc for doc in docs if doc['formatType'] == 'RESOURCE']
+    return resource
 
 
 def D1_lookup(path):
@@ -238,7 +260,7 @@ def D1_lookup(path):
 
     dataMap = {
         'dataId': package_pid,
-        'size': metadata[0].get('size', -1),
+        'size': int(metadata[0].get('size', 0)),
         'name': metadata[0].get('title', 'no title'),
         'doi': metadata[0].get('identifier', 'no DOI').split('doi:')[-1],
         'repository': 'DataONE',
@@ -248,7 +270,7 @@ def D1_lookup(path):
 
 def get_documents(package_pid):
     """
-    Retrieve a list of all the files in a data package.The metadata
+    Retrieve a list of all the files in a data package. The metadata
     record providing information about the package is also in this list.
     """
 
@@ -263,47 +285,85 @@ def get_documents(package_pid):
     return result['response']['docs']
 
 
-def get_object_name(doc):
-    """
-    When setting the name of objects in a package, we want to be sure to
-    use 'title' for METADATA objects and 'fileName for others.
-    """
-    if doc['formatType'] == 'METADATA':
-        return doc['title']
-    if 'fileName' not in doc:
-        return doc['identifier']
-    return doc['fileName']
+def check_multiple_maps(documenting):
+    if len(documenting) > 1:
+        raise RestException(
+            "Found two objects in the resource map documenting other objects. "
+            "This is unexpected and unhandled.")
+    elif len(documenting) == 0:
+        raise RestException('No object was found in the resource map.')
 
 
-def get_package_title(docs):
-    for doc in docs:
-        if doc['formatType'] == 'METADATA':
-            return doc['title']
-    return ""
+def check_multiple_metadata(metadata):
+    if len(metadata) > 1:
+        raise RestException("Multiple documenting metadata objects found. "
+                            "This is unexpected and unhandled.")
 
 
-def get_package_list(path):
-    """
-    Retrieves a list of all the files in a package with
-    their sizes
-    """
+def get_package_list(path, package=None, isChild=False):
+    """"""
+    if package is None:
+        package = {}
 
     package_pid = get_package_pid(path)
     logger.debug('Found package PID of {}.'.format(package_pid))
 
     docs = get_documents(package_pid)
 
-    packageName = get_package_title(docs)
+    # Filter the Solr result by TYPE so we can construct the package
+    metadata = extract_metadata_docs(docs)
+    data = extract_data_docs(docs)
+    children = extract_resource_docs(docs)
 
-    files = list()
-    for doc in docs:
+    # Verify what's in Solr is matching.
+    verify_results(package_pid, docs)
 
-        dataMap = {
-            'name': get_object_name(doc),
-            'size': doc.get('size', -1),
-            'id': doc.get('identifier', -1),
-            'packageParent': packageName
-            }
-        files.append(dataMap)
+    # Find the primary/documenting metadata so we can later on find the
+    # folder name
+    # TODO: Grabs the resmap a second time, fix this
+    documenting = get_documenting_identifiers(package_pid)
 
-    return files
+    # Stop now if multiple objects document others
+    check_multiple_maps(documenting)
+
+    # Determine the folder name. This is usually the title of the metadata file
+    # in the package but when there are multiple metadata files in the package,
+    # we need to figure out which one is the 'main' or 'documenting' one.
+    primary_metadata = [doc for doc in metadata if 'documents' in doc]
+
+    check_multiple_metadata(primary_metadata)
+
+    data += [doc for doc in metadata if doc['identifier'] != primary_metadata[0]['identifier']]
+
+    fileList = get_package_files(data, metadata, primary_metadata)
+
+    # Add a new entry in the package structure
+    # if isChild:
+    #    package[-1][primary_metadata[0]['title']] = {'fileList': []}
+    # else:
+    package[primary_metadata[0]['title']] = {'fileList': []}
+
+    package[primary_metadata[0]['title']]['fileList'].append(fileList)
+    if children is not None and len(children) > 0:
+        for child in children:
+            get_package_list(child['identifier'], package[primary_metadata[0]['title']], True)
+    return package
+
+
+def get_package_files(data, metadata, primary_metadata):
+    fileList = {}
+    for fileObj in data:
+        fileName = fileObj.get('fileName', fileObj.get('identifier', ''))
+
+        fileSize = int(fileObj.get('size', 0))
+
+        fileList[fileName] = {
+            'size': fileSize
+        }
+
+    # Also add the metadata to the file list
+    fileList[primary_metadata[0]['fileName']] = {
+        'size': primary_metadata[0].get('size', 0)
+    }
+
+    return fileList
