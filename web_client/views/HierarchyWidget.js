@@ -96,7 +96,8 @@ function _stopNb(e) {
     }, this));
 }
 
-function _startNb() {
+function _startNb(e) {
+    $(e.currentTarget).attr('disabled', 'disabled');
     var folderId = this.parentModel.id;
     restRequest({
         url: 'frontend',
