@@ -4,7 +4,6 @@ import { wrap } from 'girder/utilities/PluginUtils';
 import './routes';
 import './views/HierarchyWidget';
 import './views/HeaderUserView';
-import './views/HeaderView';
 import './views/FooterView';
 
 // Add a new global nav item for creating and browsing rafts
