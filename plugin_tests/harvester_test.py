@@ -216,7 +216,7 @@ class DataONEHarversterTestCase(base.TestCase):
                     'doi': 'urn:uuid:c878ae53-06cf-40c9-a830-7f6f564133f9',
                     'name': 'Thaw depth in the ITEX plots at Barrow and Atqasuk, Alaska',
                     'repository': 'DataONE',
-                    'size': 21702
+                    'size': 40882
                 }, {
                     'dataId': 'http://use.yt/upload/944d8537',
                     'doi': 'unknown',
