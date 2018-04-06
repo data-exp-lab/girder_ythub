@@ -258,9 +258,12 @@ def D1_lookup(path):
     if not metadata:
         raise RestException('No metadata found.')
 
+    # Compute package size (sum of 'size' values´)
+    total_size = sum([int(doc.get('size', 0)) for doc in docs])
+
     dataMap = {
         'dataId': package_pid,
-        'size': int(metadata[0].get('size', 0)),
+        'size': total_size,
         'name': metadata[0].get('title', 'no title'),
         'doi': metadata[0].get('identifier', 'no DOI').split('doi:')[-1],
         'repository': 'DataONE',
