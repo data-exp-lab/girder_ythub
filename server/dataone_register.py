@@ -258,7 +258,7 @@ def D1_lookup(path):
     if not metadata:
         raise RestException('No metadata found.')
 
-    # Compute package size (sum of 'size' values´)
+    # Compute package size (sum of 'size' values)
     total_size = sum([int(doc.get('size', 0)) for doc in docs])
 
     dataMap = {
