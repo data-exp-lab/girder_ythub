@@ -9,13 +9,10 @@ from girder.constants import TokenScope
 from girder.utility.model_importer import ModelImporter
 from ..dataone_register import \
     D1_BASE, \
-    get_documenting_identifiers, \
     extract_metadata_docs, \
     get_documents, \
     extract_data_docs, \
     extract_resource_docs, \
-    verify_results, \
-    check_multiple_maps, \
     check_multiple_metadata
 
 
