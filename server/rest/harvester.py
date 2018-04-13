@@ -52,17 +52,6 @@ def register_DataONE_resource(parent, parentType, progress, user, pid, name=None
     data = extract_data_docs(docs)
     children = extract_resource_docs(docs)
 
-    # Verify what's in Solr is matching
-    verify_results(pid, docs)
-
-    # Find the primary/documenting metadata so we can later on find the
-    # folder name
-    # TODO: Grabs the resmap a second time, fix this
-    documenting = get_documenting_identifiers(pid)
-
-    # Stop now if multiple objects document others
-    check_multiple_maps(documenting)
-
     # Add in URLs to resolve each metadata/data object by
     for i in range(len(metadata)):
         metadata[i]['url'] = \
