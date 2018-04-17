@@ -193,6 +193,20 @@ class TaleTestCase(base.TestCase):
                 continue
             self.assertEqual(resp.json[key], tale[key])
 
+        resp = self.request(
+            path='/tale/{_id}/export'.format(**tale), 
+            method='GET', 
+            user=self.user,
+            type='application/octet-stream',
+            isJson=False)
+
+        self.assertStatus(resp, 200)
+        # self.assertEqual(resp.json, {
+        #     'message': ("Invalid JSON object for parameter tale: 'folderId' "
+        #                 "is a required property"),
+        #     'type': 'rest'
+        # })
+
     def testTaleAccess(self):
         with httmock.HTTMock(mockReposRequest, mockCommitRequest,
                              mockOtherRequest):
