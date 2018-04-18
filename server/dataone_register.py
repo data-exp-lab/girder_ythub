@@ -318,17 +318,6 @@ def get_package_list(path, package=None, isChild=False):
     data = extract_data_docs(docs)
     children = extract_resource_docs(docs)
 
-    # Verify what's in Solr is matching.
-    verify_results(package_pid, docs)
-
-    # Find the primary/documenting metadata so we can later on find the
-    # folder name
-    # TODO: Grabs the resmap a second time, fix this
-    documenting = get_documenting_identifiers(package_pid)
-
-    # Stop now if multiple objects document others
-    check_multiple_maps(documenting)
-
     # Determine the folder name. This is usually the title of the metadata file
     # in the package but when there are multiple metadata files in the package,
     # we need to figure out which one is the 'main' or 'documenting' one.
