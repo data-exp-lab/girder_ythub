@@ -201,11 +201,9 @@ class TaleTestCase(base.TestCase):
             isJson=False)
 
         self.assertStatus(resp, 200)
-        # self.assertEqual(resp.json, {
-        #     'message': ("Invalid JSON object for parameter tale: 'folderId' "
-        #                 "is a required property"),
-        #     'type': 'rest'
-        # })
+        # `resp.body` is a generator and this is a hacky way to get the size
+        # of it using a list comprehension:
+        self.assertEqual(sum(1 for byte in resp.body), 1210)
 
     def testTaleAccess(self):
         with httmock.HTTMock(mockReposRequest, mockCommitRequest,
