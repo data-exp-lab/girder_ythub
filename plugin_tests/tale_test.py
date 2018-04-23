@@ -203,7 +203,7 @@ class TaleTestCase(base.TestCase):
         self.assertStatus(resp, 200)
         # `resp.body` is a generator and this is a hacky way to get the size
         # of it using a list comprehension:
-        self.assertEqual(sum(1 for byte in resp.body), 1210)
+        self.assertEqual(sum(1 for byte in resp.body), 2438)
 
     def testTaleAccess(self):
         with httmock.HTTMock(mockReposRequest, mockCommitRequest,

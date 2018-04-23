@@ -6,7 +6,8 @@ import requests
 from girder.api import access
 from girder.api.docs import addModel
 from girder.api.describe import Description, autoDescribeRoute
-from girder.api.rest import Resource, filtermodel, RestException, setResponseHeader, setContentDisposition
+from girder.api.rest import Resource, filtermodel, RestException,\
+    setResponseHeader, setContentDisposition
 
 from girder.constants import AccessType, SortDir, TokenScope
 from girder.utility import ziputil
@@ -222,10 +223,9 @@ class Tale(Resource):
             zip = ziputil.ZipGenerator(zip_name)
 
             # Add files from the Tale folder
-            for (path, f) in self.model('folder').fileList(
-                folder,
-                user=user,
-                subpath=False):
+            for (path, f) in self.model('folder').fileList(folder,
+                                                           user=user,
+                                                           subpath=False):
 
                 for data in zip.addFile(f, path):
                     yield data
@@ -233,7 +233,7 @@ class Tale(Resource):
             # Temporary: Add Image metadata
             for data in zip.addFile(lambda: image.__str__(), 'image.txt'):
                 yield data
-            
+
             # Temporary: Add Recipe metadata
             for data in zip.addFile(lambda: recipe.__str__(), 'recipe.txt'):
                 yield data
