@@ -193,6 +193,18 @@ class TaleTestCase(base.TestCase):
                 continue
             self.assertEqual(resp.json[key], tale[key])
 
+        resp = self.request(
+            path='/tale/{_id}/export'.format(**tale), 
+            method='GET', 
+            user=self.user,
+            type='application/octet-stream',
+            isJson=False)
+
+        self.assertStatus(resp, 200)
+        # `resp.body` is a generator and this is a hacky way to get the size
+        # of it using a list comprehension:
+        self.assertEqual(sum(1 for byte in resp.body), 2438)
+
     def testTaleAccess(self):
         with httmock.HTTMock(mockReposRequest, mockCommitRequest,
                              mockOtherRequest):
