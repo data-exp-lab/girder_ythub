@@ -76,13 +76,12 @@ class Frontend(Resource):
         return list(self.model('frontend', 'ythub').list(
             user=user, offset=offset, limit=limit, sort=sort))
 
-    @access.public
+    @access.user
     @filtermodel(model='frontend', plugin='ythub')
     @autoDescribeRoute(
         Description('Get a frontend by ID.')
         .modelParam('id', model='frontend', plugin='ythub',
                     level=AccessType.READ)
-        .param('id', 'The ID of the frontend.', paramType='path')
         .responseClass('frontend')
         .errorResponse('ID was invalid.')
     )
