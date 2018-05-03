@@ -1,7 +1,10 @@
+/* eslint-disable import/first */
+
 import router from 'girder/router';
 import events from 'girder/events';
 import { exposePluginConfig } from 'girder/utilities/PluginUtils';
 import ItemModel from 'girder/models/ItemModel';
+import { Layout } from 'girder/constants';
 
 import ConfigView from './views/ConfigView';
 import NotebookListWidget from './views/NotebookListWidget';
@@ -9,6 +12,7 @@ import RaftListView from './views/RaftListView';
 import RaftRunView from './views/RaftRunView';
 import CreateRaftView from './views/body/CreateRaftView';
 import FrontendModel from './models/FrontendModel';
+import RunNotebookView from './views/RunNotebookView';
 
 exposePluginConfig('ythub', 'plugins/ythub/config');
 
@@ -72,5 +76,14 @@ router.route('raft/:id/edit', 'newRaft', (id, params) => {
         });
     }).fail(() => {
         router.navigate('rafts', {trigger: true, replace: true});
+    });
+});
+
+router.route('frontend/:id/:folderId', 'runNotebook', function (id, folderId) {
+    events.trigger('g:navigateTo', RunNotebookView, {
+        frontendId: id,
+        folderId: folderId
+    }, {
+        layout: Layout.EMPTY
     });
 });
