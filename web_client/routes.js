@@ -87,3 +87,21 @@ router.route('frontend/:id/:folderId', 'runNotebook', function (id, folderId) {
         layout: Layout.EMPTY
     });
 });
+
+router.route('raft/:id', (id, params) => {
+    const item = new ItemModel({_id: id});
+    const promises = [item.fetch()];
+
+    $.when.apply($, promises).done(() => {
+        let raftSpec = item.get('meta').raftSpec;
+        events.trigger('g:navigateTo', RunNotebookView, {
+            frontendId: raftSpec.frontend,
+            folderId: raftSpec.data,
+            scripts: raftSpec.scripts
+        }, {
+            layout: Layout.EMPTY
+        });
+    }).fail(() => {
+        router.navigate('rafts', {trigger: true});
+    });
+});
