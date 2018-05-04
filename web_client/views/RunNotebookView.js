@@ -12,7 +12,7 @@ var RunNotebookView = View.extend({
         }).then((resp) => {
             var frontendId = settings.frontendId;
             var folderId = settings.folderId;
-            var scripts = settings.scripts || [];
+            var scripts = JSON.stringify(settings.scripts || []);
             restRequest({
                 url: 'notebook',
                 method: 'POST',
