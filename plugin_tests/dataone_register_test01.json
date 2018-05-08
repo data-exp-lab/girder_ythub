@@ -1,0 +1,518 @@
+{
+  "Temperature and bio-geochemical data from Toolik Lake, Lake N2, Lake E1, Lake E5, and Lake E6, North Slope, Alaska": {
+    "fileList": [
+      {
+        "science_metadata.xml": {
+          "size": 8940
+        }
+      }
+    ],
+    "Carbon Dioxide and Methane profiles from Toolik Lake, Lake N2, Lake E1, Lake E5, and Lake E6, North Slope, Alaska, 2012-2016": {
+      "fileList": [
+        {
+          "N2_lake_dissolved_gases_2012_2016.csv": {
+            "size": 4141
+          },
+          "E6_lake_dissolved_gases_2012_2016.csv": {
+            "size": 1769
+          },
+          "toolik_lake_dissolved_gases_2012_2016.csv": {
+            "size": 9447
+          },
+          "E1_lake_dissolved_gases_2012_2016.csv": {
+            "size": 4990
+          },
+          "E5_lake_dissolved_gases_2012_2016.csv": {
+            "size": 4388
+          },
+          "science_metadata.xml": {
+            "size": 26873
+          }
+        }
+      ]
+    },
+    "Time series of water temperature, specific conductance, and oxygen from Lake E5, North Slope, Alaska": {
+      "fileList": [
+        {
+          "E5_metadata.xml": {
+            "size": 8502
+          }
+        }
+      ],
+      "Time series of water temperature, specific conductance, and oxygen from Lake E5, North Slope, Alaska, 2012-2013": {
+        "fileList": [
+          {
+            "2013_summer_E5_temperature.csv": {
+              "size": 3622122
+            },
+            "2012_2013_winter_E5_temperature.csv": {
+              "size": 6959182
+            },
+            "E5_2013metadata.xml": {
+              "size": 31522
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Lake E5, North Slope, Alaska, 2014-2015": {
+        "fileList": [
+          {
+            "2015_summer_E5_temperature.csv": {
+              "size": 3697500
+            },
+            "2014_2015_winter_E5_temperature.csv": {
+              "size": 11630685
+            },
+            "2014_2015_winter_E5_dissoxy.csv": {
+              "size": 1775633
+            },
+            "2014_2015_winter_E5_spconductance.csv": {
+              "size": 483867
+            },
+            "E5_2015metadata.xml": {
+              "size": 38791
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Lake E5, North Slope, Alaska, 2013-2014": {
+        "fileList": [
+          {
+            "2013_2014_winter_E5_spconductance.csv": {
+              "size": 467919
+            },
+            "2014_summer_E5_temperature.csv": {
+              "size": 3239402
+            },
+            "2013_2014_winter_E5_dissoxy.csv": {
+              "size": 1395110
+            },
+            "2013_2014_winter_E5_temperature.csv": {
+              "size": 11365382
+            },
+            "E5_2014metadata.xml": {
+              "size": 39491
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Lake E5, North Slope, Alaska, 2015-2016": {
+        "fileList": [
+          {
+            "2015_2016_winter_E5_spconductance.csv": {
+              "size": 522118
+            },
+            "2015_2016_winter_E5_dissoxy.csv": {
+              "size": 1865414
+            },
+            "2016_summer_E5_temperature.csv": {
+              "size": 2889371
+            },
+            "2015_2016_winter_E5_temperature.csv": {
+              "size": 12259272
+            },
+            "E5_2016metadata.xml": {
+              "size": 39461
+            }
+          }
+        ]
+      }
+    },
+    "Time series of water temperature, specific conductance, and oxygen from Toolik Lake, North Slope, Alaska": {
+      "fileList": [
+        {
+          "toolik_metadata.xml": {
+            "size": 8506
+          }
+        }
+      ],
+      "Time series of water temperature, specific conductance, and oxygen from Toolik Lake, North Slope, Alaska, 2012-2013": {
+        "fileList": [
+          {
+            "2013_summer_toolik_temperature.csv": {
+              "size": 6875617
+            },
+            "2012_2013_winter_toolik_temperature.csv": {
+              "size": 19536076
+            },
+            "2012_2013_winter_toolik_spconductance.csv": {
+              "size": 689738
+            },
+            "toolik_2013metadata.xml": {
+              "size": 48909
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Toolik Lake, North Slope, Alaska, 2013-2014": {
+        "fileList": [
+          {
+            "2013_2014_winter_toolik_temperature.csv": {
+              "size": 16557796
+            },
+            "2013_2014_winter_toolik_dissoxy.csv": {
+              "size": 3065075
+            },
+            "2014_summer_toolik_temperature.csv": {
+              "size": 8152742
+            },
+            "2013_2014_winter_toolik_spconductance.csv": {
+              "size": 1143165
+            },
+            "toolik_2014metadata.xml": {
+              "size": 56269
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Toolik Lake, North Slope, Alaska, 2014-2015": {
+        "fileList": [
+          {
+            "2014_2015_winter_toolik_dissoxy.csv": {
+              "size": 2938042
+            },
+            "2015_summer_toolik_spconductance.csv": {
+              "size": 326729
+            },
+            "2015_summer_toolik_dissoxy.csv": {
+              "size": 422900
+            },
+            "2014_2015_winter_toolik_temperature.csv": {
+              "size": 17568419
+            },
+            "2015_summer_toolik_temperature.csv": {
+              "size": 7388577
+            },
+            "2014_2015_winter_toolik_spconductance.csv": {
+              "size": 944978
+            },
+            "toolik_2015metadata.xml": {
+              "size": 65009
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Toolik Lake, North Slope, Alaska, 2015-2016": {
+        "fileList": [
+          {
+            "2015_2016_winter_toolik_spconductance.csv": {
+              "size": 1508161
+            },
+            "2016_summer_toolik_temperature.csv": {
+              "size": 6424024
+            },
+            "2015_2016_winter_toolik_dissoxy.csv": {
+              "size": 3195361
+            },
+            "2016_summer_toolik_dissoxy.csv": {
+              "size": 278700
+            },
+            "2015_2016_winter_toolik_temperature.csv": {
+              "size": 20143003
+            },
+            "toolik_2016metadata.xml": {
+              "size": 62748
+            }
+          }
+        ]
+      }
+    },
+    "Temperature and bio-geochemical profiles from Toolik Lake, Lake N2, Lake E1, Lake E5, and Lake E6, North Slope, Alaska, 2012-2016": {
+      "fileList": [
+        {
+          "E5_lake_physchem_2012_2016.csv": {
+            "size": 14367
+          },
+          "N2_lake_physchem_2012_2016.csv": {
+            "size": 9978
+          },
+          "toolik_lake_physchem_2012_2016.csv": {
+            "size": 32570
+          },
+          "E1_lake_physchem_2012_2016.csv": {
+            "size": 14970
+          },
+          "E6_lake_physchem_2012_2016.csv": {
+            "size": 4422
+          },
+          "science_metadata.xml": {
+            "size": 35150
+          }
+        }
+      ]
+    },
+    "Time series of water temperature, specific conductance, and oxygen from Lake N2, North Slope, Alaska": {
+      "fileList": [
+        {
+          "N2_metadata.xml": {
+            "size": 8502
+          }
+        }
+      ],
+      "Time series of water temperature, specific conductance, and oxygen from Lake N2, North Slope, Alaska, 2015-2016": {
+        "fileList": [
+          {
+            "2015_2016_winter_N2_temperature.csv": {
+              "size": 9175080
+            },
+            "2015_2016_winter_N2_spconductance.csv": {
+              "size": 669063
+            },
+            "2015_2016_winter_N2_dissoxy.csv": {
+              "size": 2274196
+            },
+            "N2_2016metadata.xml": {
+              "size": 27618
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Lake N2, North Slope, Alaska, 2012-2013": {
+        "fileList": [
+          {
+            "2013_summer_N2_temperature.csv": {
+              "size": 3236585
+            },
+            "2013_summer_N2_spconductance.csv": {
+              "size": 98037
+            },
+            "2012_2013_winter_N2_temperature.csv": {
+              "size": 7884365
+            },
+            "2012_2013_winter_N2_spconductance.csv": {
+              "size": 660777
+            },
+            "2012_2013_winter_N2_dissoxy.csv": {
+              "size": 1342424
+            },
+            "N2_2013metadata.xml": {
+              "size": 38906
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Lake N2, North Slope, Alaska, 2014-2015": {
+        "fileList": [
+          {
+            "2014_2015_winter_N2_spconductance.csv": {
+              "size": 764082
+            },
+            "2014_2015_winter_N2_temperature.csv": {
+              "size": 8186731
+            },
+            "2014_2015_winter_N2_dissoxy.csv": {
+              "size": 2041484
+            },
+            "2015_summer_N2_temperature.csv": {
+              "size": 3959476
+            },
+            "N2_2015metadata.xml": {
+              "size": 38880
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Lake N2, North Slope, Alaska, 2013-2014": {
+        "fileList": [
+          {
+            "2013_2014_winter_N2_spconductance.csv": {
+              "size": 805573
+            },
+            "2014_summer_N2_temperature.csv": {
+              "size": 3985764
+            },
+            "2013_2014_winter_N2_temperature.csv": {
+              "size": 8799847
+            },
+            "2013_2014_winter_N2_dissoxy.csv": {
+              "size": 2199099
+            },
+            "2014_summer_N2_spconductance.csv": {
+              "size": 109399
+            },
+            "N2_2014metadata.xml": {
+              "size": 42453
+            }
+          }
+        ]
+      }
+    },
+    "Time series of water temperature, specific conductance, and oxygen from Lake E6, North Slope, Alaska": {
+      "fileList": [
+        {
+          "E6_metadata.xml": {
+            "size": 8502
+          }
+        }
+      ],
+      "Time series of water temperature, specific conductance, and oxygen from Lake E6, North Slope, Alaska, 2012-2013": {
+        "fileList": [
+          {
+            "2013_summer_E6_temperature.csv": {
+              "size": 1809400
+            },
+            "2012_2013_winter_E6_temperature.csv": {
+              "size": 10530736
+            },
+            "E6_2013metadata.xml": {
+              "size": 26487
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Lake E6, North Slope, Alaska, 2013-2014": {
+        "fileList": [
+          {
+            "2013_2014_winter_E6_temperature.csv": {
+              "size": 7576278
+            },
+            "2013_2014_winter_E6_spconductance.csv": {
+              "size": 311796
+            },
+            "2014_summer_E6_temperature.csv": {
+              "size": 2563014
+            },
+            "2013_2014_winter_E6_dissoxy.csv": {
+              "size": 891254
+            },
+            "E6_2014metadata.xml": {
+              "size": 33677
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Lake E6, North Slope, Alaska, 2014-2015": {
+        "fileList": [
+          {
+            "2014_2015_winter_E6_dissoxy.csv": {
+              "size": 798736
+            },
+            "2014_2015_winter_E6_temperature.csv": {
+              "size": 7001630
+            },
+            "2015_summer_E6_temperature.csv": {
+              "size": 2599637
+            },
+            "2014_2015_winter_E6_spconductance.csv": {
+              "size": 294911
+            },
+            "E6_2015metadata.xml": {
+              "size": 34381
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance, and oxygen from Lake E6, North Slope, Alaska, 2015-2016": {
+        "fileList": [
+          {
+            "2016_summer_E6_temperature.csv": {
+              "size": 1925158
+            },
+            "2015_2016_winter_E6_dissoxy.csv": {
+              "size": 1197456
+            },
+            "2015_2016_winter_E6_temperature.csv": {
+              "size": 6833526
+            },
+            "2015_2016_winter_E6_spconductance.csv": {
+              "size": 503972
+            },
+            "E6_2016metadata.xml": {
+              "size": 32344
+            }
+          }
+        ]
+      }
+    },
+    "Time series of water temperature, specific conductance, and oxygen from Lake E1, North Slope, Alaska": {
+      "fileList": [
+        {
+          "E1_metadata.xml": {
+            "size": 8498
+          }
+        }
+      ],
+      "Time series of water temperature, specific conductance and oxygen from Lake E1, North Slope, Alaska, 2015-2016": {
+        "fileList": [
+          {
+            "2015_2016_winter_E1_spconductance.csv": {
+              "size": 500013
+            },
+            "2015_2016_winter_E1_dissoxy.csv": {
+              "size": 1396269
+            },
+            "2015_2016_winter_E1_temperature.csv": {
+              "size": 11166136
+            },
+            "E1_2016metadata.xml": {
+              "size": 26819
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance and oxygen from Lake E1, North Slope, Alaska, 2013-2014": {
+        "fileList": [
+          {
+            "2013_2014_winter_E1_temperature.csv": {
+              "size": 12183564
+            },
+            "2013_2014_winter_E1_spconductance.csv": {
+              "size": 450249
+            },
+            "2014_summer_E1_temperature.csv": {
+              "size": 4790928
+            },
+            "2014_summer_E1_spconductance.csv": {
+              "size": 162291
+            },
+            "2013_2014_winter_E1_dissoxy.csv": {
+              "size": 2131042
+            },
+            "E1_2014metadata.xml": {
+              "size": 47376
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance and oxygen from Lake E1, North Slope, Alaska, 2012-2013": {
+        "fileList": [
+          {
+            "2013_summer_E1_temperature.csv": {
+              "size": 3782958
+            },
+            "2012_2013_winter_E1_temperature.csv": {
+              "size": 11118770
+            },
+            "E1_2013metadata.xml": {
+              "size": 32211
+            }
+          }
+        ]
+      },
+      "Time series of water temperature, specific conductance and oxygen from Lake E1, North Slope, Alaska, 2014-2015": {
+        "fileList": [
+          {
+            "2014_2015_winter_E1_temperature.csv": {
+              "size": 9679469
+            },
+            "2015_summer_E1_spconductance.csv": {
+              "size": 183913
+            },
+            "2014_2015_winter_E1_dissoxy.csv": {
+              "size": 1603002
+            },
+            "2014_2015_winter_E1_spconductance.csv": {
+              "size": 586667
+            },
+            "2015_summer_E1_temperature.csv": {
+              "size": 5687791
+            },
+            "E1_2015metadata.xml": {
+              "size": 45972
+            }
+          }
+        ]
+      }
+    }
+  }
+}

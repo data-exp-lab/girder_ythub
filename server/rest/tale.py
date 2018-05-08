@@ -1,10 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import re
+import requests
+
 from girder.api import access
 from girder.api.docs import addModel
 from girder.api.describe import Description, autoDescribeRoute
-from girder.api.rest import Resource, filtermodel, RestException
+from girder.api.rest import Resource, filtermodel, RestException,\
+    setResponseHeader, setContentDisposition
+
 from girder.constants import AccessType, SortDir, TokenScope
+from girder.utility import ziputil
 from ..schema.tale import taleModel
 
 
@@ -24,6 +30,7 @@ class Tale(Resource):
         self.route('DELETE', (':id',), self.deleteTale)
         self.route('GET', (':id', 'access'), self.getTaleAccess)
         self.route('PUT', (':id', 'access'), self.updateTaleAccess)
+        self.route('GET', (':id', 'export'), self.exportTale)
 
     @access.public
     @filtermodel(model='tale', plugin='wholetale')
@@ -177,3 +184,67 @@ class Tale(Resource):
         user = self.getCurrentUser()
         return self.model('tale', 'wholetale').setAccessList(
             tale, access, save=True, user=user, setPublic=public, publicFlags=publicFlags)
+
+    @access.user
+    @autoDescribeRoute(
+        Description('Export a tale.')
+        .modelParam('id', model='tale', plugin='wholetale', level=AccessType.READ)
+        .responseClass('tale')
+        .produces('application/zip')
+        .errorResponse('ID was invalid.', 404)
+        .errorResponse('You are not authorized to export this tale.', 403)
+    )
+    def exportTale(self, tale, params):
+        user = self.getCurrentUser()
+        folder = self.model('folder').load(
+            tale['folderId'],
+            user=user,
+            level=AccessType.READ,
+            exc=True)
+        image = self.model('image', 'wholetale').load(
+            tale['imageId'], user=user, level=AccessType.READ, exc=True)
+        recipe = self.model('recipe', 'wholetale').load(
+            image['recipeId'], user=user, level=AccessType.READ, exc=True)
+
+        # Construct a sanitized name for the ZIP archive using a whitelist
+        # approach
+        zip_name = re.sub('[^a-zA-Z0-9-]', '_', tale['title'])
+
+        setResponseHeader('Content-Type', 'application/zip')
+        setContentDisposition(zip_name + '.zip')
+
+        # Temporary: Fetch the GitHub archive of the recipe. Note that this is
+        # done in a streaming fashion because ziputil makes use of generators
+        # when files are added to the zip
+        url = '{}/archive/{}.tar.gz'.format(recipe['url'], recipe['commitId'])
+        req = requests.get(url, stream=True)
+
+        def stream():
+            zip = ziputil.ZipGenerator(zip_name)
+
+            # Add files from the Tale folder
+            for (path, f) in self.model('folder').fileList(folder,
+                                                           user=user,
+                                                           subpath=False):
+
+                for data in zip.addFile(f, path):
+                    yield data
+
+            # Temporary: Add Image metadata
+            for data in zip.addFile(lambda: image.__str__(), 'image.txt'):
+                yield data
+
+            # Temporary: Add Recipe metadata
+            for data in zip.addFile(lambda: recipe.__str__(), 'recipe.txt'):
+                yield data
+
+            # Temporary: Add a zip of the recipe archive
+            # TODO: Grab proper filename from header
+            # e.g. 'Content-Disposition': 'attachment; filename= \
+            # jupyter-base-b45f9a575602e6038b4da6333f2c3e679ee01c58.tar.gz'
+            for data in zip.addFile(req.iter_content, 'archive.tar.gz'):
+                yield data
+
+            yield zip.footer()
+
+        return stream

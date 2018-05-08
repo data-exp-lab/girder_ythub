@@ -193,6 +193,15 @@ class TaleTestCase(base.TestCase):
                 continue
             self.assertEqual(resp.json[key], tale[key])
 
+        resp = self.request(
+            path='/tale/{_id}/export'.format(**tale), 
+            method='GET', 
+            user=self.user,
+            type='application/octet-stream',
+            isJson=False)
+
+        self.assertStatus(resp, 200)
+
     def testTaleAccess(self):
         with httmock.HTTMock(mockReposRequest, mockCommitRequest,
                              mockOtherRequest):

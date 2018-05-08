@@ -4,16 +4,16 @@ import requests
 
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
-from girder.api.rest import boundHandler, RestException, filtermodel
+from girder.api.rest import boundHandler, filtermodel
 from girder.constants import TokenScope
 from girder.utility.model_importer import ModelImporter
 from ..dataone_register import \
     D1_BASE, \
-    esc, \
-    get_aggregated_identifiers,\
-    get_documenting_identifiers, \
-    query, \
-    unesc
+    extract_metadata_docs, \
+    get_documents, \
+    extract_data_docs, \
+    extract_resource_docs, \
+    check_multiple_metadata
 
 
 def register_http_resource(parent, parentType, progress, user, url, name):
@@ -40,41 +40,14 @@ def register_DataONE_resource(parent, parentType, progress, user, pid, name=None
     """Create a package description (Dict) suitable for dumping to JSON."""
     progress.update(increment=1, message='Processing package {}.'.format(pid))
 
-    # query for things in the resource map
-    result = query("resourceMap:\"{}\"".format(esc(pid)),
-                   ["identifier", "formatType", "title", "size", "formatId",
-                    "fileName", "documents"])
-
-    if 'response' not in result or 'docs' not in result['response']:
-        raise RestException(
-            "Failed to get a result for the query\n {}".format(result))
-
-    docs = result['response']['docs']
+    # query for things in the resource map. At this point, it is assumed that the pid
+    # has been correctly identified by the user in the UI.
+    docs = get_documents(pid)
 
     # Filter the Solr result by TYPE so we can construct the package
-    metadata = [doc for doc in docs if doc['formatType'] == 'METADATA']
-    data = [doc for doc in docs if doc['formatType'] == 'DATA']
-    children = [doc for doc in docs if doc['formatType'] == 'RESOURCE']
-
-    # Verify what's in Solr is matching
-    aggregation = get_aggregated_identifiers(pid)
-    pids = set([unesc(doc['identifier']) for doc in docs])
-
-    if aggregation != pids:
-        raise RestException(
-            "The contents of the Resource Map don't match what's in the Solr "
-            "index. This is unexpected and unhandled.")
-
-    # Find the primary/documenting metadata so we can later on find the
-    # folder name
-    # TODO: Grabs the resmap a second time, fix this
-    documenting = get_documenting_identifiers(pid)
-
-    # Stop now if multiple objects document others
-    if len(documenting) != 1:
-        raise RestException(
-            "Found two objects in the resource map documenting other objects. "
-            "This is unexpected and unhandled.")
+    metadata = extract_metadata_docs(docs)
+    data = extract_data_docs(docs)
+    children = extract_resource_docs(docs)
 
     # Add in URLs to resolve each metadata/data object by
     for i in range(len(metadata)):
@@ -90,9 +63,7 @@ def register_DataONE_resource(parent, parentType, progress, user, pid, name=None
     # we need to figure out which one is the 'main' or 'documenting' one.
     primary_metadata = [doc for doc in metadata if 'documents' in doc]
 
-    if len(primary_metadata) > 1:
-        raise RestException("Multiple documenting metadata objects found. "
-                            "This isn't implemented.")
+    check_multiple_metadata(primary_metadata)
 
     # Create a Dict to store folders' information
     # the data key is a concatenation of the data and any metadata objects
