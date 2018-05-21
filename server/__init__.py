@@ -258,6 +258,17 @@ def load(info):
     info['apiRoot'].wholetale = wholeTale()
     info['apiRoot'].instance = Instance()
     info['apiRoot'].tale = Tale()
+
+    from girder.plugins.wholetale.models.tale import Tale as TaleModel
+    from girder.plugins.wholetale.models.tale import _currentTaleFormat
+    q = {
+        '$or': [
+            {'format': {'$exists': False}},
+            {'format': {'$lt': _currentTaleFormat}}
+        ]}
+    for obj in TaleModel().find(q):
+        TaleModel().save(obj, validate=True)
+
     info['apiRoot'].recipe = Recipe()
     info['apiRoot'].dataset = Dataset()
     image = Image()
