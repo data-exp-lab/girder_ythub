@@ -7,13 +7,14 @@ import ssl
 import time
 
 from girder import logger
-from ..constants import API_VERSION, NotebookStatus
+from ..constants import API_VERSION, NotebookStatus, PluginSettings
 from girder.api.rest import getApiUrl
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
 from girder.models.notification import \
     ProgressState, Notification
+from girder.models.setting import Setting
 from girder.plugins.worker import getCeleryApp, getWorkerApiUrl
 from tornado.httpclient import HTTPRequest, HTTPError, HTTPClient
 # FIXME look into removing tornado
@@ -172,11 +173,11 @@ class Notebook(AccessControlledModel):
         serviceInfo = serviceTask.get()
         serviceInfo.update(volumeInfo)
 
-        netloc = urllib.parse.urlsplit(getApiUrl()).netloc
-        domain = '{}.{}'.format(
-            serviceInfo['serviceId'], netloc.split(':')[0].split('.', 1)[1])
-        # FIXME: bring back https
-        url = 'http://{}/{}'.format(domain, serviceInfo.get('urlPath', ''))
+        tmpnb_url = urllib.parse.urlsplit(
+            Setting().get(PluginSettings.TMPNB_URL)
+        )
+        domain = f"{serviceInfo['serviceId']}.{tmpnb_url.netloc}"
+        url = f"{tmpnb_url.scheme}://{domain}/{serviceInfo.get('urlPath', '')}"
 
         Notification().updateProgress(
             notification, total=total, current=2.5,
