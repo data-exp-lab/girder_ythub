@@ -16,7 +16,7 @@ var PaginateRaftsWidget = View.extend({
             });
         },
         'click button.g-raft-create-button': function (event) {
-            router.navigate('raft/new', {trigger: true});
+            router.navigate('newraft', {trigger: true});
         }
     },
     /**

@@ -30,7 +30,7 @@ router.route('rafts', 'raftList', () => {
     events.trigger('g:navigateTo', RaftListView);
 });
 
-router.route('raft/new', 'newRaft', () => {
+router.route('newraft', 'newRaft', () => {
     events.trigger('g:navigateTo', CreateRaftView);
 });
 
