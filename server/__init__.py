@@ -8,6 +8,7 @@ import six
 
 from girder import events
 from girder.models.model_base import ValidationException
+from girder.models.item import Item
 from girder.api import access
 from girder.api.describe import Description, describeRoute
 from girder.api.rest import boundHandler, loadmodel
@@ -236,4 +237,7 @@ def load(info):
     info['apiRoot'].folder.route('GET', (':id', 'rootpath'), folderRootpath)
     info['apiRoot'].folder.route('PUT', (':id', 'check'), checkFolder)
     info['apiRoot'].collection.route('PUT', (':id', 'check'), checkCollection)
+
+    Item().ensureIndex(['meta.isRaft', {'sparse': True}])
+
     events.bind('model.user.save.created', 'ythub', addDefaultFolders)
