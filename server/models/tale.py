@@ -11,6 +11,9 @@ from girder.models.model_base import \
 from girder.constants import AccessType
 
 
+# Whenever the Tale object schema is modified (e.g. fields are added or
+# removed) increase `_currentTaleFormat` to retroactively apply those
+# changes to existing Tales.
 _currentTaleFormat = 1
 
 
