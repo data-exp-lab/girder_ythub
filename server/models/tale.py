@@ -11,6 +11,12 @@ from girder.models.model_base import \
 from girder.constants import AccessType
 
 
+# Whenever the Tale object schema is modified (e.g. fields are added or
+# removed) increase `_currentTaleFormat` to retroactively apply those
+# changes to existing Tales.
+_currentTaleFormat = 1
+
+
 class Tale(AccessControlledModel):
 
     def initialize(self):
@@ -25,15 +31,19 @@ class Tale(AccessControlledModel):
         })
         self.modifiableFields = {
             'title', 'description', 'public', 'config', 'updated', 'authors',
-            'category', 'icon', 'illustration'
+            'category', 'icon', 'iframe', 'illustration'
         }
         self.exposeFields(
             level=AccessType.READ,
-            fields=({'_id', 'folderId', 'imageId', 'creatorId', 'created'} |
-                    self.modifiableFields))
+            fields=({'_id', 'folderId', 'imageId', 'creatorId', 'created',
+                     'format'} | self.modifiableFields))
         self.exposeFields(level=AccessType.ADMIN, fields={'published'})
 
     def validate(self, tale):
+        if 'iframe' not in tale:
+            tale['iframe'] = False
+        if 'format' not in tale:
+            tale['format'] = _currentTaleFormat
         return tale
 
     def setPublished(self, tale, publish, save=False):
@@ -75,7 +85,8 @@ class Tale(AccessControlledModel):
 
     def createTale(self, image, folder, creator=None, save=True, title=None,
                    description=None, public=None, config=None, published=False,
-                   authors=None, icon=None, category=None, illustration=None):
+                   authors=None, icon=None, category=None, illustration=None,
+                   iframe=False):
         if creator is None:
             creatorId = None
         else:
@@ -94,8 +105,10 @@ class Tale(AccessControlledModel):
             'creatorId': creatorId,
             'description': description,
             'folderId': ObjectId(folder['_id']),
+            'format': _currentTaleFormat,
             'created': now,
             'icon': icon,
+            'iframe': iframe,
             'imageId': ObjectId(image['_id']),
             'illustration': illustration,
             'title': title,

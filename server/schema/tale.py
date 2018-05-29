@@ -33,6 +33,10 @@ taleModel = {
             "type": "string",
             "description": "ID of a data folder used by the Tale"
         },
+        "format": {
+            "type": "integer",
+            "description": "Tale format specification"
+        },
         "public": {
             "type": "boolean",
             "description": "If set to true the Tale is accessible by anyone.",
@@ -74,6 +78,10 @@ taleModel = {
         "illustration": {
             "type": "string",
             "description": "A URL to an image depicturing the content of the Tale"
+        },
+        "iframe": {
+            "type": "boolean",
+            "description": "If 'true', the tale can be embedded in an iframe"
         },
         "icon": {
             "type": "string",
