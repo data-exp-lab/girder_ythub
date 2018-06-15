@@ -3,6 +3,26 @@
 from girder.api.docs import addModel
 
 
+dataResourceSchema = {
+    'title': 'dataResource',
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'description': 'A schema representing data elements used in WholeTale',
+    'type': 'object',
+    'properties': {
+        'type': {
+            'type': 'string',
+            'enum': ['item', 'folder'],
+            'description': 'Either a Girder item or a Girder folder'
+        },
+        'id': {
+            'type': 'string',
+            'description': 'Girder object id'
+        }
+    },
+    'required': ['type', 'id']
+}
+
+
 dataMapSchema = {
     'title': 'dataMap',
     '$schema': 'http://json-schema.org/draft-04/schema#',

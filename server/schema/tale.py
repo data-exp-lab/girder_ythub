@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .misc import containerConfigSchema
+from .misc import containerConfigSchema, dataResourceSchema
 
 taleModel = {
     "definitions": {
@@ -9,7 +9,7 @@ taleModel = {
     },
     "description": "Object representing a Tale.",
     "required": [
-        "folderId",
+        "data",
         "imageId"
     ],
     "properties": {
@@ -31,7 +31,12 @@ taleModel = {
         },
         "folderId": {
             "type": "string",
-            "description": "ID of a data folder used by the Tale"
+            "description": "ID of a folder containing copy of tale['data']"
+        },
+        "data": {
+            "type": "array",
+            "items": dataResourceSchema,
+            "description": "Resources used to create Tale's data folder"
         },
         "format": {
             "type": "integer",
