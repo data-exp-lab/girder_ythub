@@ -4,27 +4,27 @@ import datetime
 
 from bson.objectid import ObjectId
 
-from ..constants import WORKSPACE_NAME
+from ..constants import WORKSPACE_NAME, DATADIRS_NAME
 from ..utils import getOrCreateRootFolder
-from girder.models.model_base import \
-    AccessControlledModel
+from girder.models.model_base import AccessControlledModel
+from girder.models.folder import Folder
+from girder.models.user import User
 from girder.constants import AccessType
+from girder.exceptions import \
+    GirderException, ValidationException
 
 
 # Whenever the Tale object schema is modified (e.g. fields are added or
 # removed) increase `_currentTaleFormat` to retroactively apply those
 # changes to existing Tales.
-_currentTaleFormat = 1
+_currentTaleFormat = 2
 
 
 class Tale(AccessControlledModel):
 
     def initialize(self):
         self.name = 'tale'
-        self.ensureIndices(
-            ('folderId', 'title', 'imageId',
-             ([('folderId', 1), ('title', 1), ('imageId', 1)], {}))
-        )
+        self.ensureIndices(('imageId', ([('imageId', 1)], {})))
         self.ensureTextIndex({
             'title': 10,
             'description': 1
@@ -36,14 +36,29 @@ class Tale(AccessControlledModel):
         self.exposeFields(
             level=AccessType.READ,
             fields=({'_id', 'folderId', 'imageId', 'creatorId', 'created',
-                     'format'} | self.modifiableFields))
+                     'format', 'data'} | self.modifiableFields))
         self.exposeFields(level=AccessType.ADMIN, fields={'published'})
 
     def validate(self, tale):
         if 'iframe' not in tale:
             tale['iframe'] = False
-        if 'format' not in tale:
-            tale['format'] = _currentTaleFormat
+        if tale.get('format', 0) < 2:
+            dataFolder = getOrCreateRootFolder(DATADIRS_NAME)
+            try:
+                origFolder = Folder().load(tale['folderId'], force=True, exc=True)
+            except ValidationException:
+                raise GirderException(
+                    'Tale ({_id}) references folder ({folderId}) that does not exist'.format(**tale))
+            if origFolder.get('creatorId'):
+                creator = User().load(origFolder['creatorId'], force=True)
+            else:
+                creator = None
+            tale['data'] = {'type': 'folder', 'id': tale.pop('folderId')}
+            newFolder = Folder().copyFolder(
+                origFolder, parent=dataFolder, name=str(tale['_id']),
+                creator=creator, progress=False)
+            tale['folderId'] = newFolder['_id']
+        tale['format'] = _currentTaleFormat
         return tale
 
     def setPublished(self, tale, publish, save=False):
@@ -129,7 +144,13 @@ class Tale(AccessControlledModel):
             self.createWorkspace(tale, creator=creator)
         return tale
 
+    def createDataMountpoint(self, tale, creator=None):
+        return self._createAuxFolder(self, tale, DATADIRS_NAME, creator=creator)
+
     def createWorkspace(self, tale, creator=None):
+        return self._createAuxFolder(self, tale, WORKSPACE_NAME, creator=creator)
+
+    def _createAuxFolder(self, tale, rootFolderName, creator=None):
         if creator is None:
             creator = self.model('user').load(tale['creatorId'], force=True)
 
@@ -138,16 +159,16 @@ class Tale(AccessControlledModel):
         else:
             public = False
 
-        workspaceFolder = getOrCreateRootFolder(WORKSPACE_NAME)
-        taleWorkspace = self.model('folder').createFolder(
-            workspaceFolder, str(tale['_id']), parentType='folder',
+        rootFolder = getOrCreateRootFolder(rootFolderName)
+        auxFolder = self.model('folder').createFolder(
+            rootFolder, str(tale['_id']), parentType='folder',
             public=public, reuseExisting=True)
         self.setUserAccess(
-            taleWorkspace, user=creator, level=AccessType.ADMIN,
+            auxFolder, user=creator, level=AccessType.ADMIN,
             save=True)
-        taleWorkspace = self.model('folder').setMetadata(
-            taleWorkspace, {'taleId': str(tale['_id'])})
-        return taleWorkspace
+        auxFolder = self.model('folder').setMetadata(
+            auxFolder, {'taleId': str(tale['_id'])})
+        return auxFolder
 
     def updateTale(self, tale):
         """
