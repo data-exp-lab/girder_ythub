@@ -7,6 +7,7 @@ from bson.objectid import ObjectId
 from ..constants import WORKSPACE_NAME, DATADIRS_NAME
 from ..utils import getOrCreateRootFolder
 from girder.models.model_base import AccessControlledModel
+from girder.models.item import Item
 from girder.models.folder import Folder
 from girder.models.user import User
 from girder.constants import AccessType
@@ -53,7 +54,7 @@ class Tale(AccessControlledModel):
                 creator = User().load(origFolder['creatorId'], force=True)
             else:
                 creator = None
-            tale['data'] = {'type': 'folder', 'id': tale.pop('folderId')}
+            tale['data'] = [{'type': 'folder', 'id': tale.pop('folderId')}]
             newFolder = Folder().copyFolder(
                 origFolder, parent=dataFolder, name=str(tale['_id']),
                 creator=creator, progress=False)
@@ -98,7 +99,7 @@ class Tale(AccessControlledModel):
                 limit=limit, offset=offset):
             yield r
 
-    def createTale(self, image, folder, creator=None, save=True, title=None,
+    def createTale(self, image, data, creator=None, save=True, title=None,
                    description=None, public=None, config=None, published=False,
                    authors=None, icon=None, category=None, illustration=None,
                    iframe=False):
@@ -118,8 +119,8 @@ class Tale(AccessControlledModel):
             'category': category,
             'config': config,
             'creatorId': creatorId,
+            'data': data,
             'description': description,
-            'folderId': ObjectId(folder['_id']),
             'format': _currentTaleFormat,
             'created': now,
             'icon': icon,
@@ -142,13 +143,25 @@ class Tale(AccessControlledModel):
         if save:
             tale = self.save(tale)
             self.createWorkspace(tale, creator=creator)
+            parent = self.createDataMountpoint(tale, creator=creator)
+            tale['folderId'] = parent['_id']
+            for obj in data:
+                if obj['type'] == 'folder':
+                    folder = Folder().load(obj['id'], user=creator)
+                    Folder().copyFolder(
+                        folder, parent=parent, creator=creator,
+                        progress=False)
+                elif obj['type'] == 'item':
+                    item = Item().load(obj['id'], user=creator)
+                    Item().copyItem(item, creator, folder=parent)
+            tale = self.save(tale)
         return tale
 
     def createDataMountpoint(self, tale, creator=None):
-        return self._createAuxFolder(self, tale, DATADIRS_NAME, creator=creator)
+        return self._createAuxFolder(tale, DATADIRS_NAME, creator=creator)
 
     def createWorkspace(self, tale, creator=None):
-        return self._createAuxFolder(self, tale, WORKSPACE_NAME, creator=creator)
+        return self._createAuxFolder(tale, WORKSPACE_NAME, creator=creator)
 
     def _createAuxFolder(self, tale, rootFolderName, creator=None):
         if creator is None:
