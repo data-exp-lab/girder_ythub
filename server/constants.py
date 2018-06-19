@@ -9,6 +9,7 @@ CATALOG_NAME = 'WholeTale Catalog'
 WORKSPACE_NAME = 'WholeTale Workspaces'
 DATADIRS_NAME = 'WholeTale Data Mountpoints'
 
+
 class HarvesterType:
     """
     All possible data harverster implementation types.

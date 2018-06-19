@@ -49,7 +49,8 @@ class Tale(AccessControlledModel):
                 origFolder = Folder().load(tale['folderId'], force=True, exc=True)
             except ValidationException:
                 raise GirderException(
-                    'Tale ({_id}) references folder ({folderId}) that does not exist'.format(**tale))
+                    ('Tale ({_id}) references folder ({folderId}) '
+                     'that does not exist').format(**tale))
             if origFolder.get('creatorId'):
                 creator = User().load(origFolder['creatorId'], force=True)
             else:
