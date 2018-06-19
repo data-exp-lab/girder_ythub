@@ -109,7 +109,7 @@ class Tale(AccessControlledModel):
             creatorId = creator.get('_id', None)
 
         if title is None:
-            title = '{} with {}'.format(image['fullName'], folder['name'])
+            title = '{} with {}'.format(image['fullName'], DATADIRS_NAME)
         # if illustration is None:
             # Get image from SILS
 
