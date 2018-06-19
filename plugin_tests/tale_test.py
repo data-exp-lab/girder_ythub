@@ -154,6 +154,7 @@ class TaleTestCase(base.TestCase):
 
         resp = self.request(
             path='/tale', method='GET', user=self.admin,
+
             params={}
         )
         self.assertStatusOk(resp)
@@ -167,15 +168,6 @@ class TaleTestCase(base.TestCase):
         self.assertEqual(len(resp.json), 2)
         self.assertEqual(set([_['_id'] for _ in resp.json]),
                          {tale['_id'], new_tale['_id']})
-
-        #resp = self.request(
-        #    path='/tale', method='GET', user=self.user,
-        #    params={'folderId': publicFolder['_id']}
-        #)
-        #self.assertStatusOk(resp)
-        #self.assertEqual(len(resp.json), 1)
-        #self.assertEqual(set([_['_id'] for _ in resp.json]),
-        #                 {tale['_id']})
 
         resp = self.request(
             path='/tale', method='GET', user=self.user,
@@ -215,8 +207,8 @@ class TaleTestCase(base.TestCase):
             self.assertEqual(resp.json[key], tale[key])
 
         resp = self.request(
-            path='/tale/{_id}/export'.format(**tale), 
-            method='GET', 
+            path='/tale/{_id}/export'.format(**tale),
+            method='GET',
             user=self.user,
             type='application/octet-stream',
             isJson=False)
