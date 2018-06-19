@@ -7,7 +7,7 @@ from girder import events
 API_VERSION = '2.0'
 CATALOG_NAME = 'WholeTale Catalog'
 WORKSPACE_NAME = 'WholeTale Workspaces'
-
+DATADIRS_NAME = 'WholeTale Data Mountpoints'
 
 class HarvesterType:
     """
