@@ -3,3 +3,4 @@ cryptography
 tornado
 celery[redis]
 requests
+git+https://github.com/whole-tale/gwvolman#egg=gwvolman
