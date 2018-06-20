@@ -84,6 +84,14 @@ containerConfigSchema = {
         'cpuShares': {
             'type': 'string',
         },
+        'environment': {
+            'type': 'array',
+            'description': 'List of environment variables passed to a container',
+            'items': {
+                'type': 'string',
+                'description': 'Environment variable, in the form KEY=val'
+            }
+        },
         'memLimit': {
             'type': 'string',
         },
