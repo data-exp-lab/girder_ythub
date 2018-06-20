@@ -49,7 +49,8 @@ class Tale(AccessControlledModel):
                 origFolder = Folder().load(tale['folderId'], force=True, exc=True)
             except ValidationException:
                 raise GirderException(
-                    'Tale ({_id}) references folder ({folderId}) that does not exist'.format(**tale))
+                    ('Tale ({_id}) references folder ({folderId}) '
+                     'that does not exist').format(**tale))
             if origFolder.get('creatorId'):
                 creator = User().load(origFolder['creatorId'], force=True)
             else:
@@ -69,15 +70,15 @@ class Tale(AccessControlledModel):
             tale = self.save(tale)
         return tale
 
-    def list(self, user=None, folder=None, image=None, limit=0, offset=0,
+    def list(self, user=None, data=None, image=None, limit=0, offset=0,
              sort=None, currentUser=None):
         """
         List a page of jobs for a given user.
 
         :param user: The user who created the tale.
         :type user: dict or None
-        :param folder: The folder that's being used by the tale.
-        :type folder: dict or None
+        :param data: The object array that's being used by the tale.
+        :type data: dict or None
         :param image: The Image that's being used by the tale.
         :type image: dict or None
         :param limit: The page limit.
@@ -88,8 +89,8 @@ class Tale(AccessControlledModel):
         cursor_def = {}
         if user is not None:
             cursor_def['creatorId'] = user['_id']
-        if folder is not None:
-            cursor_def['folderId'] = folder['_id']
+        if data is not None:
+            cursor_def['data'] = data
         if image is not None:
             cursor_def['imageId'] = image['_id']
 

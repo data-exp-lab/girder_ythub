@@ -38,14 +38,13 @@ class Tale(Resource):
         Description('Return all the tales accessible to the user')
         .param('userId', "The ID of the tale's creator.", required=False)
         .param('imageId', "The ID of the tale's image.", required=False)
-        .param('folderId', "The ID of the tale's folder.", required=False)
         .param('text', ('Perform a full text search for recipe with matching '
                         'Title or description.'), required=False)
         .responseClass('tale', array=True)
         .pagingParams(defaultSort='lowerName',
                       defaultSortDir=SortDir.DESCENDING)
     )
-    def listTales(self, userId, imageId, folderId, text, limit, offset, sort,
+    def listTales(self, userId, imageId, text, limit, offset, sort,
                   params):
         currentUser = self.getCurrentUser()
         if imageId:
@@ -53,12 +52,6 @@ class Tale(Resource):
                 imageId, user=currentUser, level=AccessType.READ, exc=True)
         else:
             image = None
-
-        if folderId:
-            folder = self.model('folder').load(
-                folderId, user=currentUser, level=AccessType.READ, exc=True)
-        else:
-            folder = None
 
         if userId:
             user = self.model('user').load(userId, force=True, exc=True)
@@ -70,7 +63,7 @@ class Tale(Resource):
                 text, user=user, limit=limit, offset=offset, sort=sort))
         else:
             return list(self.model('tale', 'wholetale').list(
-                user=user, folder=folder, image=image,
+                user=user, data=None, image=image,
                 currentUser=currentUser,
                 offset=offset, limit=limit, sort=sort))
 

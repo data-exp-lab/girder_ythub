@@ -151,14 +151,15 @@ class Instance(Resource):
             userDataFolder = path_util.lookUpPath(
                 '/user/%s/Data' % user['login'], user)
             folder = userDataFolder['document']
+            data = [{'type': 'folder', 'id': folder['_id']}]
             try:
                 # Check if it already exists
-                tale = next(taleModel.list(user=None, folder=folder, image=image,
+                tale = next(taleModel.list(user=None, data=data, image=image,
                                            currentUser=user))
             except StopIteration:
                 title = 'Testing %s' % image['fullName']
                 tale = taleModel.createTale(
-                    image, folder, creator=user, save=True,
+                    image, data, creator=user, save=True,
                     title=title, description=None, public=False)
 
         instanceModel = self.model('instance', 'wholetale')
