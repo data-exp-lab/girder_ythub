@@ -9,7 +9,7 @@ taleModel = {
     },
     "description": "Object representing a Tale.",
     "required": [
-        "data",
+        "involatileData",
         "imageId"
     ],
     "properties": {
@@ -33,7 +33,7 @@ taleModel = {
             "type": "string",
             "description": "ID of a folder containing copy of tale['data']"
         },
-        "data": {
+        "involatileData": {
             "type": "array",
             "items": dataResourceSchema,
             "description": "Resources used to create Tale's data folder"
