@@ -37,7 +37,7 @@ class Tale(AccessControlledModel):
         self.exposeFields(
             level=AccessType.READ,
             fields=({'_id', 'folderId', 'imageId', 'creatorId', 'created',
-                     'format', 'data'} | self.modifiableFields))
+                     'format', 'involatileData'} | self.modifiableFields))
         self.exposeFields(level=AccessType.ADMIN, fields={'published'})
 
     def validate(self, tale):
@@ -55,7 +55,9 @@ class Tale(AccessControlledModel):
                 creator = User().load(origFolder['creatorId'], force=True)
             else:
                 creator = None
-            tale['data'] = [{'type': 'folder', 'id': tale.pop('folderId')}]
+            tale['involatileData'] = [
+                {'type': 'folder', 'id': tale.pop('folderId')}
+            ]
             newFolder = Folder().copyFolder(
                 origFolder, parent=dataFolder, name=str(tale['_id']),
                 creator=creator, progress=False)
@@ -90,7 +92,7 @@ class Tale(AccessControlledModel):
         if user is not None:
             cursor_def['creatorId'] = user['_id']
         if data is not None:
-            cursor_def['data'] = data
+            cursor_def['involatileData'] = data
         if image is not None:
             cursor_def['imageId'] = image['_id']
 
@@ -120,7 +122,7 @@ class Tale(AccessControlledModel):
             'category': category,
             'config': config,
             'creatorId': creatorId,
-            'data': data,
+            'involatileData': data,
             'description': description,
             'format': _currentTaleFormat,
             'created': now,

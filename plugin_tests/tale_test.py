@@ -58,7 +58,8 @@ class TaleTestCase(base.TestCase):
         )
         self.assertStatus(resp, 400)
         self.assertEqual(resp.json, {
-            'message': ("Invalid JSON object for parameter tale: 'data' "
+            'message': ("Invalid JSON object for parameter tale: "
+                        "'involatileData' "
                         "is a required property"),
             'type': 'rest'
         })
@@ -87,9 +88,12 @@ class TaleTestCase(base.TestCase):
         resp = self.request(
             path='/tale', method='POST', user=self.user,
             type='application/json',
-            body=json.dumps(
-                {'imageId': str(self.image['_id']),
-                 'data': [{'type': 'folder', 'id': publicFolder['_id']}]})
+            body=json.dumps({
+                'imageId': str(self.image['_id']),
+                'involatileData': [
+                    {'type': 'folder', 'id': publicFolder['_id']}
+                ]
+            })
         )
         self.assertStatusOk(resp)
         tale = resp.json
@@ -118,7 +122,7 @@ class TaleTestCase(base.TestCase):
             type='application/json',
             user=self.user, body=json.dumps({
                 'folderId': tale['folderId'],
-                'data': tale['data'],
+                'involatileData': tale['involatileData'],
                 'imageId': tale['imageId'],
                 'title': 'new name',
                 'description': 'new description',
@@ -134,9 +138,12 @@ class TaleTestCase(base.TestCase):
         resp = self.request(
             path='/tale', method='POST', user=self.user,
             type='application/json',
-            body=json.dumps(
-                {'imageId': str(self.image['_id']),
-                 'data': [{'type': 'folder', 'id': privateFolder['_id']}]})
+            body=json.dumps({
+                'imageId': str(self.image['_id']),
+                'involatileData': [
+                    {'type': 'folder', 'id': privateFolder['_id']}
+                ]
+            })
         )
         self.assertStatusOk(resp)
         new_tale = resp.json
@@ -144,10 +151,13 @@ class TaleTestCase(base.TestCase):
         resp = self.request(
             path='/tale', method='POST', user=self.admin,
             type='application/json',
-            body=json.dumps(
-                {'imageId': str(self.image['_id']),
-                 'data': [{'type': 'folder', 'id': adminPublicFolder['_id']}],
-                 'public': False})
+            body=json.dumps({
+                'imageId': str(self.image['_id']),
+                'involatileData': [
+                    {'type': 'folder', 'id': adminPublicFolder['_id']}
+                ],
+                'public': False
+            })
         )
         self.assertStatusOk(resp)
         # admin_tale = resp.json
@@ -234,7 +244,9 @@ class TaleTestCase(base.TestCase):
                 body=json.dumps(
                     {
                         'imageId': str(self.image['_id']),
-                        'data': [{'type': 'folder', 'id': folder['_id']}],
+                        'involatileData': [
+                            {'type': 'folder', 'id': folder['_id']}
+                        ],
                         'public': True
                     })
             )
@@ -247,7 +259,9 @@ class TaleTestCase(base.TestCase):
                 body=json.dumps(
                     {
                         'imageId': str(self.image_admin['_id']),
-                        'data': [{'type': 'folder', 'id': folder['_id']}]
+                        'involatileData': [
+                            {'type': 'folder', 'id': folder['_id']}
+                        ]
                     })
             )
             self.assertStatusOk(resp)
