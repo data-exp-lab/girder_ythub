@@ -1,9 +1,15 @@
-from girder.utility.model_importer import ModelImporter
+from girder.models.collection import Collection
+from girder.models.folder import Folder
 
 
 def getOrCreateRootFolder(name):
-    collection = ModelImporter.model('collection').createCollection(
-        name, public=False, reuseExisting=True)
-    folder = ModelImporter.model('folder').createFolder(
+    collection = Collection().createCollection(
+        name, public=True, reuseExisting=True)
+    # For backward compat
+    if not collection['public']:
+        collection = Collection().save(
+            Collection().setPublic(collection, True)
+        )
+    folder = Folder().createFolder(
         collection, name, parentType='collection', public=True, reuseExisting=True)
     return folder
