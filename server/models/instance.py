@@ -6,6 +6,7 @@ import time
 import ssl
 
 from ..constants import API_VERSION, InstanceStatus
+from ..schema.misc import containerInfoSchema
 from girder import logger
 from girder.api.rest import getApiUrl
 from girder.constants import AccessType, SortDir
@@ -162,8 +163,8 @@ class Instance(AccessControlledModel):
         # Create single job
         volumeTask = create_volume.signature(args=[payload])
         serviceTask = launch_container.signature(queue='manager')
-        result = (volumeTask | serviceTask).apply_async()
-        return result.job
+        (volumeTask | serviceTask).apply_async()
+        return instance
 
     def updateInstance(self, instance):
         """
@@ -189,11 +190,13 @@ def finalizeInstance(event):
             domain = '{}.{}'.format(
                 service['name'], netloc.split(':')[0].split('.', 1)[1])
             url = 'https://{}/{}'.format(domain, service.get('urlPath', ''))
+            valid_keys = set(containerInfoSchema['properties'].keys())
+            containerInfo = {key: service.get(key, '') for key in valid_keys}
             # _wait_for_server(url)
             instance.update({
                 'url': url,
                 'status': InstanceStatus.RUNNING,
-                'containerInfo': service
+                'containerInfo': containerInfo
             })
         elif status == JobStatus.ERROR:
             instance['status'] = InstanceStatus.ERROR
