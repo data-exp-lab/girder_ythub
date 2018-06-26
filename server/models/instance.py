@@ -110,14 +110,16 @@ class Instance(AccessControlledModel):
         )
         instanceTask.get(timeout=TASK_TIMEOUT)
 
-        # queue = 'celery@{}'.format(instance['containerInfo']['nodeId'])
-        queue = 'manager'
-        if queue in active_queues:
-            volumeTask = app.send_task(
-                'gwvolman.tasks.remove_volume', args=[payload],
-                queue=instance['containerInfo']['nodeId']
-            )
-            volumeTask.get(timeout=TASK_TIMEOUT)
+        try:
+            queue = 'celery@{}'.format(instance['containerInfo']['nodeId'])
+            if queue in active_queues:
+                volumeTask = app.send_task(
+                    'gwvolman.tasks.remove_volume', args=[payload],
+                    queue=instance['containerInfo']['nodeId']
+                )
+                volumeTask.get(timeout=TASK_TIMEOUT)
+        except KeyError:
+            pass
 
         # TODO: handle error
         self.remove(instance)
