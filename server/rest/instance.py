@@ -6,7 +6,6 @@ from girder.api.docs import addModel
 from girder.api.rest import Resource, filtermodel, RestException
 from girder.constants import AccessType, SortDir
 from girder.utility import path as path_util
-from girder.plugins.jobs.models.job import Job as JobModel
 
 
 instanceModel = {
@@ -122,7 +121,7 @@ class Instance(Resource):
             instance, self.getCurrentToken())
 
     @access.user
-    @filtermodel(model=JobModel)
+    @filtermodel(model='instance', plugin='wholetale')
     @autoDescribeRoute(
         Description('Create a new instance')
         .notes('Instantiate a tale.')
@@ -132,7 +131,7 @@ class Instance(Resource):
                required=False)
         .param('name', 'A user-friendly, short name of the tale.',
                required=False)
-        .responseClass('job')
+        .responseClass('instance')
         .errorResponse('Read access was denied for the tale.', 403)
     )
     def createInstance(self, taleId, imageId, name, params):
