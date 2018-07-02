@@ -104,8 +104,7 @@ class Tale(AccessControlledModel):
 
     def createTale(self, image, data, creator=None, save=True, title=None,
                    description=None, public=None, config=None, published=False,
-                   authors=None, icon=None, category=None, illustration=None,
-                   iframe=False):
+                   authors=None, icon=None, category=None, illustration=None):
         if creator is None:
             creatorId = None
         else:
@@ -127,7 +126,7 @@ class Tale(AccessControlledModel):
             'format': _currentTaleFormat,
             'created': now,
             'icon': icon,
-            'iframe': iframe,
+            'iframe': image['iframe'],
             'imageId': ObjectId(image['_id']),
             'illustration': illustration,
             'title': title,

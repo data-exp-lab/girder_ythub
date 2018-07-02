@@ -30,6 +30,7 @@ instanceModel = {
         },
         'created': '2017-04-07T17:04:04.777000+00:00',
         'creatorId': '57c099af86ed1d0001733722',
+        'iframe': True,
         'lastActivity': '2017-04-07T17:04:04.777000+00:00',
         'name': 'test',
         'status': 0,
@@ -45,6 +46,10 @@ instanceModel = {
         },
         'created': {'type': 'string', 'format': 'date'},
         'creatorId': {'type': 'string'},
+        'iframe': {
+            'type': 'boolean',
+            'description': 'If "true", instance can be embedded in an iframe'
+        },
         'lastActivity': {'type': 'string', 'format': 'date'},
         'name': {'type': 'string'},
         'status': {'type': 'integer', 'format': 'int32',

@@ -60,7 +60,7 @@ class Instance(AccessControlledModel):
 
         self.exposeFields(
             level=AccessType.READ,
-            fields={'_id', 'created', 'creatorId', 'name', 'taleId'})
+            fields={'_id', 'created', 'creatorId', 'iframe', 'name', 'taleId'})
         self.exposeFields(
             level=AccessType.WRITE,
             fields={'containerInfo', 'lastActivity', 'status', 'url'})
@@ -140,6 +140,7 @@ class Instance(AccessControlledModel):
         instance = {
             'created': now,
             'creatorId': user['_id'],
+            'iframe': tale.get('iframe', False),
             'lastActivity': now,
             'name': name,
             'status': InstanceStatus.LAUNCHING,
