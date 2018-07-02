@@ -121,6 +121,7 @@ class Instance(Resource):
             instance, self.getCurrentToken())
 
     @access.user
+    @filtermodel(model='instance', plugin='wholetale')
     @autoDescribeRoute(
         Description('Create a new instance')
         .notes('Instantiate a tale.')
