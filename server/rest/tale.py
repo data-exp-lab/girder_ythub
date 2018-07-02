@@ -146,8 +146,7 @@ class Tale(Resource):
                                      'images/demo-graph2.jpg')),
                 authors=tale.get('authors', default_author),
                 category=tale.get('category', 'science'),
-                published=False,
-                iframe=bool(tale.get('iframe', False))
+                published=False
             )
 
     @access.user(scope=TokenScope.DATA_OWN)

@@ -47,6 +47,10 @@ imageModel = {
             "type": "string",
             "description": "A URL with an image icon"
         },
+        "iframe": {
+            "type": "boolean",
+            "description": "If 'true', the tale can be embedded in an iframe"
+        },
         "imageId": {
             "type": "string",
             "description": "A image used to build the image."
@@ -204,6 +208,8 @@ class Image(Resource):
                default=True)
         .param('icon', 'An icon representing the content of the image.',
                required=False)
+        .param('iframe', 'If "true", tales using this image can be embedded in an iframe',
+               ' Defaults to False.', dataType='boolean', default=False, required=False)
         .jsonParam('tags', 'A human readable labels for the image.',
                    required=False, schema=tagsSchema)
         .responseClass('image')
@@ -211,7 +217,7 @@ class Image(Resource):
         .errorResponse('Read/write access was denied for the image.', 403)
         .errorResponse('Tag already exists.', 409)
     )
-    def updateImage(self, image, name, description, public, icon, tags, params):
+    def updateImage(self, image, name, description, public, icon, iframe, tags, params):
         if name is not None:
             image['name'] = name
         if description is not None:
@@ -220,6 +226,8 @@ class Image(Resource):
             image['tags'] = tags
         if icon is not None:
             image['icon'] = icon
+        if iframe is not None:
+            image['iframe'] = iframe
         # TODO: tags magic
         self.model('image', 'wholetale').setPublic(image, public)
         return self.model('image', 'wholetale').updateImage(image)
@@ -250,6 +258,8 @@ class Image(Resource):
                ' Defaults to True.', dataType='boolean', required=False)
         .param('icon', 'An icon representing the content of the image.',
                required=False)
+        .param('iframe', 'If "true", tales using this image can be embedded in an iframe',
+               ' Defaults to False.', dataType='boolean', default=False, required=False)
         .jsonParam('tags', 'A human readable labels for the image.',
                    required=False, schema=tagsSchema)
         .jsonParam('config', 'Default image runtime configuration',
@@ -258,14 +268,14 @@ class Image(Resource):
         .errorResponse('Query parameter was invalid')
     )
     def createImage(self, recipeId, fullName, name, description, public, icon,
-                    tags, config, params):
+                    iframe, tags, config, params):
         user = self.getCurrentUser()
         recipe = self.model('recipe', 'wholetale').load(
             recipeId, user=user, level=AccessType.READ, exc=True)
         return self.model('image', 'wholetale').createImage(
             recipe, fullName, name=name, tags=tags, creator=user,
             save=True, parent=None, description=description, public=public,
-            config=config, icon=icon)
+            config=config, icon=icon, iframe=iframe)
 
     @access.user
     @autoDescribeRoute(
