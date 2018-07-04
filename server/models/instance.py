@@ -38,10 +38,11 @@ def _wait_for_server(url, timeout=30, wait_time=0.5):
         except HTTPError as http_error:
             code = http_error.code
             logger.info(
-                'Booting server at [%s], getting HTTP status [%s]',
-                url, code)
+                'Booting server at [%s], getting HTTP status [%s]', url, code)
             time.sleep(wait_time)
         except ssl.SSLError:
+            logger.info(
+                'Booting server at [%s], getting SSLError', url)
             time.sleep(wait_time)
         else:
             break
@@ -193,7 +194,7 @@ def finalizeInstance(event):
             url = 'https://{}/{}'.format(domain, service.get('urlPath', ''))
             valid_keys = set(containerInfoSchema['properties'].keys())
             containerInfo = {key: service.get(key, '') for key in valid_keys}
-            # _wait_for_server(url)
+            _wait_for_server(url)
             instance.update({
                 'url': url,
                 'status': InstanceStatus.RUNNING,
