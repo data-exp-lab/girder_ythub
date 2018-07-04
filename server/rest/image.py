@@ -289,13 +289,17 @@ class Image(Resource):
         user = self.getCurrentUser()
         recipe = self.model('recipe', 'wholetale').load(
             image['recipeId'], user=user, level=AccessType.READ, exc=True)
-        url = '{}/archive/{}.tar.gz'.format(recipe['url'], recipe['commitId'])
         jobTitle = 'Building image %s' % image['fullName']
         jobModel = Job()
         # Create a job to be handled by the worker plugin
+        args = (
+            str(image['_id']),
+            recipe['url'],
+            recipe['commitId']
+        )
         job = jobModel.createJob(
             title=jobTitle, type='build_image', handler='worker_handler',
-            user=user, public=False, args=(str(image['_id']), image['fullName'], url), kwargs={},
+            user=user, public=False, args=args, kwargs={},
             otherFields={
                 'celeryTaskName': 'gwvolman.tasks.build_image'
             })
