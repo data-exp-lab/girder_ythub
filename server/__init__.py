@@ -6,12 +6,13 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 import six
 
-from girder import events
+from girder import events, logprint
 from girder.api import access
 from girder.api.describe import Description, describeRoute, autoDescribeRoute
 from girder.api.rest import \
     boundHandler, loadmodel, RestException
 from girder.constants import AccessType, TokenScope, CoreEventHandler
+from girder.exceptions import GirderException
 from girder.models.model_base import ValidationException
 from girder.utility import assetstore_utilities, setting_utilities
 from girder.utility.model_importer import ModelImporter
@@ -268,7 +269,10 @@ def load(info):
             {'format': {'$lt': _currentTaleFormat}}
         ]}
     for obj in TaleModel().find(q):
-        TaleModel().save(obj, validate=True)
+        try:
+            TaleModel().save(obj, validate=True)
+        except GirderException as exc:
+            logprint(exc)
 
     info['apiRoot'].recipe = Recipe()
     info['apiRoot'].dataset = Dataset()
