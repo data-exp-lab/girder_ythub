@@ -59,8 +59,8 @@ class Tale(AccessControlledModel):
                 {'type': 'folder', 'id': tale.pop('folderId')}
             ]
             newFolder = Folder().copyFolder(
-                origFolder, parent=dataFolder, name=str(tale['_id']),
-                creator=creator, progress=False)
+                origFolder, parent=dataFolder, parentType='folder',
+                name=str(tale['_id']), creator=creator, progress=False)
             tale['folderId'] = newFolder['_id']
         tale['format'] = _currentTaleFormat
         return tale
@@ -151,8 +151,8 @@ class Tale(AccessControlledModel):
                 if obj['type'] == 'folder':
                     folder = Folder().load(obj['id'], user=creator)
                     Folder().copyFolder(
-                        folder, parent=parent, creator=creator,
-                        progress=False)
+                        folder, parent=parent, parentType='folder',
+                        creator=creator, progress=False)
                 elif obj['type'] == 'item':
                     item = Item().load(obj['id'], user=creator)
                     Item().copyItem(item, creator, folder=parent)
