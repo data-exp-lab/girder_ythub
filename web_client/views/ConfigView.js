@@ -8,34 +8,31 @@ import { restRequest } from 'girder/rest';
 import ConfigViewTemplate from '../templates/configView.pug';
 import '../stylesheets/configView.styl';
 
-var ConfigView = View.extend({
-    SETTING_KEYS: [
-        'ythub.tmpnb_internal_url',
-        'ythub.tmpnb_redirect_url',
-        'ythub.culling_period',
-        'ythub.culling_frequency',
-        'ythub.priv_key',
-        'ythub.pub_key'
-    ],
+var SETTING_KEYS = [
+    'ythub.tmpnb_internal_url',
+    'ythub.tmpnb_redirect_url',
+    'ythub.culling_period',
+    'ythub.culling_frequency',
+    'ythub.priv_key',
+    'ythub.pub_key'
+];
 
-    settingControlId: function(key) {
-        return '#' + key.replace(/(_|\.)/g, '-');
-    },
+var ConfigView = View.extend({
 
     events: {
         'submit #g-ythub-config-form': function (event) {
             event.preventDefault();
             this.$('#g-ythub-error-message').empty();
 
-            var settingsList = this.SETTING_KEYS.map(function(key) {
-                let value = this.$(this.settingControlId(key)).val()
+            var settingsList = SETTING_KEYS.map(function (key) {
+                let value = this.$(this.settingControlId(key)).val();
                 if (typeof value !== 'undefined' && !/key/.test(key)) {
                     value = value.trim();
                 }
                 return {
                     key: key,
                     value: value
-                }
+                };
             }, this);
 
             this._saveSettings(settingsList);
@@ -43,21 +40,22 @@ var ConfigView = View.extend({
         'click .g-generate-key': function (event) {
             event.preventDefault();
             restRequest({
-               type: 'POST',
-               path: 'ythub/genkey',
-               data: {}
+                type: 'POST',
+                url: 'ythub/genkey',
+                data: {}
             }).done(_.bind(function (resp) {
-               this.$('#ythub-priv-key').val(resp['ythub.priv_key']);
-               this.$('#ythub-pub-key').val(resp['ythub.pub_key']);
+                this.$('#ythub-priv-key').val(resp['ythub.priv_key']);
+                this.$('#ythub-pub-key').val(resp['ythub.pub_key']);
             }, this));
         }
     },
+
     initialize: function () {
         restRequest({
             type: 'GET',
-            path: 'system/setting',
+            url: 'system/setting',
             data: {
-                list: JSON.stringify(this.SETTING_KEYS)
+                list: JSON.stringify(SETTING_KEYS)
             }
         }).done(_.bind(function (resp) {
             this.settingVals = resp;
@@ -77,8 +75,8 @@ var ConfigView = View.extend({
         }
 
         if (this.settingVals) {
-            for (var i in this.SETTING_KEYS) {
-                var key = this.SETTING_KEYS[i];
+            for (var i in SETTING_KEYS) {
+                var key = SETTING_KEYS[i];
                 this.$(this.settingControlId(key)).val(this.settingVals[key]);
             }
         }
@@ -86,10 +84,14 @@ var ConfigView = View.extend({
         return this;
     },
 
+    settingControlId: function (key) {
+        return '#' + key.replace(/(_|\.)/g, '-');
+    },
+
     _saveSettings: function (settings) {
         restRequest({
             type: 'PUT',
-            path: 'system/setting',
+            url: 'system/setting',
             data: {
                 list: JSON.stringify(settings)
             },

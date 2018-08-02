@@ -1,0 +1,51 @@
+.g-body-title Create a new raft
+
+.g-creation-instruction.
+  A raft is a basic way of sharing data with other users of the yt Hub. At the bare minimum it consists of a folder with
+  data and a frontend to interact with it. Additionally you can add any number of scripts (e.g. jupyter notebooks, text
+  files etc.). Any time the user starts the raft, each script will be downloaded and put in their home directory.
+
+form#g-item-edit-form.modal-form(role="form")
+  .form-group
+    label.control-label(for="g-name") Name
+    input#g-name.input-sm.form-control(type="text", placeholder="Enter raft name")
+  .form-group
+    label.control-label Description (optional)
+    .g-description-editor-container
+  #g-data-group.form-group
+    label.control-label Data
+    .input-group.input-group-sm
+      input#g-folder-data-id.form-control.input-sm(
+        type="text",
+        placeholder="Existing folder ID to use as the data source")
+      .input-group-btn
+        button.g-open-browser.btn.btn-default(type="button")
+          i.icon-folder-open
+  .form-group
+    label.control-label Frontend
+    .btn-group
+      button.g-raft-frontend-select.btn.btn-sm.btn-default.dropdown-toggle(
+        data-toggle="dropdown", title="Sort by Field")
+        | Choose Frontend
+        i.icon-down-dir
+      ul.dropdown-menu.pull-right(role="menu")
+        each frontend in frontends
+          li(role="presentation")
+            a.g-frontend(role="menuitem", frontend-cid=frontend.cid)
+              = frontend.get('description')
+  .form-group
+    label.control-label Add Scripts
+      .btn-group.pull-right
+        button.g-script-add-button.btn.btn-sm.btn-primary.btn-default
+          i.icon-plus
+    .g-scripts-container
+
+  .g-validation-failed-message
+  a.g-cancel-raft.btn.btn-small.btn-default Cancel
+  button.g-save-item.btn.btn-small.btn-primary(type="submit")
+    if (item)
+      i.icon-edit
+      | Save
+    else
+      i.icon-plus-squared
+      | Create

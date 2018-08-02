@@ -11,45 +11,30 @@ import 'girder/utilities/jquery/girderModal';
 import '../../stylesheets/frontendSelector.styl';
 
 var FrontendSelectorWidget = View.extend({
-   events: {
-      'click button.g-run-frontend': function(e) {
-         var row = this.el.getElementsByClassName('selected');
-         if (row.length === 0) {
-            events.trigger('g:alert', {
-               text: 'A frontend needs to be selected.',
-               type: 'warning'
-            });
-            return;
-         }
-         var frontendId = row[0].getAttribute('frontendid');
-         var folderId = row[0].getAttribute('folderid');
-         $(e.currentTarget).attr('disabled', 'disabled');
-         this._runFrontend(folderId, frontendId);
-      },
-      'click table.g-frontends-list-table tr': function(e) {
-         var row = $(e.currentTarget);
-         row.addClass('selected').siblings().removeClass('selected');
-         var value = e.currentTarget.getAttribute('frontendid');
-         console.log(value);
-      }
-   },
+    events: {
+        'click button.g-run-frontend': function (e) {
+            var row = this.el.getElementsByClassName('selected');
+            if (row.length === 0) {
+                events.trigger('g:alert', {
+                    text: 'A frontend needs to be selected.',
+                    type: 'warning'
+                });
+                return;
+            }
+            var frontendId = row[0].getAttribute('frontendid');
+            var folderId = row[0].getAttribute('folderid');
+            $(e.currentTarget).attr('disabled', 'disabled');
+            this._runFrontend(folderId, frontendId);
+        },
+        'click table.g-frontends-list-table tr': function (e) {
+            var row = $(e.currentTarget);
+            row.addClass('selected').siblings().removeClass('selected');
+            var value = e.currentTarget.getAttribute('frontendid');
+            console.log(value);
+        }
+    },
 
-   _runFrontend: function(folderId, frontendId) {
-      restRequest({path: 'ythub'}).done(function (hub) {
-         restRequest({
-            path: 'notebook',
-            data: {
-               folderId: folderId,
-               frontendId: frontendId 
-            },
-            type: 'POST'
-         }).done(function (notebook) {
-            window.location.assign(hub["url"] + '/' + notebook["containerPath"]);
-         });
-      });
-   },
-   
-   initialize: function(settings) {
+    initialize: function (settings) {
         this.filter = settings.filter || {};
         this.collection = new FrontendCollection();
         this.collection.sortField = settings.sortField || 'created';
@@ -59,15 +44,28 @@ var FrontendSelectorWidget = View.extend({
             this.render();
             this.trigger('g:changed');
         }, this).fetch(this.filter);
-   },
+    },
 
-   render: function() {
-      this.$el.html(FrontendSelectorTemplate({
-         folder: this.parentView.parentModel,
-         frontends: this.collection.toArray()
-      })).girderModal(this);
-      return this;
-   }
+    _runFrontend: function (folderId, frontendId) {
+        restRequest({
+            url: 'notebook',
+            data: {
+                folderId: folderId,
+                frontendId: frontendId
+            },
+            type: 'POST'
+        }).done(function (notebook) {
+            window.location.assign(notebook['url']);
+        });
+    },
+
+    render: function () {
+        this.$el.html(FrontendSelectorTemplate({
+            folder: this.parentView.parentModel,
+            frontends: this.collection.toArray()
+        })).girderModal(this);
+        return this;
+    }
 });
 
 export default FrontendSelectorWidget;

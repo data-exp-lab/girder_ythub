@@ -23,7 +23,7 @@ table.g-notebooks-list-table
               i.icon-stop
         if columns & columnEnum.COLUMN_NOTEBOOK
           td
-            a(href=`${hubUrl}/${notebook.get('containerPath')}`)= notebook.get('containerPath')
+            a(href=`${notebook.get('url')}`)= notebook.get('serviceInfo')['serviceId']
         if columns & columnEnum.COLUMN_FOLDER
           td
             a(href=`#folder/${notebook.get('folderId')}`)= notebook.get('folderId')
@@ -31,7 +31,7 @@ table.g-notebooks-list-table
           td.g-notebook-created-cell= formatDate(notebook.get('created'), DATE_SECOND)
         if columns & columnEnum.COLUMN_OWNER
           td
-            a(href=`#user/${notebook.get('userId')}`)= notebook.get('userId')
+            a(href=`#user/${notebook.get('creatorId')}`)= notebook.get('creatorId')
         if columns & columnEnum.COLUMN_STATUS
           td.g-notebook-status-cell= NotebookStatus.text(notebook.get('status'))
 

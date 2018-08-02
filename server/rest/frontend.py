@@ -76,13 +76,12 @@ class Frontend(Resource):
         return list(self.model('frontend', 'ythub').list(
             user=user, offset=offset, limit=limit, sort=sort))
 
-    @access.public
+    @access.user
     @filtermodel(model='frontend', plugin='ythub')
     @autoDescribeRoute(
         Description('Get a frontend by ID.')
         .modelParam('id', model='frontend', plugin='ythub',
                     level=AccessType.READ)
-        .param('id', 'The ID of the frontend.', paramType='path')
         .responseClass('frontend')
         .errorResponse('ID was invalid.')
     )
@@ -108,12 +107,17 @@ class Frontend(Resource):
         .param('public', 'Whether the frontend should be publicly visible.'
                ' Defaults to False.', dataType='boolean', required=False)
         .param('cpuShares', 'Limit cpu usage.', required=False)
+        .param('targetMount', 'Path where data will be mounted.',
+               required=False)
+        .param('urlPath', 'Optional suffix to frontend url',
+               required=False)
         .responseClass('frontend')
         .errorResponse('ID was invalid.')
         .errorResponse('Admin access was denied for the frontend.', 403)
     )
     def updateFrontend(self, frontend, imageName, command, memLimit,
-                       user, port, description, public, cpuShares, params):
+                       user, port, description, public, cpuShares,
+                       targetMount, urlPath, params):
         frontend['imageName'] = imageName or frontend['imageName']
         frontend['command'] = command or frontend['command']
         frontend['memLimit'] = memLimit or frontend['memLimit']
@@ -121,6 +125,8 @@ class Frontend(Resource):
         frontend['port'] = port or frontend['port']
         frontend['description'] = description or frontend['description']
         frontend['cpuShares'] = cpuShares or frontend['cpuShares']
+        frontend['targetMount'] = targetMount or frontend['targetMount']
+        frontend['urlPath'] = urlPath or frontend['urlPath']
 
         if public is not None:
             self.model('frontend', 'ythub').setPublic(frontend, public)
@@ -152,6 +158,10 @@ class Frontend(Resource):
                required=False)
         .param('description', 'Short info about the image content.',
                required=False)
+        .param('targetMount', 'Path where data will be mounted.',
+               required=True)
+        .param('urlPath', 'Optional suffix to frontend url',
+               required=False, default='')
         .param('public', 'Whether the frontend should be publicly visible.'
                ' Defaults to False.', dataType='boolean', required=False)
         .param('cpuShares', 'Limit cpu usage.', required=False)
@@ -159,8 +169,9 @@ class Frontend(Resource):
         .errorResponse('You are not authorized to create collections.', 403)
     )
     def createFrontend(self, imageName, command, memLimit, user, port,
-                       description, public, cpuShares, params):
+                       description, public, cpuShares, targetMount, urlPath,
+                       params):
         return self.model('frontend', 'ythub').createFrontend(
             imageName, memLimit=memLimit, command=command, user=user,
             port=port, cpuShares=cpuShares, description=description,
-            public=public)
+            public=public, urlPath=urlPath, targetMount=targetMount)

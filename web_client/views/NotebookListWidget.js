@@ -4,7 +4,6 @@ import PaginateWidget from 'girder/views/widgets/PaginateWidget';
 import View from 'girder/views/View';
 import { defineFlags, formatDate, DATE_SECOND } from 'girder/misc';
 import eventStream from 'girder/utilities/EventStream';
-import { getCurrentUser } from 'girder/auth';
 import { SORT_DESC } from 'girder/constants';
 import { restRequest } from 'girder/rest';
 
@@ -14,7 +13,6 @@ import NotebookStatus from '../NotebookStatus';
 
 import '../stylesheets/notebookListWidget.styl';
 
-
 var NotebookListWidget = View.extend({
     events: {
         'click .g-notebook-trigger-link': function (e) {
@@ -22,15 +20,15 @@ var NotebookListWidget = View.extend({
             this.trigger('g:notebookClicked', this.collection.get(cid));
         },
 
-   'click .g-notebook-delete-link': function (e) {
-        var url = $(e.currentTarget).attr('notebook-id');
+        'click .g-notebook-delete-link': function (e) {
+            var url = $(e.currentTarget).attr('notebook-id');
             var widget = this;
             var _delParams = {
-                path: 'notebook/' + url,
+                url: 'notebook/' + url,
                 type: 'DELETE',
                 error: null
             };
-            restRequest(_delParams).done(function() {
+            restRequest(_delParams).done(function () {
                 widget.trigger('g:changed');
             });
         }
@@ -70,20 +68,15 @@ var NotebookListWidget = View.extend({
     ], 'COLUMN_ALL'),
 
     render: function () {
-        var widget = this;
-
-        restRequest({path: 'ythub'}).done(function (resp) {
-            widget.$el.html(NotebookListWidgetTemplate({
-                notebooks: widget.collection.toArray(),
-                showHeader: widget.showHeader,
-                columns: widget.columns,
-                hubUrl: resp["url"],
-                columnEnum: widget.columnEnum,
-                NotebookStatus: NotebookStatus,
-                formatDate: formatDate,
-                DATE_SECOND: DATE_SECOND
-            }));
-        });
+        this.$el.html(NotebookListWidgetTemplate({
+            notebooks: this.collection.toArray(),
+            showHeader: this.showHeader,
+            columns: this.columns,
+            columnEnum: this.columnEnum,
+            NotebookStatus: NotebookStatus,
+            formatDate: formatDate,
+            DATE_SECOND: DATE_SECOND
+        }));
 
         if (this.showPaging) {
             this.paginateWidget.setElement(this.$('.g-notebook-pagination')).render();

@@ -18,8 +18,9 @@ class PluginSettings:
 
 # Constants representing the setting keys for this plugin
 class NotebookStatus(object):
-    RUNNING = 0
-    ERROR = 1
+    STARTING = 0
+    RUNNING = 1
+    ERROR = 2
 
     @staticmethod
     def isValid(status):
@@ -28,4 +29,5 @@ class NotebookStatus(object):
         if event.defaultPrevented and len(event.responses):
             return event.responses[-1]
 
-        return status in (NotebookStatus.RUNNING, NotebookStatus.ERROR)
+        return status in (NotebookStatus.STARTING, NotebookStatus.RUNNING,
+                          NotebookStatus.ERROR)

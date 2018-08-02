@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import httmock
-import json
-import six
+import mock
 from tests import base
 from girder.models.model_base import ValidationException
 
@@ -15,6 +13,45 @@ def setUpModule():
 
 def tearDownModule():
     base.stopServer()
+
+
+class FakeAsyncResult(object):
+    def __init__(self):
+        self.task_id = 'fake_id'
+
+    def get(self):
+        return dict(
+            nodeId='123456',
+            volumeId='blah_volume',
+            serviceId='tmp-blah',
+            urlPath='?token=foo'
+        )
+
+
+class FakeAsyncResult2(object):
+    def __init__(self):
+        self.task_id = 'fake_id'
+
+    def get(self):
+        return dict(
+            nodeId='654321',
+            volumeId='foobar_volume',
+            serviceId='tmp-foobar',
+            urlPath='?token=blah'
+        )
+
+
+class FakeAsyncResult3(object):
+    def __init__(self):
+        self.task_id = 'fake_id'
+
+    def get(self):
+        return dict(
+            nodeId='162534',
+            volumeId='foobaz_volume',
+            serviceId='tmp-foobaz',
+            urlPath='?token=ragl'
+        )
 
 
 class NotebookTestCase(base.TestCase):
@@ -34,7 +71,7 @@ class NotebookTestCase(base.TestCase):
         global PluginSettings
         from girder.plugins.ythub.constants import PluginSettings
         self.model('setting').set(
-            PluginSettings.TMPNB_URL, "https://tmpnb.null")
+            PluginSettings.TMPNB_URL, "http://tmpnb.null")
 
         users = ({
             'email': 'root@dev.null',
@@ -51,18 +88,7 @@ class NotebookTestCase(base.TestCase):
         })
         self.admin, self.user = [self._getUser(user) for user in users]
 
-    @httmock.all_requests
-    def mockOtherRequest(self, url, request):
-        raise Exception('Unexpected url %s' % str(request.url))
-
     def testNotebooks(self):
-        tmpnb_response = {
-            'mountPoint': '/var/lib/blah',
-            'containerId': '123456',
-            'containerPath': '/user/blah',
-            'host': '172.168.1.16'
-        }
-
         # Grab the default user folders
         resp = self.request(
             path='/folder', method='GET', user=self.user, params={
@@ -80,6 +106,8 @@ class NotebookTestCase(base.TestCase):
             'memLimit': '2048m',
             'port': 12345,
             'user': 'user',
+            'targetMount': '/blah',
+            'urlPath': '?token={token}',
             'description': 'foo',
             'cpuShares': None,
             'public': True,
@@ -91,70 +119,64 @@ class NotebookTestCase(base.TestCase):
         self.assertStatus(resp, 200)
         frontend = resp.json
 
-        @httmock.urlmatch(scheme='https', netloc='^tmpnb.null$',
-                          path='^/$', method='POST')
-        def mockTmpnbHubPost(url, request):
-            try:
-                params = json.loads(request.body.decode('utf8'))
-                self.assertIn(
-                    params['folderId'], (str(privateFolder['_id']),
-                                         str(publicFolder['_id'])))
-                self.assertEqual(
-                    params['frontendId'], str(frontend['_id']))
-            except (KeyError, AssertionError) as e:
-                return json.dumps({
-                    'status_code': 401,
-                    'content': json.dumps({'error': repr(e)})
-                })
+        with mock.patch('celery.Celery') as celeryMock:
+            with mock.patch('tornado.httpclient.HTTPClient') as tornadoMock:
+                instance = celeryMock.return_value
+                instance.send_task.side_effect = [
+                    FakeAsyncResult(), FakeAsyncResult(),
+                    FakeAsyncResult2(), FakeAsyncResult2(),
+                    FakeAsyncResult3(), FakeAsyncResult3(),
+                    FakeAsyncResult(), FakeAsyncResult()
+                ]
+                req = tornadoMock.return_value
+                req.fetch.return_value = {}
 
-            return json.dumps(tmpnb_response)
+                params = {
+                    'frontendId': str(frontend['_id']),
+                    'folderId': str(privateFolder['_id'])
+                }
+                resp = self.request(
+                    '/notebook', method='POST',
+                    user=self.user, params=params)
+                self.assertStatus(resp, 200)
+                notebook = resp.json
 
-        with httmock.HTTMock(mockTmpnbHubPost, self.mockOtherRequest):
-            params = {
-                'frontendId': str(frontend['_id']),
-                'folderId': str(privateFolder['_id'])
-            }
-            resp = self.request(
-                '/notebook', method='POST',
-                user=self.user, params=params)
-            self.assertStatus(resp, 200)
-            notebook = resp.json
-        self.assertEqual(notebook['host'], tmpnb_response['host'])
-        self.assertEqual(notebook['mountPoint'], tmpnb_response['mountPoint'])
-        self.assertEqual(notebook['containerId'],
-                         tmpnb_response['containerId'])
-        self.assertEqual(notebook['containerPath'],
-                         tmpnb_response['containerPath'])
+        self.assertEqual(notebook['serviceInfo']['nodeId'], '123456')
+        self.assertEqual(notebook['serviceInfo']['volumeId'], 'blah_volume')
+        self.assertEqual(notebook['serviceInfo']['serviceId'], 'tmp-blah')
+        self.assertEqual(notebook['url'], 'http://tmp-blah.0.0.1/?token=foo')
+        self.assertEqual(notebook['frontendId'], str(frontend['_id']))
         self.assertEqual(notebook['folderId'], str(privateFolder['_id']))
-        self.assertEqual(notebook['userId'], str(self.user['_id']))
+        self.assertEqual(notebook['creatorId'], str(self.user['_id']))
 
-        with httmock.HTTMock(mockTmpnbHubPost, self.mockOtherRequest):
-            params = {
-                'frontendId': str(frontend['_id']),
-                'folderId': str(privateFolder['_id'])
-            }
-            # Return exisiting
-            resp = self.request(
-                path='/notebook', method='POST', user=self.user,
-                params=params)
-            self.assertStatus(resp, 200)
-            self.assertEqual(resp.json['_id'], notebook['_id'])
+        with mock.patch('celery.Celery') as celeryMock:
+            with mock.patch('tornado.httpclient.HTTPClient') as tornadoMock:
+                params = {
+                    'frontendId': str(frontend['_id']),
+                    'folderId': str(privateFolder['_id'])
+                }
+                # Return exisiting
+                resp = self.request(
+                    path='/notebook', method='POST', user=self.user,
+                    params=params)
+                self.assertStatus(resp, 200)
+                self.assertEqual(resp.json['_id'], notebook['_id'])
 
-            # Create 2nd user's nb
-            params['folderId'] = str(publicFolder['_id'])
-            resp = self.request(
-                path='/notebook', method='POST', user=self.user,
-                params=params)
-            self.assertStatus(resp, 200)
-            other_notebook = resp.json
+                # Create 2nd user's nb
+                params['folderId'] = str(publicFolder['_id'])
+                resp = self.request(
+                    path='/notebook', method='POST', user=self.user,
+                    params=params)
+                self.assertStatus(resp, 200)
+                other_notebook = resp.json
 
-            # Create admin nb
-            params['folderId'] = str(publicFolder['_id'])
-            resp = self.request(
-                path='/notebook', method='POST', user=self.admin,
-                params=params)
-            self.assertStatus(resp, 200)
-            admin_notebook = resp.json
+                # Create admin nb
+                params['folderId'] = str(publicFolder['_id'])
+                resp = self.request(
+                    path='/notebook', method='POST', user=self.admin,
+                    params=params)
+                self.assertStatus(resp, 200)
+                admin_notebook = resp.json
 
         # By default user can list only his/her notebooks
         resp = self.request(
@@ -195,44 +217,22 @@ class NotebookTestCase(base.TestCase):
         self.assertStatus(resp, 200)
         self.assertEqual(resp.json['_id'], notebook['_id'])
 
-        @httmock.urlmatch(scheme='https', netloc='^tmpnb.null$',
-                          path='^/$', method='DELETE')
-        def mockTmpnbHubDelete(url, request):
-            try:
-                params = json.loads(request.body.decode('utf8'))
-                self.assertEqual(
-                    params['folderId'], str(privateFolder['_id']))
-                for k, v in six.viewitems(tmpnb_response):
-                    self.assertEqual(params[k], v)
-                self.assertEqual(request.headers['docker-host'],
-                                 tmpnb_response['host'])
-                self.assertEqual(request.headers['content-type'],
-                                 tmpnb_response['application/json'])
-            except (KeyError, AssertionError) as e:
-                return json.dumps({
-                    'status_code': 401,
-                    'content': json.dumps({'error': repr(e)})
-                })
-
-            return None
-
-        # Delete notebooks
-        with httmock.HTTMock(mockTmpnbHubDelete, self.mockOtherRequest):
+        with mock.patch('celery.Celery') as celeryMock:
             resp = self.request(
                 path='/notebook/{_id}'.format(**admin_notebook),
                 method='DELETE', user=self.user)
             self.assertStatus(resp, 403)
 
-            for nb in (notebook, other_notebook, admin_notebook):
-                resp = self.request(
-                    path='/notebook/{_id}'.format(**nb), method='DELETE',
-                    user=self.admin)
-                self.assertStatus(resp, 200)
+            resp = self.request(
+                path='/notebook/{_id}'.format(**notebook), method='DELETE',
+                user=self.admin)
+            self.assertStatus(resp, 200)
 
         # Check if notebook is gone
         resp = self.request(
             path='/notebook/{_id}'.format(**notebook), method='GET',
             user=self.admin)
+        self.assertStatus(resp, 400)
 
     def tearDown(self):
         self.model('user').remove(self.user)

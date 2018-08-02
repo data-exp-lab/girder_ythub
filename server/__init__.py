@@ -1,25 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import cherrypy
 from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 import six
 
-from girder import events, logger
+from girder import events
 from girder.models.model_base import ValidationException
+from girder.models.item import Item
 from girder.api import access
 from girder.api.describe import Description, describeRoute
 from girder.api.rest import boundHandler, loadmodel
 from girder.constants import AccessType, TokenScope
 
 from girder.utility.model_importer import ModelImporter
-from girder.utility import assetstore_utilities, config, setting_utilities
+from girder.utility import assetstore_utilities, setting_utilities
 
 from .constants import PluginSettings
 from .rest.frontend import Frontend
 from .rest.notebook import Notebook
+from .rest.raft import Raft
 from .rest.ythub import ytHub
 
 
@@ -229,6 +230,7 @@ def load(info):
     info['apiRoot'].ythub = ytHub()
     info['apiRoot'].notebook = notebook
     info['apiRoot'].frontend = Frontend()
+    info['apiRoot'].raft = Raft()
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
     info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
     info['apiRoot'].item.route('PUT', (':id', 'check'), checkItem)
@@ -236,22 +238,6 @@ def load(info):
     info['apiRoot'].folder.route('PUT', (':id', 'check'), checkFolder)
     info['apiRoot'].collection.route('PUT', (':id', 'check'), checkCollection)
 
-    curConfig = config.getConfig()
-    if curConfig['server']['mode'] == 'testing':
-        cull_period = 1
-    else:
-        cull_period = int(curConfig['server'].get('heartbeat', -1))
-
-    if cull_period > 0:
-
-        def _heartbeat():
-            events.trigger('heartbeat')
-
-        logger.info('Starting Heartbeat every %i s' % cull_period)
-        heartbeat = cherrypy.process.plugins.Monitor(
-            cherrypy.engine, _heartbeat, frequency=cull_period,
-            name="Heartbeat")
-        heartbeat.subscribe()
-        events.bind('heartbeat', 'ythub', notebook.cullNotebooks)
+    Item().ensureIndex(['meta.isRaft', {'sparse': True}])
 
     events.bind('model.user.save.created', 'ythub', addDefaultFolders)

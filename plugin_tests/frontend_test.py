@@ -62,6 +62,7 @@ class FrontendTestCase(base.TestCase):
             'memLimit': '2048m',
             'port': 12345,
             'user': 'user',
+            'targetMount': '/foo',
             'description': 'foo',
             'cpuShares': None,
             'public': False,
@@ -74,7 +75,8 @@ class FrontendTestCase(base.TestCase):
 
         # Try to create frontend with invalid imageName
         resp = self.request(
-            path='/frontend', method='POST', params={'imageName': 'blah^hhlh'},
+            path='/frontend', method='POST', params={'imageName': 'blah^hhlh',
+                                                     'targetMount': '/foo'},
             user=self.admin)
         self.assertValidationError(resp, 'imageName')
 
