@@ -8,7 +8,6 @@ import time
 
 from girder import logger
 from ..constants import API_VERSION, NotebookStatus, PluginSettings
-from girder.api.rest import getApiUrl
 from girder.constants import AccessType, SortDir
 from girder.models.model_base import \
     AccessControlledModel, ValidationException
@@ -21,7 +20,7 @@ from tornado.httpclient import HTTPRequest, HTTPError, HTTPClient
 
 
 def _wait_for_server(url, timeout=30, wait_time=0.5):
-    '''Wait for a server to show up within a newly launched instance.'''
+    """Wait for a server to show up within a newly launched instance."""
     tic = time.time()
     # Fudge factor of IPython notebook bootup.
     time.sleep(0.5)

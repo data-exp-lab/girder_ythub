@@ -116,7 +116,8 @@ class FrontendTestCase(base.TestCase):
 
         # Verify that anyone can see public frontend
         resp = self.request(
-            path='/frontend/{_id}'.format(**frontend), method='GET')
+            path='/frontend/{_id}'.format(**frontend), method='GET',
+            user=self.user)
         self.assertStatus(resp, 200)
         self.assertEqual(resp.json['_id'], frontend['_id'])
 
@@ -134,7 +135,8 @@ class FrontendTestCase(base.TestCase):
 
         # Verify that the frontend is gone
         resp = self.request(
-            path='/frontend/{_id}'.format(**frontend), method='GET')
+            path='/frontend/{_id}'.format(**frontend), method='GET',
+            user=self.user)
         self.assertStatus(resp, 400)
 
     def tearDown(self):

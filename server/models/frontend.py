@@ -57,12 +57,12 @@ class Frontend(AccessControlledModel):
         return frontend
 
     def updateFrontend(self, frontend):
-        '''
+        """
         Updates a frontend.
 
         :param frontend: The frontend document to update.
         :type frontend: dict
         :returns: The frontend document that was edited.
-        '''
+        """
         frontend['updated'] = datetime.datetime.utcnow()
         return self.save(frontend)

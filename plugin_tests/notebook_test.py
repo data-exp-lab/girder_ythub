@@ -144,7 +144,7 @@ class NotebookTestCase(base.TestCase):
         self.assertEqual(notebook['serviceInfo']['nodeId'], '123456')
         self.assertEqual(notebook['serviceInfo']['volumeId'], 'blah_volume')
         self.assertEqual(notebook['serviceInfo']['serviceId'], 'tmp-blah')
-        self.assertEqual(notebook['url'], 'http://tmp-blah.0.0.1/?token=foo')
+        self.assertEqual(notebook['url'], 'http://tmp-blah.tmpnb.null/?token=foo')
         self.assertEqual(notebook['frontendId'], str(frontend['_id']))
         self.assertEqual(notebook['folderId'], str(privateFolder['_id']))
         self.assertEqual(notebook['creatorId'], str(self.user['_id']))
