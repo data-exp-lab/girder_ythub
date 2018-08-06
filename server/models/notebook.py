@@ -175,8 +175,9 @@ class Notebook(AccessControlledModel):
         tmpnb_url = urllib.parse.urlsplit(
             Setting().get(PluginSettings.TMPNB_URL)
         )
-        domain = f"{serviceInfo['serviceId']}.{tmpnb_url.netloc}"
-        url = f"{tmpnb_url.scheme}://{domain}/{serviceInfo.get('urlPath', '')}"
+        domain = serviceInfo['serviceId'] + '.' + tmpnb_url.netloc
+        url = '{}://{}/{}'.format(
+            tmpnb_url.scheme, domain, serviceInfo.get('urlPath', ''))
 
         Notification().updateProgress(
             notification, total=total, current=2.5,
