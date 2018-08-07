@@ -19,6 +19,7 @@ from tornado.httpclient import HTTPRequest, HTTPError, HTTPClient
 # FIXME look into removing tornado
 
 
+
 def _wait_for_server(url, timeout=30, wait_time=0.5):
     """Wait for a server to show up within a newly launched instance."""
     tic = time.time()
@@ -37,7 +38,7 @@ def _wait_for_server(url, timeout=30, wait_time=0.5):
                 'Booting server at [%s], getting HTTP status [%s]',
                 url, code)
             time.sleep(wait_time)
-        except ssl.SSLError:
+        except (ssl.SSLError, ssl.CertificateError):
             time.sleep(wait_time)
         else:
             break
@@ -93,22 +94,28 @@ class Notebook(AccessControlledModel):
 
     def deleteNotebook(self, notebook, token):
         payload = {
-            'serviceInfo': notebook['serviceInfo'],
+            'serviceInfo': notebook.get('serviceInfo', {}),
             'girder_token': str(token['_id']),
             'apiUrl': getWorkerApiUrl()
         }
 
-        instanceTask = getCeleryApp().send_task(
-            'gwvolman.tasks.shutdown_container', args=[payload],
-            queue='manager',
-        )
-        instanceTask.get()
+        try:
+            instanceTask = getCeleryApp().send_task(
+                'gwvolman.tasks.shutdown_container', args=[payload],
+                queue='manager',
+            )
+            instanceTask.get()
+        except:
+            pass
 
-        volumeTask = getCeleryApp().send_task(
-            'gwvolman.tasks.remove_volume', args=[payload],
-            queue=notebook['serviceInfo']['nodeId']
-        )
-        volumeTask.get()
+        try:
+            volumeTask = getCeleryApp().send_task(
+                'gwvolman.tasks.remove_volume', args=[payload],
+                queue=notebook['serviceInfo']['nodeId']
+            )
+            volumeTask.get()
+        except:
+            pass
 
         self.remove(notebook)
 
@@ -175,7 +182,7 @@ class Notebook(AccessControlledModel):
         tmpnb_url = urllib.parse.urlsplit(
             Setting().get(PluginSettings.TMPNB_URL)
         )
-        domain = serviceInfo['serviceId'] + '.' + tmpnb_url.netloc
+        domain = '{}.{}'.format(serviceInfo['serviceId'], tmpnb_url.netloc)
         url = '{}://{}/{}'.format(
             tmpnb_url.scheme, domain, serviceInfo.get('urlPath', ''))
 
