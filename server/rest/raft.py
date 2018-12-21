@@ -6,6 +6,7 @@ from girder.models.model_base import ValidationException
 
 
 class Raft(Resource):
+    """Raft resource."""
 
     def __init__(self):
         super(Raft, self).__init__()

@@ -120,7 +120,7 @@ class NotebookTestCase(base.TestCase):
         frontend = resp.json
 
         with mock.patch('celery.Celery') as celeryMock:
-            with mock.patch('tornado.httpclient.HTTPClient') as tornadoMock:
+            with mock.patch('urllib.request.urlopen') as urllibMock:
                 instance = celeryMock.return_value
                 instance.send_task.side_effect = [
                     FakeAsyncResult(), FakeAsyncResult(),
@@ -128,7 +128,7 @@ class NotebookTestCase(base.TestCase):
                     FakeAsyncResult3(), FakeAsyncResult3(),
                     FakeAsyncResult(), FakeAsyncResult()
                 ]
-                req = tornadoMock.return_value
+                req = urllibMock.return_value
                 req.fetch.return_value = {}
 
                 params = {
@@ -150,7 +150,7 @@ class NotebookTestCase(base.TestCase):
         self.assertEqual(notebook['creatorId'], str(self.user['_id']))
 
         with mock.patch('celery.Celery') as celeryMock:
-            with mock.patch('tornado.httpclient.HTTPClient') as tornadoMock:
+            with mock.patch('urllib.request.urlopen') as urllibMock:
                 params = {
                     'frontendId': str(frontend['_id']),
                     'folderId': str(privateFolder['_id'])

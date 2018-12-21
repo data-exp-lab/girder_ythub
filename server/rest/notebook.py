@@ -42,6 +42,7 @@ addModel('notebook', notebookModel, resources='notebook')
 
 
 class Notebook(Resource):
+    """Notebook resource."""
 
     def __init__(self):
         super(Notebook, self).__init__()

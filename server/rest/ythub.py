@@ -12,6 +12,7 @@ from girder.plugins.ythub.constants import PluginSettings
 
 
 class ytHub(Resource):
+    """Meta resource for yt Hub."""
 
     def __init__(self):
         super(ytHub, self).__init__()

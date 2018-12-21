@@ -52,6 +52,7 @@ addModel('frontend', frontendModel, resources='frontend')
 
 
 class Frontend(Resource):
+    """Frontend resource."""
 
     def __init__(self):
         super(Frontend, self).__init__()
