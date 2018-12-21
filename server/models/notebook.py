@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-from six.moves import urllib
+from urllib.parse import urlsplit
+from urllib.request import urlopen
+from urllib.error import HTTPError, URLError
 import ssl
 import time
 
@@ -15,9 +17,6 @@ from girder.models.notification import \
     ProgressState, Notification
 from girder.models.setting import Setting
 from girder.plugins.worker import getCeleryApp, getWorkerApiUrl
-from tornado.httpclient import HTTPRequest, HTTPError, HTTPClient
-# FIXME look into removing tornado
-
 
 
 def _wait_for_server(url, timeout=30, wait_time=0.5):
@@ -26,18 +25,18 @@ def _wait_for_server(url, timeout=30, wait_time=0.5):
     # Fudge factor of IPython notebook bootup.
     time.sleep(0.5)
 
-    http_client = HTTPClient()
-    req = HTTPRequest(url)
-
     while time.time() - tic < timeout:
         try:
-            http_client.fetch(req)
-        except HTTPError as http_error:
-            code = http_error.code
+            urlopen(url, timeout=1)
+        except HTTPError as err:
             logger.info(
                 'Booting server at [%s], getting HTTP status [%s]',
-                url, code)
+                url, err.code)
             time.sleep(wait_time)
+        except URLError as err:
+            logger.info(
+                'Booting server at [%s], getting URLError due to [%s]',
+                url, err.reason)
         except (ssl.SSLError, ssl.CertificateError):
             time.sleep(wait_time)
         else:
@@ -105,7 +104,7 @@ class Notebook(AccessControlledModel):
                 queue='manager',
             )
             instanceTask.get()
-        except:
+        except Exception:
             pass
 
         try:
@@ -114,7 +113,7 @@ class Notebook(AccessControlledModel):
                 queue=notebook['serviceInfo']['nodeId']
             )
             volumeTask.get()
-        except:
+        except Exception:
             pass
 
         self.remove(notebook)
@@ -179,7 +178,7 @@ class Notebook(AccessControlledModel):
         serviceInfo = serviceTask.get()
         serviceInfo.update(volumeInfo)
 
-        tmpnb_url = urllib.parse.urlsplit(
+        tmpnb_url = urlsplit(
             Setting().get(PluginSettings.TMPNB_URL)
         )
         domain = '{}.{}'.format(serviceInfo['serviceId'], tmpnb_url.netloc)
