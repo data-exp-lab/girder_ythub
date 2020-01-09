@@ -3,10 +3,14 @@
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+import json
+import os
+
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, getApiUrl
 from girder.constants import AccessType
+from girder.models.folder import Folder
 
 from girder.plugins.ythub.constants import PluginSettings
 
@@ -16,53 +20,54 @@ class ytHub(Resource):
 
     def __init__(self):
         super(ytHub, self).__init__()
-        self.resourceName = 'ythub'
+        self.resourceName = "ythub"
 
-        self.route('GET', (), self.get_ythub_url)
-        self.route('GET', (':id', 'examples'), self.generateExamples)
-        self.route('POST', ('genkey',), self.generateRSAKey)
+        self.route("GET", (), self.get_ythub_url)
+        self.route("GET", (":id", "examples"), self.generateExamples)
+        self.route("GET", (":id", "registry"), self.generate_pooch_registry)
+        self.route("POST", ("genkey",), self.generateRSAKey)
 
     @access.admin
-    @autoDescribeRoute(
-        Description('Generate ythub\'s RSA key')
-    )
+    @autoDescribeRoute(Description("Generate ythub's RSA key"))
     def generateRSAKey(self, params):
         rsa_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048,
-            backend=default_backend()
+            public_exponent=65537, key_size=2048, backend=default_backend()
         )
 
-        pubkey_pem = rsa_key.public_key().public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
-        ).decode('utf8')
+        pubkey_pem = (
+            rsa_key.public_key()
+            .public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+            .decode("utf8")
+        )
         privkey_pem = rsa_key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption()
-        ).decode('utf8')
-        self.model('setting').set(PluginSettings.HUB_PUB_KEY, pubkey_pem)
-        self.model('setting').set(PluginSettings.HUB_PRIV_KEY, privkey_pem)
-        return {PluginSettings.HUB_PUB_KEY: pubkey_pem,
-                PluginSettings.HUB_PRIV_KEY: privkey_pem}
+            encryption_algorithm=serialization.NoEncryption(),
+        ).decode("utf8")
+        self.model("setting").set(PluginSettings.HUB_PUB_KEY, pubkey_pem)
+        self.model("setting").set(PluginSettings.HUB_PRIV_KEY, privkey_pem)
+        return {
+            PluginSettings.HUB_PUB_KEY: pubkey_pem,
+            PluginSettings.HUB_PRIV_KEY: privkey_pem,
+        }
 
     @access.public
-    @autoDescribeRoute(
-        Description('Return url for tmpnb hub.')
-    )
+    @autoDescribeRoute(Description("Return url for tmpnb hub."))
     def get_ythub_url(self, params):
-        setting = self.model('setting')
+        setting = self.model("setting")
         url = setting.get(PluginSettings.REDIRECT_URL)
         if not url:
             url = setting.get(PluginSettings.TMPNB_URL)
-        return {'url': url,
-                'pubkey': setting.get(PluginSettings.HUB_PUB_KEY)}
+        return {"url": url, "pubkey": setting.get(PluginSettings.HUB_PUB_KEY)}
 
     @access.public
     @autoDescribeRoute(
-        Description('Generate example data page.')
-        .modelParam('id', model='folder', level=AccessType.READ)
+        Description("Generate example data page.").modelParam(
+            "id", model="folder", level=AccessType.READ
+        )
     )
     def generateExamples(self, folder, params):
         def get_code(resource):
@@ -71,12 +76,12 @@ class ytHub(Resource):
             except KeyError:
                 return "unknown"
 
-        def sizeof_fmt(num, suffix='B'):
-            for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+        def sizeof_fmt(num, suffix="B"):
+            for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
                 if abs(num) < 1024.0:
                     return "%3.1f%s%s" % (num, unit, suffix)
                 num /= 1024.0
-            return "%.1f%s%s" % (num, 'Yi', suffix)
+            return "%.1f%s%s" % (num, "Yi", suffix)
 
         def download_path(_id, resource):
             return "{}/{}/{}/download".format(getApiUrl(), resource, _id)
@@ -84,22 +89,71 @@ class ytHub(Resource):
         result = {}
         user = self.getCurrentUser()
         frontends = list(
-            self.model('folder').childFolders(parentType='folder',
-                                              parent=folder, user=user))
+            self.model("folder").childFolders(
+                parentType="folder", parent=folder, user=user
+            )
+        )
         for frontend in frontends:
             ds = list(
-                self.model('folder').childFolders(parentType='folder',
-                                                  parent=frontend, user=user))
+                self.model("folder").childFolders(
+                    parentType="folder", parent=frontend, user=user
+                )
+            )
 
-            examples = [dict(code=get_code(_), description=_["description"],
-                             filename=_["name"], size=sizeof_fmt(_["size"]),
-                             url=download_path(_["_id"], "folder"))
-                        for _ in ds]
-            ds = list(self.model('folder').childItems(folder=frontend))
-            examples += [dict(code=get_code(_), description=_["description"],
-                              filename=_["name"], size=sizeof_fmt(_["size"]),
-                              url=download_path(_["_id"], "item"))
-                         for _ in ds]
+            examples = [
+                dict(
+                    code=get_code(_),
+                    description=_["description"],
+                    filename=_["name"],
+                    size=sizeof_fmt(_["size"]),
+                    url=download_path(_["_id"], "folder"),
+                )
+                for _ in ds
+            ]
+            ds = list(self.model("folder").childItems(folder=frontend))
+            examples += [
+                dict(
+                    code=get_code(_),
+                    description=_["description"],
+                    filename=_["name"],
+                    size=sizeof_fmt(_["size"]),
+                    url=download_path(_["_id"], "item"),
+                )
+                for _ in ds
+            ]
             result[frontend["name"]] = examples
 
         return result
+
+    @access.public
+    @autoDescribeRoute(
+        Description("Generate pooch registry for yt data").modelParam(
+            "id", model="folder", level=AccessType.READ
+        )
+    )
+    def generate_pooch_registry(self, folder):
+        meta = {}
+        result = {}
+        download_url = getApiUrl() + "/file/{}/download"
+        for path, fobj in Folder().fileList(
+            folder,
+            user=None,
+            path="",
+            includeMetadata=True,
+            subpath=False,
+            mimeFilter=None,
+            data=False,
+        ):
+            if path.endswith("metadata.json"):
+                name = os.path.dirname(path).replace(".tar.gz", "").replace(".zip", "")
+                meta[name] = json.loads(next(fobj()))
+            else:
+                name = fobj["name"].replace(".tar.gz", "").replace(".zip", "")
+                result[name] = {
+                    "url": download_url.format(fobj["_id"]),
+                    "hash": "sha512:{}".format(fobj["sha512"]),
+                }
+
+        for key in meta.keys():
+            result[key].update(meta[key])
+        return {k: v for k, v in result.items() if v["type"] == "sample"}
