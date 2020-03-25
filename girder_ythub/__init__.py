@@ -7,8 +7,11 @@ from cryptography.hazmat.primitives import serialization
 import six
 
 from girder import events
-from girder.models.model_base import ValidationException
+from girder.models.assetstore import Assetstore
+from girder.models.collection import Collection
+from girder.models.folder import Folder
 from girder.models.item import Item
+from girder.models.model_base import ValidationException
 from girder.api import access
 from girder.api.describe import Description, describeRoute
 from girder.api.rest import boundHandler, loadmodel
@@ -22,6 +25,9 @@ from .rest.frontend import Frontend
 from .rest.notebook import Notebook
 from .rest.raft import Raft
 from .rest.ythub import ytHub
+
+from .models.frontend import Frontend as frontendModel
+from .models.notebook import Notebook as notebookModel
 
 
 @setting_utilities.validator(PluginSettings.HUB_PRIV_KEY)
@@ -116,19 +122,18 @@ def validateCullingFrequency(doc):
 def listFolder(self, folder, params):
     user = self.getCurrentUser()
     folders = list(
-        self.model('folder').childFolders(parentType='folder',
-                                          parent=folder, user=user))
+        Folder().childFolders(parentType='folder', parent=folder, user=user))
 
     files = []
-    for item in self.model('folder').childItems(folder=folder):
-        childFiles = list(self.model('item').childFiles(item))
+    for item in Folder().childItems(folder=folder):
+        childFiles = list(Item().childFiles(item))
         if len(childFiles) == 1:
             fileitem = childFiles[0]
             if 'imported' not in fileitem and \
                     fileitem.get('assetstoreId') is not None:
                 try:
                     store = \
-                        self.model('assetstore').load(fileitem['assetstoreId'])
+                        Assetstore().load(fileitem['assetstoreId'])
                     adapter = assetstore_utilities.getAssetstoreAdapter(store)
                     fileitem["path"] = adapter.fullPath(fileitem)
                 except ValidationException:
@@ -149,7 +154,7 @@ def listFolder(self, folder, params):
 )
 @boundHandler()
 def checkItem(self, item, params):
-    self.model('item').updateSize(item)
+    Item().updateSize(item)
 
 
 @access.public(scope=TokenScope.DATA_OWN)
@@ -162,7 +167,7 @@ def checkItem(self, item, params):
 )
 @boundHandler()
 def checkFolder(self, folder, params):
-    self.model('folder').updateSize(folder)
+    Folder().updateSize(folder)
 
 
 @access.public(scope=TokenScope.DATA_OWN)
@@ -175,7 +180,7 @@ def checkFolder(self, folder, params):
 )
 @boundHandler()
 def checkCollection(self, collection, params):
-    self.model('collection').updateSize(collection)
+    Collection().updateSize(collection)
 
 
 @access.public(scope=TokenScope.DATA_READ)
@@ -189,12 +194,12 @@ def checkCollection(self, collection, params):
 @boundHandler()
 def listItem(self, item, params):
     files = []
-    for fileitem in self.model('item').childFiles(item):
+    for fileitem in Item().childFiles(item):
         if 'imported' not in fileitem and \
                 fileitem.get('assetstoreId') is not None:
             try:
                 store = \
-                    self.model('assetstore').load(fileitem['assetstoreId'])
+                    Assetstore().load(fileitem['assetstoreId'])
                 adapter = assetstore_utilities.getAssetstoreAdapter(store)
                 fileitem["path"] = adapter.fullPath(fileitem)
             except ValidationException:
@@ -213,7 +218,7 @@ def listItem(self, item, params):
 )
 @boundHandler()
 def folderRootpath(self, folder, params):
-    return self.model('folder').parentsToRoot(
+    return Folder().parentsToRoot(
         folder, user=self.getCurrentUser())
 
 
@@ -230,6 +235,8 @@ class ytHubPlugin(GirderPlugin):
     CLIENT_SOURCE_PATH = "web_client"
 
     def load(self, info):
+        ModelImporter.registerModel("notebook", notebookModel, plugin="ythub")
+        ModelImporter.registerModel("frontend", frontendModel, plugin="ythub")
         info['apiRoot'].ythub = ytHub()
         info['apiRoot'].notebook = Notebook()
         info['apiRoot'].frontend = Frontend()

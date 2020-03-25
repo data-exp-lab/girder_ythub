@@ -6,8 +6,9 @@ from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, filtermodel
 from girder.constants import AccessType, SortDir
 
+from ..models.frontend import Frontend as frontendModel
 
-frontendModel = {
+frontendModelSchema = {
     'id': 'frontend',
     'type': 'object',
     'required': [
@@ -48,7 +49,7 @@ frontendModel = {
         'public': {'type': 'boolean', 'allowEmptyValue': True},
     }
 }
-addModel('frontend', frontendModel, resources='frontend')
+addModel('frontend', frontendModelSchema, resources='frontend')
 
 
 class Frontend(Resource):
@@ -74,7 +75,7 @@ class Frontend(Resource):
     )
     def listFrontends(self, limit, offset, sort, params):
         user = self.getCurrentUser()
-        return list(self.model('frontend', 'ythub').list(
+        return list(frontendModel().list(
             user=user, offset=offset, limit=limit, sort=sort))
 
     @access.user
@@ -130,8 +131,8 @@ class Frontend(Resource):
         frontend['urlPath'] = urlPath or frontend['urlPath']
 
         if public is not None:
-            self.model('frontend', 'ythub').setPublic(frontend, public)
-        return self.model('frontend', 'ythub').updateFrontend(frontend)
+            frontendModel().setPublic(frontend, public)
+        return frontendModel().updateFrontend(frontend)
 
     @access.admin
     @autoDescribeRoute(
@@ -142,7 +143,7 @@ class Frontend(Resource):
         .errorResponse('Admin access was denied for the frontend.', 403)
     )
     def deleteFrontend(self, frontend, params):
-        self.model('frontend', 'ythub').remove(frontend)
+        frontendModel().remove(frontend)
 
     @access.admin
     @filtermodel(model='frontend', plugin='ythub')
@@ -172,7 +173,7 @@ class Frontend(Resource):
     def createFrontend(self, imageName, command, memLimit, user, port,
                        description, public, cpuShares, targetMount, urlPath,
                        params):
-        return self.model('frontend', 'ythub').createFrontend(
+        return frontendModel().createFrontend(
             imageName, memLimit=memLimit, command=command, user=user,
             port=port, cpuShares=cpuShares, description=description,
             public=public, urlPath=urlPath, targetMount=targetMount)

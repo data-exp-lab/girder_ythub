@@ -7,9 +7,13 @@ from girder.api.describe import Description, autoDescribeRoute
 from girder.api.docs import addModel
 from girder.api.rest import Resource, filtermodel
 from girder.constants import AccessType, SortDir
+from girder.models.folder import Folder
+from girder.models.user import User
 
+from ..models.notebook import Notebook as notebookModel
+from ..models.frontend import Frontend as frontendModel
 
-notebookModel = {
+notebookModelSchema = {
     'id': 'notebook',
     'type': 'object',
     'required': [
@@ -38,7 +42,7 @@ notebookModel = {
                    'maximum': 1, 'minimum': 0},
     }
 }
-addModel('notebook', notebookModel, resources='notebook')
+addModel('notebook', notebookModelSchema, resources='notebook')
 
 
 class Notebook(Resource):
@@ -73,16 +77,16 @@ class Notebook(Resource):
         if not userId or userId.lower() == 'none':
             user = None
         else:
-            user = self.model('user').load(
+            user = User().load(
                 userId, user=currentUser, level=AccessType.READ)
 
         if not folderId or folderId.lower() == 'none':
             folder = None
         else:
-            folder = self.model('folder').load(
+            folder = Folder().load(
                 folderId, user=currentUser, level=AccessType.READ)
 
-        return list(self.model('notebook', 'ythub').list(
+        return list(notebookModel().list(
             user=user, folder=folder, offset=offset, limit=limit,
             sort=sort, currentUser=currentUser))
 
@@ -108,7 +112,7 @@ class Notebook(Resource):
         .errorResponse('Write access was denied for the notebook.', 403)
     )
     def deleteNotebook(self, notebook, params):
-        self.model('notebook', 'ythub').deleteNotebook(
+        notebookModel().deleteNotebook(
             notebook, self.getCurrentToken())
 
     @access.user
@@ -127,10 +131,10 @@ class Notebook(Resource):
     def createNotebook(self, folderId, frontendId, scripts, params):
         user = self.getCurrentUser()
         token = self.getCurrentToken()
-        notebookModel = self.model('notebook', 'ythub')
-        frontend = self.model('frontend', 'ythub').load(
+        notebookModel = notebookModel()
+        frontend = frontendModel().load(
             frontendId, user=user, level=AccessType.READ)
-        folder = self.model('folder').load(
+        folder = Folder().load(
             folderId, user=user, level=AccessType.READ)
         notebook = notebookModel.createNotebook(folder, user, token, frontend,
                                                 scripts)

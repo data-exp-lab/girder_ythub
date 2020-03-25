@@ -11,6 +11,7 @@ from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, getApiUrl
 from girder.constants import AccessType
 from girder.models.folder import Folder
+from girder.models.setting import Setting
 
 from ..constants import PluginSettings
 
@@ -47,8 +48,8 @@ class ytHub(Resource):
             format=serialization.PrivateFormat.TraditionalOpenSSL,
             encryption_algorithm=serialization.NoEncryption(),
         ).decode("utf8")
-        self.model("setting").set(PluginSettings.HUB_PUB_KEY, pubkey_pem)
-        self.model("setting").set(PluginSettings.HUB_PRIV_KEY, privkey_pem)
+        Setting().set(PluginSettings.HUB_PUB_KEY, pubkey_pem)
+        Setting().set(PluginSettings.HUB_PRIV_KEY, privkey_pem)
         return {
             PluginSettings.HUB_PUB_KEY: pubkey_pem,
             PluginSettings.HUB_PRIV_KEY: privkey_pem,
@@ -57,11 +58,10 @@ class ytHub(Resource):
     @access.public
     @autoDescribeRoute(Description("Return url for tmpnb hub."))
     def get_ythub_url(self, params):
-        setting = self.model("setting")
-        url = setting.get(PluginSettings.REDIRECT_URL)
+        url = Setting().get(PluginSettings.REDIRECT_URL)
         if not url:
-            url = setting.get(PluginSettings.TMPNB_URL)
-        return {"url": url, "pubkey": setting.get(PluginSettings.HUB_PUB_KEY)}
+            url = Setting().get(PluginSettings.TMPNB_URL)
+        return {"url": url, "pubkey": Setting().get(PluginSettings.HUB_PUB_KEY)}
 
     @access.public
     @autoDescribeRoute(
@@ -89,13 +89,13 @@ class ytHub(Resource):
         result = {}
         user = self.getCurrentUser()
         frontends = list(
-            self.model("folder").childFolders(
+            Folder().childFolders(
                 parentType="folder", parent=folder, user=user
             )
         )
         for frontend in frontends:
             ds = list(
-                self.model("folder").childFolders(
+                Folder().childFolders(
                     parentType="folder", parent=frontend, user=user
                 )
             )
@@ -110,7 +110,7 @@ class ytHub(Resource):
                 )
                 for _ in ds
             ]
-            ds = list(self.model("folder").childItems(folder=frontend))
+            ds = list(Folder().childItems(folder=frontend))
             examples += [
                 dict(
                     code=get_code(_),

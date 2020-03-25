@@ -2,6 +2,7 @@ from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
 from girder.api.rest import filtermodel, Resource
 from girder.constants import AccessType
+from girder.models.item import Item
 from girder.models.model_base import ValidationException
 
 
@@ -20,11 +21,11 @@ class Raft(Resource):
     )
     @filtermodel(model='item')
     def listRafts(self, limit, offset, sort, params):
-        cursor = self.model('item').find({
+        cursor = Item().find({
             'meta.isRaft': {'$exists': True}
         }, sort=sort)
 
-        return list(self.model('item').filterResultsByPermission(
+        return list(Item().filterResultsByPermission(
             cursor, self.getCurrentUser(), level=AccessType.READ,
             limit=limit, offset=offset))
 

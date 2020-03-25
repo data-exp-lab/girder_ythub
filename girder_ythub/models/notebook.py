@@ -16,7 +16,9 @@ from girder.models.model_base import \
 from girder.models.notification import \
     ProgressState, Notification
 from girder.models.setting import Setting
-from girder.plugins.worker import getCeleryApp, getWorkerApiUrl
+
+from girder_worker.girder_plugin.celery import getCeleryApp
+from girder_worker.girder_plugin.utils import getWorkerApiUrl
 
 
 def _wait_for_server(url, timeout=30, wait_time=0.5):
