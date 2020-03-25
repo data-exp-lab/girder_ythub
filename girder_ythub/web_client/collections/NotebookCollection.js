@@ -1,4 +1,4 @@
-import Collection from 'girder/collections/Collection';
+import Collection from '@girder/core/collections/Collection';
 
 import NotebookModel from '../models/NotebookModel';
 

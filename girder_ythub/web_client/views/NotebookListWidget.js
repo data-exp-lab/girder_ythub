@@ -1,11 +1,11 @@
 import _ from 'underscore';
 
-import PaginateWidget from 'girder/views/widgets/PaginateWidget';
-import View from 'girder/views/View';
-import { defineFlags, formatDate, DATE_SECOND } from 'girder/misc';
-import eventStream from 'girder/utilities/EventStream';
-import { SORT_DESC } from 'girder/constants';
-import { restRequest } from 'girder/rest';
+import PaginateWidget from '@girder/core/views/widgets/PaginateWidget';
+import View from '@girder/core/views/View';
+import { defineFlags, formatDate, DATE_SECOND } from '@girder/core/misc';
+import eventStream from '@girder/core/utilities/EventStream';
+import { SORT_DESC } from '@girder/core/constants';
+import { restRequest } from '@girder/core/rest';
 
 import NotebookCollection from '../collections/NotebookCollection';
 import NotebookListWidgetTemplate from '../templates/NotebookListWidget.pug';

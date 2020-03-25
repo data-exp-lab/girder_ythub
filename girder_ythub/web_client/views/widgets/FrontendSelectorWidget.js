@@ -1,12 +1,12 @@
-import View from 'girder/views/View';
-import events from 'girder/events';
-import { SORT_DESC } from 'girder/constants';
-import { restRequest } from 'girder/rest';
+import View from '@girder/core/views/View';
+import events from '@girder/core/events';
+import { SORT_DESC } from '@girder/core/constants';
+import { restRequest } from '@girder/core/rest';
 
 import FrontendSelectorTemplate from '../../templates/widgets/frontendSelector.pug';
 import FrontendCollection from '../../collections/FrontendCollection';
 
-import 'girder/utilities/jquery/girderModal';
+import '@girder/core/utilities/jquery/girderModal';
 
 import '../../stylesheets/frontendSelector.styl';
 

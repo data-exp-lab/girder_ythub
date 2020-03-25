@@ -1,9 +1,9 @@
 import _ from 'underscore';
 
-import HierarchyWidget from 'girder/views/widgets/HierarchyWidget';
-import { restRequest } from 'girder/rest';
-import { wrap } from 'girder/utilities/PluginUtils';
-import { getCurrentUser } from 'girder/auth';
+import HierarchyWidget from '@girder/core/views/widgets/HierarchyWidget';
+import { restRequest } from '@girder/core/rest';
+import { wrap } from '@girder/core/utilities/PluginUtils';
+import { getCurrentUser } from '@girder/core/auth';
 
 import ytHubHierarchyWidget from '../templates/ytHubHierarchyWidget.pug';
 import ytHubFolderMenu from '../templates/ytHubFolderMenu.pug';

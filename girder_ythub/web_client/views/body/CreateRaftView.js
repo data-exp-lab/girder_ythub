@@ -1,20 +1,20 @@
 import $ from 'jquery';
 import _ from 'underscore';
 
-import router from 'girder/router';
-import ItemModel from 'girder/models/ItemModel';
-import MarkdownWidget from 'girder/views/widgets/MarkdownWidget';
-import BrowserWidget from 'girder/views/widgets/BrowserWidget';
-import View from 'girder/views/View';
-import { getCurrentUser } from 'girder/auth';
-import { restRequest } from 'girder/rest';
+import router from '@girder/core/router';
+import ItemModel from '@girder/core/models/ItemModel';
+import MarkdownWidget from '@girder/core/views/widgets/MarkdownWidget';
+import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
+import View from '@girder/core/views/View';
+import { getCurrentUser } from '@girder/core/auth';
+import { restRequest } from '@girder/core/rest';
 
 import CreateRaftViewTemplate from '../../templates/body/createRaftView.pug';
 import FrontendCollection from '../../collections/FrontendCollection';
 import ScriptAddWidget from '../widgets/ScriptAddWidget';
 import '../../stylesheets/createRaftView.styl';
 
-import 'girder/utilities/jquery/girderEnable';
+import '@girder/core/utilities/jquery/girderEnable';
 
 var lastParent = null;
 

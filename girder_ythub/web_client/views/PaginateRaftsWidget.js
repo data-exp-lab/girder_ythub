@@ -1,6 +1,6 @@
-import View from 'girder/views/View';
-import PaginateWidget from 'girder/views/widgets/PaginateWidget';
-import router from 'girder/router';
+import View from '@girder/core/views/View';
+import PaginateWidget from '@girder/core/views/widgets/PaginateWidget';
+import router from '@girder/core/router';
 
 import RaftCollection from '../collections/RaftCollection';
 import template from '../templates/paginateRaftsWidget.pug';

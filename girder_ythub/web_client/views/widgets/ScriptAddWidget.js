@@ -1,9 +1,9 @@
 import $ from 'jquery';
 import _ from 'underscore';
 
-import View from 'girder/views/View';
-import BrowserWidget from 'girder/views/widgets/BrowserWidget';
-import { getCurrentUser } from 'girder/auth';
+import View from '@girder/core/views/View';
+import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
+import { getCurrentUser } from '@girder/core/auth';
 
 import ScriptAddWidgetTemplate from '../../templates/widgets/scriptAddWidget.pug';
 import '../../stylesheets/scriptAddWidget.styl';

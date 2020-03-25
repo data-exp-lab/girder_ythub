@@ -1,10 +1,10 @@
 /* eslint-disable import/first */
 
-import router from 'girder/router';
-import events from 'girder/events';
-import { exposePluginConfig } from 'girder/utilities/PluginUtils';
-import ItemModel from 'girder/models/ItemModel';
-import { Layout } from 'girder/constants';
+import router from '@girder/core/router';
+import events from '@girder/core/events';
+import { exposePluginConfig } from '@girder/core/utilities/PluginUtils';
+import ItemModel from '@girder/core/models/ItemModel';
+import { Layout } from '@girder/core/constants';
 
 import ConfigView from './views/ConfigView';
 import NotebookListWidget from './views/NotebookListWidget';

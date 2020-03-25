@@ -1,7 +1,7 @@
-import View from 'girder/views/View';
-import { renderMarkdown } from 'girder/misc';
-import { restRequest } from 'girder/rest';
-import router from 'girder/router';
+import View from '@girder/core/views/View';
+import { renderMarkdown } from '@girder/core/misc';
+import { restRequest } from '@girder/core/rest';
+import router from '@girder/core/router';
 
 import template from '../templates/raftRun.pug';
 import '../stylesheets/raftRun.styl';
