@@ -12,7 +12,7 @@ from girder.api.rest import Resource, getApiUrl
 from girder.constants import AccessType
 from girder.models.folder import Folder
 
-from girder.plugins.ythub.constants import PluginSettings
+from ..constants import PluginSettings
 
 
 class ytHub(Resource):

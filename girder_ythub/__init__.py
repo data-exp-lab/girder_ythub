@@ -13,7 +13,7 @@ from girder.api import access
 from girder.api.describe import Description, describeRoute
 from girder.api.rest import boundHandler, loadmodel
 from girder.constants import AccessType, TokenScope
-
+from girder.plugin import getPlugin, GirderPlugin
 from girder.utility.model_importer import ModelImporter
 from girder.utility import assetstore_utilities, setting_utilities
 
@@ -225,19 +225,22 @@ def addDefaultFolders(event):
         notebookFolder, user, AccessType.ADMIN, save=True)
 
 
-def load(info):
-    notebook = Notebook()
-    info['apiRoot'].ythub = ytHub()
-    info['apiRoot'].notebook = notebook
-    info['apiRoot'].frontend = Frontend()
-    info['apiRoot'].raft = Raft()
-    info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
-    info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
-    info['apiRoot'].item.route('PUT', (':id', 'check'), checkItem)
-    info['apiRoot'].folder.route('GET', (':id', 'rootpath'), folderRootpath)
-    info['apiRoot'].folder.route('PUT', (':id', 'check'), checkFolder)
-    info['apiRoot'].collection.route('PUT', (':id', 'check'), checkCollection)
+class ytHubPlugin(GirderPlugin):
+    DISPLAY_NAME = "ytHub on Girder"
+    CLIENT_SOURCE_PATH = "web_client"
 
-    Item().ensureIndex(['meta.isRaft', {'sparse': True}])
+    def load(self, info):
+        info['apiRoot'].ythub = ytHub()
+        info['apiRoot'].notebook = Notebook()
+        info['apiRoot'].frontend = Frontend()
+        info['apiRoot'].raft = Raft()
+        info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
+        info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
+        info['apiRoot'].item.route('PUT', (':id', 'check'), checkItem)
+        info['apiRoot'].folder.route('GET', (':id', 'rootpath'), folderRootpath)
+        info['apiRoot'].folder.route('PUT', (':id', 'check'), checkFolder)
+        info['apiRoot'].collection.route('PUT', (':id', 'check'), checkCollection)
 
-    events.bind('model.user.save.created', 'ythub', addDefaultFolders)
+        Item().ensureIndex(['meta.isRaft', {'sparse': True}])
+
+        events.bind('model.user.save.created', 'ythub', addDefaultFolders)

@@ -1,0 +1,21 @@
+{
+    "name": "@girder/ythub",
+    "version": "0.0.0",
+    "description": "Allow users to configure yt Hub.",
+    "homepage": "https://ythub.readthedocs.io/en/latest/",
+    "bugs": {
+        "url": "https://github.com/data-exp-lab/girder_ythub/issues"
+    },
+    "license": "BSD-3",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/data-exp-lab/girder_ythub.git"
+    },
+    "peerDependencies": {
+        "@girder/core": "*"
+    },
+    "girderPlugin": {
+        "name": "ythub",
+        "main": "./main.js"
+    }
+}
