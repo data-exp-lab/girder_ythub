@@ -17,6 +17,7 @@ from girder.api.rest import Resource, getApiUrl, setResponseHeader
 from girder.constants import AccessType
 from girder.exceptions import RestException
 from girder.models.folder import Folder
+from girder.models.item import Item
 
 from girder.plugins.ythub.constants import PluginSettings
 
@@ -164,44 +165,30 @@ class ytHub(Resource):
         def download_path(_id, resource):
             return "{}/{}/{}/download".format(getApiUrl(), resource, _id)
 
+        def get_meta(item):
+            try:
+                frontend = "{} frontend".format(item["meta"]["frontend"])
+                fname, fobj = next(Item().fileList(item, data=False))
+
+                entry = {
+                    "code": get_code(item),
+                    "description": item["meta"]["description"],
+                    "filename": fname.rsplit(".", 2)[0],
+                    "size": sizeof_fmt(fobj["size"]),
+                    "url": download_path(fobj["_id"], "file"),
+                }
+                return frontend, entry
+            except:
+                pass
+
         result = {}
-        user = self.getCurrentUser()
-        frontends = list(
-            self.model("folder").childFolders(
-                parentType="folder", parent=folder, user=user
-            )
-        )
-        for frontend in frontends:
-            ds = list(
-                self.model("folder").childFolders(
-                    parentType="folder", parent=frontend, user=user
-                )
-            )
+        for ds in Folder().childItems(folder):
+            frontend, entry = get_meta(ds)
+            if frontend not in result:
+                result[frontend] = []
+            result[frontend].append(entry)
 
-            examples = [
-                dict(
-                    code=get_code(_),
-                    description=_["description"],
-                    filename=_["name"],
-                    size=sizeof_fmt(_["size"]),
-                    url=download_path(_["_id"], "folder"),
-                )
-                for _ in ds
-            ]
-            ds = list(self.model("folder").childItems(folder=frontend))
-            examples += [
-                dict(
-                    code=get_code(_),
-                    description=_["description"],
-                    filename=_["name"],
-                    size=sizeof_fmt(_["size"]),
-                    url=download_path(_["_id"], "item"),
-                )
-                for _ in ds
-            ]
-            result[frontend["name"]] = examples
-
-        return result
+        return [{key: result[key]} for key in sorted(result.keys())]
 
     @access.public
     @autoDescribeRoute(
@@ -210,31 +197,19 @@ class ytHub(Resource):
         )
     )
     def generate_pooch_registry(self, folder):
-        meta = {}
-        result = {}
-        download_url = getApiUrl() + "/file/{}/download"
-        for path, fobj in Folder().fileList(
-            folder,
-            user=None,
-            path="",
-            includeMetadata=True,
-            subpath=False,
-            mimeFilter=None,
-            data=False,
-        ):
-            if path.endswith("metadata.json"):
-                name = os.path.dirname(path).replace(".tar.gz", "").replace(".zip", "")
-                meta[name] = json.loads(next(fobj()))
-            else:
-                name = fobj["name"].replace(".tar.gz", "").replace(".zip", "")
-                result[name] = {
-                    "url": download_url.format(fobj["_id"]),
-                    "hash": "sha512:{}".format(fobj["sha512"]),
-                }
+        def download_path(_id, resource):
+            return "{}/{}/{}/download".format(getApiUrl(), resource, _id)
 
-        for key in meta.keys():
-            result[key].update(meta[key])
-        return {k: v for k, v in result.items() if v["type"] == "sample"}
+        result = {}
+        for item in Folder().childItems(folder):
+            fname, fobj = next(Item().fileList(item, data=False))
+            result[item["name"]] = {
+                "hash": "sha512:{}".format(fobj["sha512"]),
+                "load_kwargs": item["meta"].get("load_kwargs", {}),
+                "load_name": item["meta"].get("load_name"),
+                "url": download_path(fobj["_id"], "file"),
+            }
+        return result
 
     @access.public
     @autoDescribeRoute(
