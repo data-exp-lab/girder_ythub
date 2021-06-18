@@ -188,7 +188,7 @@ class ytHub(Resource):
                 result[frontend] = []
             result[frontend].append(entry)
 
-        return [{key: result[key]} for key in sorted(result.keys())]
+        return result
 
     @access.public
     @autoDescribeRoute(
