@@ -22,6 +22,7 @@ from .rest.frontend import Frontend
 from .rest.notebook import Notebook
 from .rest.raft import Raft
 from .rest.ythub import ytHub
+from .rest.qmc import QMC
 
 
 @setting_utilities.validator(PluginSettings.HUB_PRIV_KEY)
@@ -231,6 +232,7 @@ def load(info):
     info['apiRoot'].notebook = notebook
     info['apiRoot'].frontend = Frontend()
     info['apiRoot'].raft = Raft()
+    info['apiRoot'].qmc = QMC()
     info['apiRoot'].folder.route('GET', (':id', 'listing'), listFolder)
     info['apiRoot'].item.route('GET', (':id', 'listing'), listItem)
     info['apiRoot'].item.route('PUT', (':id', 'check'), checkItem)
