@@ -1,0 +1,8 @@
+.g-item-rel-sims.g-info.list-entry
+   i.icon-link-ext
+   | Related Simulations
+   each sim in sims
+      if (sim._id != currentId)
+        li.g-sim-list-entry
+           a.g-item-list-link.g-right-border(g-item-cid=sim.cid, href=`#item/${sim._id}`)
+             = sim.name
