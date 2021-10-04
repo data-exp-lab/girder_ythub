@@ -3,7 +3,12 @@
 from bson import ObjectId
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
-from girder.api.rest import Resource, filtermodel
+from girder.api.rest import (
+    Resource,
+    filtermodel,
+    setResponseHeader,
+    setContentDisposition,
+)
 from girder.constants import AccessType
 from girder.models.item import Item
 from girder.utility import ziputil
@@ -184,20 +189,18 @@ class QMC(Resource):
 
     @access.public
     @autoDescribeRoute(
-        QMCDescription(
-            "Download QMC sims by config parameters (T, P)"
-        ).physRangeParams()
+        QMCDescription("Download QMC sims by config parameters (T, P)")
+        .physRangeParams()
+        .produces("application/zip")
     )
     def downloadQMCByParams(self, Tmin, Tmax, Pmin, Pmax):
         user = self.getCurrentUser()
         search_kwargs = dict(
-            sort=[("name", 1)],
-            user=user,
-            level=AccessType.READ,
-            limit=0,
-            offset=0,
+            sort=[("name", 1)], user=user, level=AccessType.READ, limit=0, offset=0
         )
         q = self.query(Tmin, Pmin, Tmax, Pmax)
+        setResponseHeader("Content-Type", "application/zip")
+        setContentDisposition("QMC.zip")
 
         def stream():
             zipobj = ziputil.ZipGenerator()
