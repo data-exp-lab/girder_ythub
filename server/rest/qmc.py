@@ -6,6 +6,44 @@ from girder.api.describe import Description, autoDescribeRoute
 from girder.api.rest import Resource, filtermodel
 from girder.constants import AccessType
 from girder.models.item import Item
+from girder.utility import ziputil
+
+
+class QMCDescription(Description):
+    def physRangeParams(self):
+        self.param(
+            "Tmin",
+            "Minimum temperature in K",
+            required=False,
+            paramType="query",
+            default=0,
+            dataType="integer",
+        )
+        self.param(
+            "Tmax",
+            "Maximum temperature in K",
+            required=False,
+            paramType="query",
+            default=10000,
+            dataType="integer",
+        )
+        self.param(
+            "Pmin",
+            "Minimum pressure in GPa",
+            required=False,
+            paramType="query",
+            default=0,
+            dataType="integer",
+        )
+        self.param(
+            "Pmax",
+            "Maximum pressure in GPa",
+            required=False,
+            paramType="query",
+            default=10000,
+            dataType="integer",
+        )
+        return self
 
 
 class QMC(Resource):
@@ -18,6 +56,7 @@ class QMC(Resource):
         self.route("GET", (), self.listSimsByConfig)
         self.route("GET", ("filter",), self.listQMCByParams)
         self.route("GET", ("count",), self.aggregateQMCByParams)
+        self.route("GET", ("download",), self.downloadQMCByParams)
 
     @access.public
     @filtermodel(model=Item)
@@ -46,40 +85,9 @@ class QMC(Resource):
     @access.public
     @filtermodel(model=Item)
     @autoDescribeRoute(
-        Description("List items in range of config parameters")
+        QMCDescription("List items in range of config parameters")
         .responseClass("item", array=True)
-        .param(
-            "Tmin",
-            "Minimum temperature in K",
-            required=False,
-            paramType="query",
-            default=0,
-            dataType="integer",
-        )
-        .param(
-            "Tmax",
-            "Maximum temperature in K",
-            required=False,
-            paramType="query",
-            default=10000,
-            dataType="integer",
-        )
-        .param(
-            "Pmin",
-            "Minimum pressure in GPa",
-            required=False,
-            paramType="query",
-            default=0,
-            dataType="integer",
-        )
-        .param(
-            "Pmax",
-            "Maximum pressure in GPa",
-            required=False,
-            paramType="query",
-            default=10000,
-            dataType="integer",
-        )
+        .physRangeParams()
         .pagingParams(defaultSort="name")
     )
     def listQMCByParams(self, Tmin, Tmax, Pmin, Pmax, limit, offset, sort):
@@ -102,7 +110,7 @@ class QMC(Resource):
 
     @access.public
     @autoDescribeRoute(
-        Description("Aggregate QMC sims by config parameters (T, P)")
+        QMCDescription("Aggregate QMC sims by config parameters (T, P)")
         .param(
             "draw",
             "Magic integer from datatables",
@@ -110,50 +118,12 @@ class QMC(Resource):
             paramType="query",
             dataType="integer",
         )
-        .param(
-            "Tmin",
-            "Minimum temperature in K",
-            required=False,
-            paramType="query",
-            default=0,
-            dataType="integer",
-        )
-        .param(
-            "Tmax",
-            "Maximum temperature in K",
-            required=False,
-            paramType="query",
-            default=10000,
-            dataType="integer",
-        )
-        .param(
-            "Pmin",
-            "Minimum pressure in GPa",
-            required=False,
-            paramType="query",
-            default=0,
-            dataType="integer",
-        )
-        .param(
-            "Pmax",
-            "Maximum pressure in GPa",
-            required=False,
-            paramType="query",
-            default=10000,
-            dataType="integer",
-        )
+        .physRangeParams()
         .pagingParams(defaultSort="name")
     )
     def aggregateQMCByParams(self, draw, Tmin, Tmax, Pmin, Pmax, limit, offset, sort):
         results = []
         user = self.getCurrentUser()
-
-        def query(Tmin=0, Pmin=0, Tmax=100000, Pmax=100000):
-            return {
-                "meta.conf.configId": {"$exists": True},
-                "meta.conf.tkelvin": {"$gte": Tmin, "$lte": Tmax},
-                "meta.conf.pgpa": {"$gte": Pmin, "$lte": Pmax},
-            }
 
         search_kwargs = dict(
             sort=[("name", 1)],
@@ -164,8 +134,8 @@ class QMC(Resource):
             fields={},
         )
 
-        total = Item().findWithPermissions(query(), **search_kwargs).count()
-        q = query(Tmin, Pmin, Tmax, Pmax)
+        total = Item().findWithPermissions(self.query(), **search_kwargs).count()
+        q = self.query(Tmin, Pmin, Tmax, Pmax)
         totalFiltered = Item().findWithPermissions(q, **search_kwargs).count()
 
         if sort[0][0] == "T":
@@ -203,3 +173,41 @@ class QMC(Resource):
             "recordsFiltered": totalFiltered,
             "data": results,
         }
+
+    @staticmethod
+    def query(Tmin=0, Pmin=0, Tmax=100000, Pmax=100000):
+        return {
+            "meta.conf.configId": {"$exists": True},
+            "meta.conf.tkelvin": {"$gte": Tmin, "$lte": Tmax},
+            "meta.conf.pgpa": {"$gte": Pmin, "$lte": Pmax},
+        }
+
+    @access.public
+    @autoDescribeRoute(
+        QMCDescription(
+            "Download QMC sims by config parameters (T, P)"
+        ).physRangeParams()
+    )
+    def downloadQMCByParams(self, Tmin, Tmax, Pmin, Pmax):
+        user = self.getCurrentUser()
+        search_kwargs = dict(
+            sort=[("name", 1)],
+            user=user,
+            level=AccessType.READ,
+            limit=0,
+            offset=0,
+        )
+        q = self.query(Tmin, Pmin, Tmax, Pmax)
+
+        def stream():
+            zipobj = ziputil.ZipGenerator()
+            for item in Item().findWithPermissions(q, **search_kwargs):
+                print(item["_id"])
+                for (path, fobj) in Item().fileList(
+                    doc=item, user=user, includeMetadata=False, subpath=True
+                ):
+                    for data in zipobj.addFile(fobj, path):
+                        yield data
+            yield zipobj.footer()
+
+        return stream
