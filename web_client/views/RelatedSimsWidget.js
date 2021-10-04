@@ -11,7 +11,7 @@ var RelatedSimsWidget = View.extend({
     },
 
     render: function () {
-        var uuid = this.item.attributes.meta.conf.uuid;
+        var uuid = this.item.attributes.meta.conf.configId;
         var widget = this;
         
         restRequest({
@@ -20,9 +20,6 @@ var RelatedSimsWidget = View.extend({
             data: {configId: uuid},
             error: null
         }).done(function (sims) {
-            console.log("I was here");
-            console.log(this);
-            console.log(widget);
             widget.$el.html(RelatedSimsWidgetTemplate({
                 currentId: widget.item.attributes._id,
                 sims: sims
