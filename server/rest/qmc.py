@@ -60,7 +60,8 @@ class QMC(Resource):
 
         self.route("GET", (), self.listSimsByConfig)
         self.route("GET", ("filter",), self.listQMCByParams)
-        self.route("GET", ("count",), self.aggregateQMCByParams)
+        self.route("GET", ("table",), self.aggregateQMCByParams)
+        self.route("GET", ("count",), self.countQMC)
         self.route("GET", ("download",), self.downloadQMCByParams)
 
     @access.public
@@ -214,3 +215,22 @@ class QMC(Resource):
             yield zipobj.footer()
 
         return stream
+
+    @access.public
+    @autoDescribeRoute(
+        Description("Return a count of QMC simulations aggregated by (T, P)")
+    )
+    def countQMC(self):
+        query = {
+            "$match": {
+                "meta.conf.configId": {"$exists": True},
+                "meta.conf.tkelvin": {"$exists": True},
+            }
+        }
+        aggregation = {
+            "$group": {
+                "_id": {"tkelvin": "$meta.conf.tkelvin", "pgpa": "$meta.conf.pgpa"},
+                "count": {"$sum": 1},
+            }
+        }
+        return list(Item().collection.aggregate([query, aggregation]))
