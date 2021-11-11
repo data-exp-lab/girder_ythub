@@ -232,7 +232,7 @@ class QMC(Resource):
         aggregation = {
             "$group": {
                 "_id": {"tkelvin": "$meta.conf.tkelvin", "pgpa": "$meta.conf.pgpa"},
-                "count": {"$sum": 1},
+                "count": {"$sum": "$meta.conf.nconf"},
             }
         }
         return list(Item().collection.aggregate([query, aggregation]))
