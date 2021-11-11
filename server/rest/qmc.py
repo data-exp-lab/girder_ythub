@@ -168,8 +168,10 @@ class QMC(Resource):
                     "T": conf["tkelvin"],
                     "P": conf["pgpa"],
                     "DT_RowData": {"itemId": item["_id"], "configId": conf["configId"]},
-                    "dft": conf.get("input_dft"),
+                    "input_dft": conf.get("input_dft"),
                     "ens": conf["ens"],
+                    "conf_dft": conf.get("config_dft"),
+                    "quantum": conf.get("quantum", False),
                 }
             )
 
