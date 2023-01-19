@@ -4,11 +4,10 @@ import cherrypy
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-import json
 import os
 import re
+import requests
 from urllib.parse import urlparse, urlunparse, parse_qs
-from urllib.request import urlopen
 import validators
 
 from girder.api import access
@@ -31,8 +30,8 @@ class DataverseImportProvider(object):
 
     @staticmethod
     def query_dataverse(search_url):
-        resp = urlopen(search_url).read()
-        data = json.loads(resp.decode('utf-8'))['data']
+        resp = requests.get(search_url)
+        data = resp.json()['data']
         if data['count_in_response'] != 1:
             raise ValueError
         item = data['items'][0]
@@ -55,8 +54,8 @@ class DataverseImportProvider(object):
             )
         else:
             dataset_url = urlunparse(url)
-        resp = urlopen(dataset_url).read()
-        data = json.loads(resp.decode('utf-8'))
+        resp = requests.get(dataset_url)
+        data = resp.json()
         doi = '{protocol}:{authority}/{identifier}'.format(**data['data'])
         return doi
 
@@ -178,7 +177,7 @@ class ytHub(Resource):
                     "url": download_path(fobj["_id"], "file"),
                 }
                 return frontend, entry
-            except:
+            except Exception:
                 pass
 
         result = {}
